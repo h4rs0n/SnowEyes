@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- 引入样式文件 -->
+  <link rel="stylesheet" href="highlight.css">
+  <style>
+    /* 基础样式设置 */
+    body {
+      width: 400px;            /* 固定弹出窗口宽度 */
+      margin: 0;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.5;
+      background: #f8f9fa;
+    }
+
+    /* 主容器样式 */
+    .container {
+      width: 400px;           /* 与body同宽 */
+      max-height: 600px;      /* 最大高度限制 */
+      overflow-y: auto;       /* 内容超出时显示滚动条 */
+      padding: 15px;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    /* 结果区域样式 */
+    .result-section {
+      width: 370px;           /* 考虑内边距的容器宽度 */
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #8f8c8c;
+      border-radius: 4px;
+      background: #f2eeee;
+      box-sizing: border-box;
+    }
+
+    /* 结果列表样式 */
+    .result-list {
+      width: 350px;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* 结果项样式 */
+    .result-item {
+      width: 350px;
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      box-sizing: border-box;
+    }
+
+    /* 结果项包装器样式 */
+    .result-wrapper {
+      width: 334px;
+      position: relative;
+      padding-right: 30px;    /* 为复制按钮预留空间 */
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    /* URL 内容样式 */
+    .url-content {
+      width: 304px;
+      display: inline-block;
+      padding: 8px;
+      margin: 0;
+      background: #f5f5f5;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      word-break: break-all;
+      white-space: pre-wrap;
+      box-sizing: border-box;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 复制按钮样式 */
+    .copy-btn {
+      position: absolute;
+      right: 0;
+      top: 8px;
+      padding: 4px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .copy-btn:hover {
+      opacity: 1;
+    }
+
+    /* 导航栏样式 */
+    .nav {
+      width: 400px;
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 1000;
+      padding: 10px 15px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    /* 标题样式 */
+    h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: #333;
+    }
+
+    /* 按钮通用样式 */
+    button {
+      padding: 6px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    button:hover {
+      background: #f5f5f5;
+    }
+
+    /* 状态提示样式 */
+    .loading, .error {
+      padding: 20px;
+      text-align: center;
+      color: #666;
+    }
+
+    /* 复制提示工具提示样式 */
+    .copy-tooltip {
+      position: fixed;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 1001;
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <div class="nav">
+    <div class="nav-title">信息检测</div>
+    <div class="nav-actions">
+      <button class="refresh-btn">刷新</button>
+    </div>
+  </div>
+  
+  <!-- 主容器，用于显示扫描结果 -->
+  <div class="container">
+    <!-- 内容将由 JavaScript 动态生成 -->
+  </div>
+
+  <!-- 引入主要脚本文件 -->
+  <script src="popup.js"></script>
+</body>
+</html> 

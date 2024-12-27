@@ -1,0 +1,338 @@
+/* 基础页面布局 */
+body {
+  width: 400px;
+  height: 600px;
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: #fff;
+  color: #333;
+}
+
+/* 导航栏样式 */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+/* 导航栏标题 */
+.nav-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c2c2c;
+}
+
+/* 刷新按钮样式 */
+.refresh-btn {
+  padding: 4px 12px;
+  font-size: 13px;
+  color: #5c7cfa;
+  background: #edf2ff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+  background: #dbe4ff;
+}
+
+/* 主容器样式 */
+.container {
+  padding: 8px 16px 12px;
+  height: calc(100% - 50px);
+  overflow-y: auto;
+}
+
+/* 自定义滚动条样式 */
+.container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.container::-webkit-scrollbar-track {
+  background: #f1f3f5;
+  border-radius: 3px;
+}
+
+.container::-webkit-scrollbar-thumb {
+  background: #dee2e6;
+  border-radius: 3px;
+}
+
+.container::-webkit-scrollbar-thumb:hover {
+  background: #ced4da;
+}
+
+/* 结果区域样式 */
+.section {
+  margin-bottom: 12px;
+}
+
+/* 结果区域标题栏 */
+.section-header {
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 标题文本样式 */
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #495057;
+  letter-spacing: 0.3px;
+}
+
+/* 结果数量样式 */
+.count {
+  font-size: 13px;
+  color: #868e96;
+  margin-left: 2px;
+  font-weight: normal;
+  letter-spacing: 0.2px;
+}
+
+/* 结果内容区域 */
+.section-content {
+  background: #f8f9fa;
+  border-radius: 4px;
+  padding: 8px;
+  display: block;
+  max-height: 300px;
+  overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 结果区域滚动条样式 */
+.section-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.section-content::-webkit-scrollbar-track {
+  background: #f1f3f5;
+  border-radius: 3px;
+}
+
+.section-content::-webkit-scrollbar-thumb {
+  background: #dee2e6;
+  border-radius: 3px;
+}
+
+.section-content::-webkit-scrollbar-thumb:hover {
+  background: #ced4da;
+}
+
+/* 结果项包装器 */
+.content-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 单个结果项样式 */
+.item {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #495057;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  transition: all 0.15s ease;
+  width: fit-content;
+  min-width: unset;
+  max-width: calc(100% - 16px);
+  white-space: normal;
+  word-break: break-all;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+/* 添加悬停效果 */
+.item:hover {
+  background: #f8f9fa;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 点击效果 */
+.item:active {
+  transform: scale(0.98);
+  background: #f1f3f5;
+}
+
+/* 为不同类型的结果添加左侧彩色边框 */
+.item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2.5px;
+  border-radius: 4px 0 0 4px;
+}
+
+/* 各类型结果的边框颜色 */
+.domain-list .item::before {
+  background: #74c0fc;  /* 蓝色 - 域名 */
+}
+
+.api-list .item::before {
+  background: #b197fc;  /* 紫色 - API */
+}
+
+.ip-list .item::before {
+  background: #ffd43b;  /* 黄色 - IP */
+}
+
+.port-list .item::before {
+  background: #868e96;  /* 灰色 - 端口 */
+}
+
+.phone-list .item::before {
+  background: #ff8787;  /* 红色 - 手机号 */
+}
+
+.email-list .item::before {
+  background: #69db7c;  /* 绿色 - 邮箱 */
+}
+
+.idcard-list .item::before {
+  background: #ffa94d;  /* 橙色 - 身份证 */
+}
+
+.url-list .item::before {
+  background: #4dabf7;  /* 浅蓝 - URL */
+}
+
+.btc-list .item::before {
+  background: #fab005;  /* 金色 - 比特币地址 */
+}
+
+.eth-list .item::before {
+  background: #7950f2;  /* 深紫 - 以太坊地址 */
+}
+
+.jwt-list .item::before {
+  background: #ff922b;  /* 橙色 - JWT Token */
+}
+
+.aws-list .item::before {
+  background: #ff6b6b;  /* 红色 - AWS Key */
+}
+
+.hash-md5-list .item::before {
+  background: #20c997;  /* 青色 - MD5哈希 */
+}
+
+.hash-sha1-list .item::before {
+  background: #51cf66;  /* 绿色 - SHA1哈希 */
+}
+
+.hash-sha256-list .item::before {
+  background: #82c91e;  /* 黄绿色 - SHA256哈希 */
+}
+
+/* 复制按钮样式 */
+.copy-all-btn {
+  padding: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #868e96;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.copy-all-btn:hover {
+  background: #f1f3f5;
+  color: #495057;
+}
+
+.copy-all-btn:active {
+  transform: translateY(1px);
+}
+
+/* 复制提示动画 */
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+}
+
+/* 复制提示样式 */
+.copy-tooltip {
+  position: fixed;
+  background: rgba(33, 37, 41, 0.9);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1000;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  animation: fadeInOut 1s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 状态提示样式 */
+.loading, .error, .no-results {
+  padding: 8px;
+  text-align: center;
+  color: #868e96;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.error {
+  color: #ff6b6b;
+}
+
+/* 优化标签间距 */
+.content-wrapper {
+  gap: unset;
+}
+
+/* 移除结果项间的分隔符 */
+.item::after {
+  content: none;
+}
+
+.item:last-child::after {
+  content: none;
+}
+ 

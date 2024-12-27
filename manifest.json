@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+
+  "name": "网页敏感信息检测",
+  "version": "1.0",
+  "description": "网页信息检测工具",
+
+  "permissions": [
+    "activeTab",    
+    "scripting",    
+    "storage"       
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "background": {
+    "service_worker": "background/background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      
+      "js": [
+        "content/utils/logger.js",
+        
+        "content/config/api.config.js",
+        "content/config/domain.config.js",
+        "content/config/ip.config.js",
+        
+        "content/validators/api.validator.js",
+        "content/validators/domain.validator.js",
+        "content/validators/ip.validator.js",
+        
+        "content/filters/api.filter.js",
+        "content/filters/domain.filter.js",
+        "content/filters/ip.filter.js",
+        
+        "content/content.js"
+      ],
+      
+      "run_at": "document_end"
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup/popup.html"
+  }
+} 
