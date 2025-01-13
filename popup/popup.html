@@ -149,23 +149,137 @@
       font-size: 12px;
       z-index: 1001;
     }
+
+    /* 导航栏样式 */
+    .nav-tabs {
+      display: flex;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      padding: 0;
+      margin: 0;
+      height: 40px;
+      justify-content: space-between; /* 两端对齐 */
+      align-items: center; /* 垂直居中 */
+    }
+
+    .nav-left {
+      display: flex; /* 左侧标签容器 */
+    }
+
+    .nav-right {
+      padding-right: 10px; /* 右侧按钮容器 */
+    }
+
+    .nav-tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: #666;
+      font-size: 14px;
+      position: relative;
+    }
+
+    .nav-tab.active {
+      color: #1a73e8;
+      font-weight: 500;
+    }
+
+    .nav-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #1a73e8;
+    }
+
+    /* 刷新按钮样式 */
+    .refresh-btn {
+      padding: 6px 12px;
+      color: #5c7cfa;
+      background: #edf2ff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      background: #dbe4ff;
+    }
+
+    /* 页面容器样式 */
+    .page {
+      display: none;
+      height: calc(100vh - 40px); /* 减去导航栏高度 */
+      overflow-y: auto;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* 配置页面样式 */
+    .config-page {
+      padding: 15px;
+    }
+
+    .config-section {
+      margin-bottom: 20px;
+    }
+
+    .config-section h4 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .config-item {
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    /* 内容容器样式 */
+    .container {
+      padding: 15px;
+    }
   </style>
 </head>
 <body>
   <!-- 导航栏 -->
-  <div class="nav">
-    <div class="nav-title">信息检测</div>
-    <div class="nav-actions">
+  <div class="nav-tabs">
+    <div class="nav-left">
+      <button class="nav-tab active" data-page="scanner">信息搜集</button>
+      <button class="nav-tab" data-page="config">配置</button>
+    </div>
+    <div class="nav-right">
       <button class="refresh-btn">刷新</button>
     </div>
   </div>
-  
-  <!-- 主容器，用于显示扫描结果 -->
-  <div class="container">
-    <!-- 内容将由 JavaScript 动态生成 -->
+
+  <!-- 信息搜集页面 -->
+  <div class="page scanner-page active">
+    <div class="container">
+      <!-- 内容将由 JavaScript 动态生成 -->
+    </div>
   </div>
 
-  <!-- 引入主要脚本文件 -->
+  <!-- 配置页面 -->
+  <div class="page config-page">
+    <div class="config-container">
+      <!-- 配置内容将由 JavaScript 动态生成 -->
+    </div>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html> 

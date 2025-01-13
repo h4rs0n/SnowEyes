@@ -26,19 +26,8 @@
       
       "js": [
         "content/utils/logger.js",
-        
-        "content/config/api.config.js",
-        "content/config/domain.config.js",
-        "content/config/ip.config.js",
-        
-        "content/validators/api.validator.js",
-        "content/validators/domain.validator.js",
-        "content/validators/ip.validator.js",
-        
-        "content/filters/api.filter.js",
-        "content/filters/domain.filter.js",
-        "content/filters/ip.filter.js",
-        
+        "content/config/scanner.config.js",
+        "content/filters/scanner.filter.js",
         "content/content.js"
       ],
       

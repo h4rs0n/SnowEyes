@@ -1,33 +1,26 @@
-// 等待所有依赖模块加载完成
-// 返回一个 Promise，在所有依赖都可用时 resolve
-function waitForDependencies() {
-  return new Promise((resolve) => {
-    const check = () => {
-      // 需要检查的依赖模块列表
-      const dependencies = [
-        'API_CONFIG',      // API 配置
-        'DOMAIN_CONFIG',   // 域名配置
-        'IP_CONFIG',       // IP 配置
-        'apiValidator',    // API 验证器
-        'domainValidator', // 域名验证器
-        'ipValidator',     // IP 验证器
-        'apiFilter',      // API 过滤器
-        'domainFilter',   // 域名过滤器
-        'ipFilter',       // IP 过滤器
-        'logger'          // 日志工具
-      ];
+// 安全获取属性值的函数
+const safeGetAttribute = (element, attr) => {
+  try {
+    const value = element[attr];
+    return typeof value === 'string' ? value : '';
+  } catch (e) {
+    return '';
+  }
+};
 
-      // 检查所有依赖是否都已加载到 window 对象中
-      if (dependencies.every(dep => window[dep])) {
-        resolve();
-      } else {
-        // 如果有依赖未加载，50ms 后重试
-        setTimeout(check, 50);
-      }
-    };
-    check();
+// 等待依赖加载 - 简化检查
+const waitForDependencies = () => {
+  const deps = [
+    'SCANNER_CONFIG',
+    'SCANNER_FILTER',
+    'logger'
+  ];
+  return new Promise(resolve => {
+    (function check() {
+      deps.every(dep => window[dep]) ? resolve() : setTimeout(check, 50);
+    })();
   });
-}
+};
 
 // 存储扫描结果的集合
 const latestResults = {
@@ -39,8 +32,6 @@ const latestResults = {
   emails: new Set(),      // 邮箱结果集
   idcards: new Set(),     // 身份证号结果集
   urls: new Set(),        // URL 结果集
-  btcs: new Set(),        // 比特币地址结果集
-  eths: new Set(),        // 以太坊地址结果集
   jwts: new Set(),        // JWT Token 结果集
   awsKeys: new Set(),     // AWS Access Key 结果集
   hashes: {              // 哈希结果集
@@ -50,145 +41,406 @@ const latestResults = {
   }
 };
 
-// 正则表达式模式集合
-let patterns;
+// 优化获取脚本内容函数
+async function getAllScriptContents() {
+  const sources = new Set();
+  const jsContents = new Set();
 
-// 初始化正则表达式模式
-function initPatterns() {
-  patterns = {
-    // 匹配域名的正则表达式
-    domain: /[a-z0-9][-a-z0-9.]*\.[a-z0-9][-a-z0-9.]*[a-z0-9]/gi,
-    // 匹配 API 路径的正则表达式（从配置中获取）
-    api: new RegExp('(?:' + window.API_CONFIG.PATTERNS.join('|') + ')', 'gi'),
-    // 匹配 IP 地址（可选带端口）的正则表达式
-    ip: /\b(?:\d{1,3}\.){3}\d{1,3}(?::\d{1,5})?\b/g,
-    // 匹配中国大陆手机号的正则表达式
-    phone: /(?:13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9]|198|199)\d{8}/g,
-    // 匹配电子邮箱的正则表达式
-    email: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})?/g,
-    // 匹配身份证号的正则表达式
-    idcard: /[1-9]\d{5}(?:18|19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dXx]|[1-9]\d{5}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}/g,
-    // 新增：URL匹配
-    url: /https?:\/\/(?:[\w-]+\.)+[a-z]{2,}(?::\d{2,5})?(?:\/[^\s'"]*)?/gi,
-    // 新增：比特币地址
-    btc: /[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[ac-hj-np-z02-9]{39,59}/g,
-    // 新增：以太坊地址
-    eth: /0x[a-fA-F0-9]{40}/g,
-    // 新增：JWT Token
-    jwt: /eyJ[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/g,
-    // 新增：AWS Access Key
-    awsKey: /AKIA[0-9A-Z]{16}/g,
-    // 新增：常见加密哈希
-    hash: {
-      md5: /[a-f0-9]{32}/gi,
-      sha1: /[a-f0-9]{40}/gi,
-      sha256: /[a-f0-9]{64}/gi
-    }
-  };
-}
-
-// 获取页面中的所有可能包含敏感信息的资源
-function getAllSources() {
-  const sources = [];
   try {
-    // 1. 获取整个页面的 HTML 内容
-    sources.push(document.documentElement.outerHTML);
+    // 获取当前页面的基础URL
+    const baseUrl = window.location.origin;
     
-    // 2. 获取所有内联脚本的内容
-    const scripts = Array.from(document.scripts);
-    scripts.forEach(script => {
-      if (!script.src && script.textContent) {
-        sources.push(script.textContent);
+    // 1. 从 document.scripts 获取
+    const scripts = Array.from(document.scripts)
+      .filter(script => script?.src && typeof script.src === 'string' && script.src.trim());
+    
+    // 2. 从页面内容正则匹配获取
+    const pageContent = document.documentElement.outerHTML;
+    const jsPattern = /(?:src|href)=['"]([^'"]+\.(?:js)(?:\?[^\s'"]*)?)['"]/g;
+    const jsMatches = Array.from(pageContent.matchAll(jsPattern))
+      .map(match => {
+        const path = match[1];
+        try {
+          // 处理不同类型的路径
+          if (path.startsWith('http')) {
+            return path;
+          } else if (path.startsWith('//')) {
+            return window.location.protocol + path;
+          } else if (path.startsWith('/')) {
+            return baseUrl + path;
+          } else {
+            return new URL(path, baseUrl).href;
+          }
+        } catch (e) {
+          console.error('Error processing JS path:', e);
+          return null;
+        }
+      })
+      .filter(url => url !== null);
+
+    // 合并所有JS文件URL并去重
+    const allJsUrls = new Set([
+      ...scripts.map(script => script.src),
+      ...jsMatches
+    ]);
+    
+    // 并行获取脚本内容
+    const fetchPromises = Array.from(allJsUrls).map(async url => {
+      if (jsContents.has(url)) return;
+      jsContents.add(url);
+      
+      try {
+        const response = await new Promise(resolve => {
+          chrome.runtime.sendMessage({type: 'FETCH_JS', url: url}, resolve);
+        });
+        
+        if (response?.content) {
+          sources.add(response.content);
+        }
+      } catch (e) {
+        console.error('Error fetching script:', url, e);
       }
     });
 
-    // 3. 获取所有资源的 URL
-    const resources = [
-      ...Array.from(document.querySelectorAll('a[href]')).map(a => a.href),       // 链接
-      ...Array.from(document.querySelectorAll('img[src]')).map(img => img.src),   // 图片
-      ...Array.from(document.querySelectorAll('script[src]')).map(script => script.src), // 外部脚本
-      ...Array.from(document.querySelectorAll('link[href]')).map(link => link.href),    // 样式表
-      ...Array.from(document.querySelectorAll('iframe[src]')).map(iframe => iframe.src), // iframe
-      ...Array.from(document.querySelectorAll('source[src]')).map(source => source.src)  // ��体源
-    ];
-    sources.push(...resources);
+    await Promise.all(fetchPromises);
+  } catch (e) {
+    console.error('Error in getAllScriptContents:', e);
+  }
 
-    // 4. 获取 HTML 注释内容
-    const iterator = document.createNodeIterator(
-      document.documentElement,
-      NodeFilter.SHOW_COMMENT
-    );
-    let comment;
-    while (comment = iterator.nextNode()) {
-      sources.push(comment.textContent);
+  return sources;
+}
+
+// 优化资源收集函数
+async function getAllSources() {
+  const sources = new Set();
+  
+  try {
+    // 1. 获取 HTML 内容
+    const htmlContent = document.documentElement.innerHTML;
+    if (htmlContent) {
+      sources.add(htmlContent);
+    }
+    
+    // 2. 获取脚本内容
+    const scriptSources = await getAllScriptContents();
+    if (scriptSources) {
+      for (const source of scriptSources) {
+        if (source) sources.add(source);
+      }
     }
 
-    // 5. 获取表单和元数据内容
-    // 获取文本输入框和文本区域的值
-    const formElements = document.querySelectorAll('input[type="text"], textarea');
-    formElements.forEach(el => {
-      if (el.value) sources.push(el.value);
+    // 3. 获取关键资源的 URL
+    const criticalSelectors = [
+      ['a[href^="http"]', 'href'],  // 只获取外部链接
+      ['script[src]', 'src'],
+      ['link[href]', 'href']
+    ];
+
+    for (const [selector, attr] of criticalSelectors) {
+      try {
+        const elements = document.querySelectorAll(selector);
+        for (const el of elements) {
+          const value = el[attr];
+          if (value) sources.add(value);
+        }
+      } catch (e) {
+        console.error('Error collecting resources:', e);
+      }
+    }
+
+    // 4. 获取 meta 标签的内容
+    try {
+      const metas = document.querySelectorAll('meta[content]');
+      for (const meta of metas) {
+        const content = meta.content;
+        if (content) sources.add(content);
+      }
+    } catch (e) {
+      console.error('Error collecting meta content:', e);
+    }
+
+    // 5. 获取可能包含敏感信息的数据属性
+    try {
+      const sensitiveDataAttrs = ['api', 'url', 'endpoint', 'server', 'config'];
+      for (const attr of sensitiveDataAttrs) {
+        const elements = document.querySelectorAll(`[data-${attr}]`);
+        for (const el of elements) {
+          const value = el.dataset[attr];
+          if (value) sources.add(value);
+        }
+      }
+    } catch (e) {
+      console.error('Error collecting data attributes:', e);
+    }
+  } catch (e) {
+    console.error('Error in getAllSources:', e);
+  }
+
+  // 过滤结果
+  return Array.from(sources).filter(source => 
+    source && 
+    typeof source === 'string' && 
+    source.trim().length > 3 && 
+    !source.startsWith('data:') && 
+    !source.startsWith('blob:') &&
+    !source.startsWith('javascript:')
+  );
+}
+
+// 优化扫描函数
+function scanSources(sources) {
+  const seen = new Set();
+  let lastUpdateTime = Date.now();
+  const UPDATE_INTERVAL = 100; // 每100ms更新一次
+  const MAX_CHUNK_SIZE = 500000; // 最大块大小：500KB
+  
+  // 发送更新的函数
+  const sendUpdate = () => {
+    const results = {};
+    // 处理普通结果
+    for (const key in latestResults) {
+      if (key !== 'hashes') {
+        results[key] = Array.from(latestResults[key]);
+      }
+    }
+    // 单独处理哈希结果
+    results.hashes = {};
+    for (const hashType in latestResults.hashes) {
+      results.hashes[hashType] = Array.from(latestResults.hashes[hashType]);
+    }
+    
+    chrome.runtime.sendMessage({
+      type: 'SCAN_UPDATE',
+      results: results
+    });
+  };
+
+  // 分块处理大文本
+  function* splitIntoChunks(text) {
+    const length = text.length;
+    for (let i = 0; i < length; i += MAX_CHUNK_SIZE) {
+      yield text.slice(i, i + MAX_CHUNK_SIZE);
+    }
+  }
+
+  // 使用迭代器获取所有匹配
+  function* getAllMatches(text, pattern) {
+    if (!text || typeof text !== 'string') return;
+    
+    let match;
+    try {
+      while ((match = pattern.exec(text)) !== null) {
+        yield match[0];
+      }
+    } catch (e) {
+      console.error('Error in pattern matching:', e);
+    }
+  }
+  
+  for (const source of sources) {
+    if (!source || seen.has(source)) continue;
+    seen.add(source);
+    let hasNewResults = false;
+
+    // 对大文本进行分块处理
+    for (const chunk of splitIntoChunks(source)) {
+      // 处理哈希模式
+      for (const [hashType, hashPattern] of Object.entries(SCANNER_CONFIG.PATTERNS.HASH)) {
+        try {
+          // 确保正则表达式有全局标志
+          const pattern = new RegExp(hashPattern.source, hashPattern.flags.includes('g') ? hashPattern.flags : hashPattern.flags + 'g');
+          for (const match of getAllMatches(chunk, pattern)) {
+            if (SCANNER_FILTER.hash[hashType.toLowerCase()](match, latestResults)) {
+              hasNewResults = true;
+            }
+          }
+        } catch (e) {
+          console.error('Error processing hash pattern:', hashType, e);
+        }
+      }
+
+      // 处理其他模式
+      for (const [key, pattern] of Object.entries(SCANNER_CONFIG.PATTERNS)) {
+        if (key === 'HASH') continue;
+        
+        try {
+          // 确保正则表达式有全局标志
+          const regex = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
+          const filter = SCANNER_FILTER[key.toLowerCase()];
+          
+          if (filter) {
+            for (const match of getAllMatches(chunk, regex)) {
+              if (filter(match, latestResults)) {
+                hasNewResults = true;
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error processing pattern:', key, e);
+        }
+      }
+    }
+
+    // 如果有新结果且距离上次更新超过100ms，就发送更新
+    if (hasNewResults && Date.now() - lastUpdateTime >= UPDATE_INTERVAL) {
+      sendUpdate();
+      lastUpdateTime = Date.now();
+    }
+  }
+
+  // 最后再发送一次更新，确保所有结果都已发送
+  sendUpdate();
+}
+
+// 初始化扫描
+async function initScan() {
+  try {
+    await waitForDependencies();
+    window.logger.info('开始扫描...');
+    
+    // 清空之前的结果
+    Object.keys(latestResults).forEach(key => {
+      if (key === 'hashes') {
+        Object.keys(latestResults.hashes).forEach(hashType => {
+          latestResults.hashes[hashType].clear();
+        });
+      } else {
+        latestResults[key].clear();
+      }
     });
 
-    // 获取 meta 标签的内容
-    const metas = document.querySelectorAll('meta[content]');
-    metas.forEach(meta => sources.push(meta.content));
+    // 立即开始扫描HTML内容
+    const htmlContent = document.documentElement.innerHTML;
+    if (htmlContent) {
+      scanSources([htmlContent]);
+    }
 
-    // 6. 过滤和去重处理
-    return Array.from(new Set(
-      sources.filter(source => 
-        source && 
-        typeof source === 'string' && 
-        source.trim().length > 3 && // 忽略过短的内容
-        !source.startsWith('data:') && // 忽略 data URL
-        !source.startsWith('blob:')    // 忽略 blob URL
-      )
-    ));
-
-  } catch (e) {
-    logger.error('获取资源时出错:', e);
-    return sources;
+    // 收集并扫描其他资源
+    collectAndScanResources();
+  } catch (error) {
+    console.error('扫描失败:', error);
   }
 }
 
-// 扫描资源内容，查找敏感信息
-function scanSources(sources) {
-  sources.forEach(source => {
-    if (typeof source === 'string') {
-      // 对每种模式���行匹配
-      Object.entries(patterns).forEach(([key, pattern]) => {
-        const matches = source.match(pattern) || [];
-        console.log(`Found ${matches.length} potential ${key} matches in source`);
-        matches.forEach(match => {
-          // 获取对应的过滤器
-          const filter = window[`${key}Filter`];
-          if (filter) {
-            const result = filter(match, latestResults);
-            if (!result) {
-              console.log(`Filtered out ${key} match: ${match}`);
-            }
-          }
-        });
-      });
-    }
-  });
-}
-
-// 初始化扫描过程
-async function initScan() {
+// 增量收集和扫描资源
+async function collectAndScanResources() {
   try {
-    // 等待所有依赖加载完成
-    await waitForDependencies();
-    // 初始化正则表达式模式
-    initPatterns();
-    // 记录开始扫描的日志
-    window.logger.info('开始扫描...');
-    // 获取所有资源
-    const sources = getAllSources();
-    // 执行扫描
-    scanSources(sources);
-  } catch (error) {
-    console.error('初始化扫描失败:', error);
+    // 1. 收集并扫描关键资源的URL
+    const criticalSelectors = [
+      ['a[href^="http"]', 'href'],
+      ['script[src]', 'src'],
+      ['link[href]', 'href']
+    ];
+
+    for (const [selector, attr] of criticalSelectors) {
+      try {
+        const elements = document.querySelectorAll(selector);
+        const urls = [];
+        for (const el of elements) {
+          const value = el[attr];
+          if (value) urls.push(value);
+        }
+        if (urls.length > 0) {
+          scanSources(urls);
+        }
+      } catch (e) {
+        console.error('Error collecting resources:', e);
+      }
+    }
+
+    // 2. 收集并扫描meta标签内容
+    try {
+      const metas = document.querySelectorAll('meta[content]');
+      const contents = [];
+      for (const meta of metas) {
+        const content = meta.content;
+        if (content) contents.push(content);
+      }
+      if (contents.length > 0) {
+        scanSources(contents);
+      }
+    } catch (e) {
+      console.error('Error collecting meta content:', e);
+    }
+
+    // 3. 收集并扫描数据属性
+    try {
+      const sensitiveDataAttrs = ['api', 'url', 'endpoint', 'server', 'config'];
+      for (const attr of sensitiveDataAttrs) {
+        const elements = document.querySelectorAll(`[data-${attr}]`);
+        const values = [];
+        for (const el of elements) {
+          const value = el.dataset[attr];
+          if (value) values.push(value);
+        }
+        if (values.length > 0) {
+          scanSources(values);
+        }
+      }
+    } catch (e) {
+      console.error('Error collecting data attributes:', e);
+    }
+
+    // 4. 异步获取并扫描脚本内容
+    const baseUrl = window.location.origin;
+    
+    // 从document.scripts获取
+    const scripts = Array.from(document.scripts)
+      .filter(script => script?.src && typeof script.src === 'string' && script.src.trim());
+    
+    // 从页面内容匹配获取
+    const pageContent = document.documentElement.outerHTML;
+    const jsPattern = /(?:src|href)=['"]([^'"]+\.(?:js)(?:\?[^\s'"]*)?)['"]/g;
+    const jsMatches = Array.from(pageContent.matchAll(jsPattern))
+      .map(match => {
+        const path = match[1];
+        try {
+          if (path.startsWith('http')) {
+            return path;
+          } else if (path.startsWith('//')) {
+            return window.location.protocol + path;
+          } else if (path.startsWith('/')) {
+            return baseUrl + path;
+          } else {
+            return new URL(path, baseUrl).href;
+          }
+        } catch (e) {
+          console.error('Error processing JS path:', e);
+          return null;
+        }
+      })
+      .filter(url => url !== null);
+
+    // 合并所有JS文件URL并去重
+    const allJsUrls = new Set([
+      ...scripts.map(script => script.src),
+      ...jsMatches
+    ]);
+
+    // 并行获取脚本内容，但每个脚本获取后立即扫描
+    const jsContents = new Set();
+    const fetchPromises = Array.from(allJsUrls).map(async url => {
+      if (jsContents.has(url)) return;
+      jsContents.add(url);
+      
+      try {
+        const response = await new Promise(resolve => {
+          chrome.runtime.sendMessage({type: 'FETCH_JS', url: url}, resolve);
+        });
+        
+        if (response?.content) {
+          // 立即扫描获取到的脚本内容
+          scanSources([response.content]);
+        }
+      } catch (e) {
+        console.error('Error fetching script:', url, e);
+      }
+    });
+
+    // 等待所有脚本获取完成
+    await Promise.all(fetchPromises);
+  } catch (e) {
+    console.error('Error in collectAndScanResources:', e);
   }
 }
 
@@ -207,6 +459,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       ));
     });
     return true; // 保持消息通道打开
+  } else if (request.type === 'GET_CONFIG') {
+    // 返回配置信息，将正则表达式转换为字符串
+    const config = {
+      API: {
+        PATTERN: SCANNER_CONFIG.API.PATTERN.toString()
+      },
+      PATTERNS: {
+        DOMAIN: SCANNER_CONFIG.PATTERNS.DOMAIN.toString(),
+        IP: SCANNER_CONFIG.PATTERNS.IP.toString(),
+        PHONE: SCANNER_CONFIG.PATTERNS.PHONE.toString(),
+        EMAIL: SCANNER_CONFIG.PATTERNS.EMAIL.toString(),
+        IDCARD: SCANNER_CONFIG.PATTERNS.IDCARD.toString(),
+        URL: SCANNER_CONFIG.PATTERNS.URL.toString(),
+        JWT: SCANNER_CONFIG.PATTERNS.JWT.toString(),
+        AWS_KEY: SCANNER_CONFIG.PATTERNS.AWS_KEY.toString(),
+        HASH: {
+          MD5: SCANNER_CONFIG.PATTERNS.HASH.MD5.toString(),
+          SHA1: SCANNER_CONFIG.PATTERNS.HASH.SHA1.toString(),
+          SHA256: SCANNER_CONFIG.PATTERNS.HASH.SHA256.toString()
+        }
+      }
+    };
+    sendResponse({ config });
   }
 });
 
