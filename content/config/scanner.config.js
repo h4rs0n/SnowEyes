@@ -20,9 +20,26 @@ const SCANNER_CONFIG = {
 
   // API 相关配置
   API: {
-    PATTERN: /['"](?:\/|\.\.\/|\.\/)[^\/\&\>\< \)\(\{\}\,\'\"\\]([^\>\< \)\(\{\}\,\'\"\\])*?[\'"]/g,
+    PATTERN: /['"`](?:\/|\.\.\/|\.\/)[^\/\>\< \)\(\}\,\'\"\\](?:[^\^\>\< \)\(\{\}\,\'\"\\])*?['"`]|['"`][a-zA_Z0-9]+(?<!text|application)\/(?:[^\^\>\< \)\(\{\}\,\'\"\\])*?["'`]/g,
     // 静态文件后缀 - 增强匹配规则
-    STATIC_FILE_PATTERN: /\.(js|css|ico|png|webp|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|map|json|jsonp)(?:\?[^'"]*)?$/i
+    STATIC_FILE_PATTERN: /\.(js|css|ico|png|webp|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|map|json|jsonp)(?:\?[^'"]*)?$/i,
+    // 需要过滤的内容类型
+    FILTERED_CONTENT_TYPES: [
+      // 图片类型
+      'image/jpeg',
+      'image/gif',
+      'image/bmp',
+      'image/png',
+      'image/x-png',
+      'image/webp',
+      'image/svg+xml',
+      'image/x-emf',
+      'image/x-wmf',
+      'image/x-icon',
+      'image/tiff',
+
+      'multipart/form-data',
+    ]
   },
 
   // 域名相关配置
