@@ -1,8 +1,28 @@
 // 统一的扫描器配置
 const SCANNER_CONFIG = {
-  // API 相关配置 - 只保留正则表达式
+  // 白名单配置
+  WHITELIST: [
+    'github.com',
+    'stackoverflow.com',
+    'npmjs.com',
+    'google.com',
+    'youtube.com',
+    'microsoft.com',
+    'apple.com',
+    'mozilla.org',
+    'cdn.jsdelivr.net',
+    'cdnjs.cloudflare.com',
+    'unpkg.com',
+    'jquery.com',
+    'bootstrapcdn.com',
+    'fontawesome.com'
+  ],
+
+  // API 相关配置
   API: {
-    PATTERN: /['"](?:\/|\.\.\/|\.\/)[^\/\>\< \)\(\{\}\,\'\"\\]([^\>\< \)\(\{\}\,\'\"\\])*?[\'"]/g
+    PATTERN: /['"](?:\/|\.\.\/|\.\/)[^\/\>\< \)\(\{\}\,\'\"\\]([^\>\< \)\(\{\}\,\'\"\\])*?[\'"]/g,
+    // 静态文件后缀
+    STATIC_FILE_PATTERN: /\.(js|css|ico|png|webp|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|map|json)$/i
   },
 
   // 域名相关配置

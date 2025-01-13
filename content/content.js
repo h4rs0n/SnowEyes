@@ -26,6 +26,7 @@ const waitForDependencies = () => {
 const latestResults = {
   domains: new Set(),     // 域名结果集
   apis: new Set(),        // API 结果集
+  staticFiles: new Set(), // 静态文件结果集
   ips: new Set(),         // IP 地址结果集
   internalIps: new Set(), // 内网 IP 结果集
   phones: new Set(),      // 手机号结果集
@@ -292,11 +293,26 @@ function scanSources(sources) {
   sendUpdate();
 }
 
+// 检查域名是否在白名单中
+function isInWhitelist(hostname) {
+  return SCANNER_CONFIG.WHITELIST.some(domain => {
+    // 完全匹配或者是子域名
+    return hostname === domain || hostname.endsWith('.' + domain);
+  });
+}
+
 // 初始化扫描
 async function initScan() {
   try {
     await waitForDependencies();
     window.logger.info('开始扫描...');
+    
+    // 检查当前域名是否在白名单中
+    const currentHostname = window.location.hostname.toLowerCase();
+    if (isInWhitelist(currentHostname)) {
+      window.logger.info('当前域名在白名单中，跳过扫描');
+      return;
+    }
     
     // 清空之前的结果
     Object.keys(latestResults).forEach(key => {
@@ -447,11 +463,23 @@ async function collectAndScanResources() {
 // 监听来自 popup 的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'GET_RESULTS') {
+    // 检查是否在白名单中
+    const currentHostname = window.location.hostname.toLowerCase();
+    if (isInWhitelist(currentHostname)) {
+      sendResponse('WHITELISTED');
+      return;
+    }
     // 返回当前的扫描结果
     sendResponse(Object.fromEntries(
       Object.entries(latestResults).map(([key, value]) => [key, Array.from(value)])
     ));
   } else if (request.type === 'REFRESH_SCAN') {
+    // 检查是否在白名单中
+    const currentHostname = window.location.hostname.toLowerCase();
+    if (isInWhitelist(currentHostname)) {
+      sendResponse('WHITELISTED');
+      return;
+    }
     // 重新执行扫描
     initScan().then(() => {
       sendResponse(Object.fromEntries(
@@ -462,23 +490,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.type === 'GET_CONFIG') {
     // 返回配置信息，将正则表达式转换为字符串
     const config = {
+      WHITELIST: SCANNER_CONFIG.WHITELIST,
       API: {
-        PATTERN: SCANNER_CONFIG.API.PATTERN.toString()
+        PATTERN: SCANNER_CONFIG.API.PATTERN.toString(),
+        STATIC_FILE_PATTERN: SCANNER_CONFIG.API.STATIC_FILE_PATTERN.toString()
       },
-      PATTERNS: {
-        DOMAIN: SCANNER_CONFIG.PATTERNS.DOMAIN.toString(),
-        IP: SCANNER_CONFIG.PATTERNS.IP.toString(),
-        PHONE: SCANNER_CONFIG.PATTERNS.PHONE.toString(),
-        EMAIL: SCANNER_CONFIG.PATTERNS.EMAIL.toString(),
-        IDCARD: SCANNER_CONFIG.PATTERNS.IDCARD.toString(),
-        URL: SCANNER_CONFIG.PATTERNS.URL.toString(),
-        JWT: SCANNER_CONFIG.PATTERNS.JWT.toString(),
-        AWS_KEY: SCANNER_CONFIG.PATTERNS.AWS_KEY.toString(),
-        HASH: {
-          MD5: SCANNER_CONFIG.PATTERNS.HASH.MD5.toString(),
-          SHA1: SCANNER_CONFIG.PATTERNS.HASH.SHA1.toString(),
-          SHA256: SCANNER_CONFIG.PATTERNS.HASH.SHA256.toString()
-        }
+      DOMAIN: {
+        BLACKLIST: SCANNER_CONFIG.DOMAIN.BLACKLIST,
+        SPECIAL_DOMAINS: SCANNER_CONFIG.DOMAIN.SPECIAL_DOMAINS
+      },
+      IP: {
+        PRIVATE_RANGES: SCANNER_CONFIG.IP.PRIVATE_RANGES.map(pattern => pattern.toString()),
+        SPECIAL_RANGES: SCANNER_CONFIG.IP.SPECIAL_RANGES.map(pattern => pattern.toString())
       }
     };
     sendResponse({ config });

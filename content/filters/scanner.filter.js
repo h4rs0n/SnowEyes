@@ -6,8 +6,12 @@ const SCANNER_FILTER = {
       // 去除首尾的引号
       match = match.slice(1, -1);
       
-      // 只添加到结果集
-      resultsSet?.apis?.add(match);
+      // 检查是否是静态文件
+      if (SCANNER_CONFIG.API.STATIC_FILE_PATTERN.test(match)) {
+        resultsSet?.staticFiles?.add(match);
+      } else {
+        resultsSet?.apis?.add(match);
+      }
       return true;
     };
   })(),

@@ -7,10 +7,7 @@ function switchPage(pageName) {
   
   // 更新页面显示状态
   document.querySelectorAll('.page').forEach(page => {
-    const isScanner = page.classList.contains('scanner-page');
-    const isConfig = page.classList.contains('config-page');
-    
-    if ((isScanner && pageName === 'scanner') || (isConfig && pageName === 'config')) {
+    if (page.classList.contains(`${pageName}-page`)) {
       page.classList.add('active');
     } else {
       page.classList.remove('active');
@@ -25,88 +22,91 @@ function switchPage(pageName) {
 
 // 显示配置信息
 function displayConfig() {
-  const configContainer = document.querySelector('.config-container');
-  configContainer.innerHTML = '<div class="loading">加载配置中...</div>';
-  
-  // 获取当前标签页
+  const container = document.querySelector('.config-page .container');
+  container.innerHTML = '<div class="loading">加载配置中...</div>';
+
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     if (tabs[0]) {
-      // 向content script发送消息获取配置
       chrome.tabs.sendMessage(tabs[0].id, {type: 'GET_CONFIG'}, response => {
-        if (response && response.config) {
-          const config = response.config;
-          
-          // 构建配置页面内容
-          let html = '';
-          
-          // API 配置
-          html += `
-            <div class="config-section">
-              <h4>API 路径匹配</h4>
-              <div class="config-item">${config.API.PATTERN}</div>
-            </div>
-          `;
-          
-          // 域名配置
-          html += `
-            <div class="config-section">
-              <h4>域名匹配</h4>
-              <div class="config-item">${config.PATTERNS.DOMAIN}</div>
-            </div>
-          `;
-          
-          // IP 配置
-          html += `
-            <div class="config-section">
-              <h4>IP 地址匹配</h4>
-              <div class="config-item">${config.PATTERNS.IP}</div>
-            </div>
-          `;
-          
-          // 其他敏感信息匹配
-          html += `
-            <div class="config-section">
-              <h4>手机号码匹配</h4>
-              <div class="config-item">${config.PATTERNS.PHONE}</div>
-            </div>
-            
-            <div class="config-section">
-              <h4>邮箱匹配</h4>
-              <div class="config-item">${config.PATTERNS.EMAIL}</div>
-            </div>
-            
-            <div class="config-section">
-              <h4>身份证号匹配</h4>
-              <div class="config-item">${config.PATTERNS.IDCARD}</div>
-            </div>
-            
-            <div class="config-section">
-              <h4>URL 匹配</h4>
-              <div class="config-item">${config.PATTERNS.URL}</div>
-            </div>
-            
-            <div class="config-section">
-              <h4>JWT Token 匹配</h4>
-              <div class="config-item">${config.PATTERNS.JWT}</div>
-            </div>
-            
-            <div class="config-section">
-              <h4>AWS Key 匹配</h4>
-              <div class="config-item">${config.PATTERNS.AWS_KEY}</div>
-            </div>
-            
-            <div class="config-section">
-              <h4>哈希值匹配</h4>
-              <div class="config-item">MD5: ${config.PATTERNS.HASH.MD5}</div>
-              <div class="config-item">SHA1: ${config.PATTERNS.HASH.SHA1}</div>
-              <div class="config-item">SHA256: ${config.PATTERNS.HASH.SHA256}</div>
-            </div>
-          `;
-          
-          configContainer.innerHTML = html;
-        } else {
-          configContainer.innerHTML = '<div class="error">无法加载配置</div>';
+        if (chrome.runtime.lastError) {
+          container.innerHTML = '<div class="error">无法获取配置信息</div>';
+          return;
         }
+        
+        const { config } = response;
+        if (!config) {
+          container.innerHTML = '<div class="error">配置信息为空</div>';
+          return;
+        }
+
+        // 构建配置展示HTML
+        let html = '<div class="config-section">';
+        
+        // 添加白名单展示
+        html += `
+          <div class="config-group">
+            <h3>白名单域名</h3>
+            <div class="config-content whitelist">
+              ${config.WHITELIST.map(domain => `<div class="whitelist-item">${domain}</div>`).join('')}
+            </div>
+          </div>
+        `;
+        
+        // API 配置展示
+        html += `
+          <div class="config-group">
+            <h3>API 配置</h3>
+            <div class="config-content">
+              <div class="config-item">
+                <div class="config-label">路径匹配模式：</div>
+                <div class="config-value">${config.API.PATTERN}</div>
+              </div>
+              <div class="config-item">
+                <div class="config-label">静态文件模式：</div>
+                <div class="config-value">${config.API.STATIC_FILE_PATTERN}</div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // 域名配置展示
+        html += `
+          <div class="config-group">
+            <h3>域名配置</h3>
+            <div class="config-content">
+              <div class="config-item">
+                <div class="config-label">黑名单：</div>
+                <div class="config-value blacklist">
+                  ${config.DOMAIN.BLACKLIST.map(domain => `<div class="blacklist-item">${domain}</div>`).join('')}
+                </div>
+              </div>
+              <div class="config-item">
+                <div class="config-label">特殊域名：</div>
+                <div class="config-value">${config.DOMAIN.SPECIAL_DOMAINS.join(', ')}</div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // IP 配置展示
+        html += `
+          <div class="config-group">
+            <h3>IP 配置</h3>
+            <div class="config-content">
+              <div class="config-item">
+                <div class="config-label">内网 IP 范围：</div>
+                <div class="config-value">${config.IP.PRIVATE_RANGES.join('<br>')}</div>
+              </div>
+              <div class="config-item">
+                <div class="config-label">特殊 IP 范围：</div>
+                <div class="config-value">${config.IP.SPECIAL_RANGES.join('<br>')}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        html += '</div>';
+        container.innerHTML = html;
       });
     }
   });
@@ -118,89 +118,56 @@ function displayResults(results) {
   const sections = [
     { id: 'domain-list', data: results.domains, title: '域名' },
     { id: 'api-list', data: results.apis, title: 'API接口' },
+    { id: 'static-list', data: results.staticFiles, title: '静态文件' },
     { id: 'ip-list', data: results.ips, title: 'IP地址' },
-    { id: 'port-list', data: results.ports, title: '端口号' },
     { id: 'phone-list', data: results.phones, title: '手机号码' },
     { id: 'email-list', data: results.emails, title: '邮箱' },
     { id: 'idcard-list', data: results.idcards, title: '身份证号' },
     { id: 'url-list', data: results.urls, title: 'URL' },
     { id: 'jwt-list', data: results.jwts, title: 'JWT Token' },
     { id: 'aws-list', data: results.awsKeys, title: 'AWS Key' },
-    { id: 'hash-md5-list', data: results.hashes.md5, title: 'MD5哈希' },
-    { id: 'hash-sha1-list', data: results.hashes.sha1, title: 'SHA1哈希' },
-    { id: 'hash-sha256-list', data: results.hashes.sha256, title: 'SHA256哈希' }
+    { id: 'hash-md5-list', data: results.hashes?.md5, title: 'MD5哈希' },
+    { id: 'hash-sha1-list', data: results.hashes?.sha1, title: 'SHA1哈希' },
+    { id: 'hash-sha256-list', data: results.hashes?.sha256, title: 'SHA256哈希' }
   ];
 
-  // 获取或创建容器
-  const container = document.querySelector('.container');
-  
+  // 获取容器
+  const container = document.querySelector('.scanner-page .container');
+  let html = '';
+
+  // 遍历所有部分
   sections.forEach(({ id, data, title }) => {
+    // 如果数据存在且不为空
     if (data && data.length > 0) {
-      // 检查section是否已存在
-      let section = document.getElementById(`section-${id}`);
-      if (!section) {
-        // 如果section不存在，创建新的section
-        section = document.createElement('div');
-        section.className = 'section';
-        section.id = `section-${id}`;
-        section.innerHTML = `
+      html += `
+        <div class="section">
           <div class="section-header">
-            <div>
-              <span class="title">${title}</span><span class="count">(${data.length})</span>
+            <span class="title">${title} <span class="count">(${data.length})</span></span>
+          </div>
+          <div class="section-content">
+            <div class="content-wrapper ${id}">
+              ${Array.from(data).map(item => `
+                <div class="item" title="${item}">
+                  ${item}
+                </div>
+              `).join('')}
             </div>
-            <button class="copy-all-btn" title="复制所有${title}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 3H4C3.45 3 3 3.45 3 4V16C3 16.55 3.45 17 4 17H16C16.55 17 17 16.55 17 16V4C17 3.45 16.55 3 16 3ZM15 15H5V5H15V15Z" fill="currentColor"/>
-                <path d="M20 7H18V19H6V21C6 21.55 6.45 22 7 22H20C20.55 22 21 21.55 21 21V8C21 7.45 20.55 7 20 7Z" fill="currentColor"/>
-              </svg>
-            </button>
           </div>
-          <div class="section-content ${id}" id="${id}">
-            <div class="content-wrapper"></div>
-          </div>
-        `;
-        container.appendChild(section);
-
-        // 添加复制所有按钮功能
-        section.querySelector('.copy-all-btn').addEventListener('click', () => {
-          const allText = data.join('\n');
-          copyText(allText, section.querySelector('.copy-all-btn'), '已复制全部');
-        });
-      } else {
-        // 如果section已存在，更新计数
-        section.querySelector('.count').textContent = `(${data.length})`;
-      }
-
-      // 更新内容
-      const contentWrapper = section.querySelector('.content-wrapper');
-      const existingItems = new Set(Array.from(contentWrapper.children).map(el => el.getAttribute('data-full-text')));
-      
-      // 添加新项
-      data.forEach(item => {
-        if (!existingItems.has(item)) {
-          const itemDiv = document.createElement('div');
-          itemDiv.className = 'item';
-          itemDiv.setAttribute('data-full-text', item);
-          itemDiv.title = item;
-          itemDiv.textContent = item;
-          
-          // 添加右键复制功能
-          itemDiv.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            copyText(item, itemDiv, '已复制');
-          });
-          
-          contentWrapper.appendChild(itemDiv);
-        }
-      });
+        </div>
+      `;
     }
   });
 
-  // 移除loading状态
-  const loading = container.querySelector('.loading');
-  if (loading) {
-    loading.remove();
+  // 如果没有任何结果
+  if (!html) {
+    html = '<div class="no-results">未发现敏感信息</div>';
   }
+
+  // 更新容器内容
+  container.innerHTML = html;
+
+  // 处理长文本
+  handleLongText();
 }
 
 // 显示复制成功的提示框
@@ -249,6 +216,18 @@ function copyText(text, element, message) {
 
 // 页面加载完成时的初始化
 document.addEventListener('DOMContentLoaded', () => {
+  // 获取当前激活的页面
+  const activePage = document.querySelector('.nav-tab.active').dataset.page;
+  
+  // 初始化页面显示
+  document.querySelectorAll('.page').forEach(page => {
+    if (page.classList.contains(`${activePage}-page`)) {
+      page.classList.add('active');
+    } else {
+      page.classList.remove('active');
+    }
+  });
+
   // 添加导航标签点击事件
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -256,8 +235,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // 添加刷新按钮点击事件
+  document.querySelector('.refresh-btn').addEventListener('click', () => {
+    const container = document.querySelector('.scanner-page .container');
+    container.innerHTML = '<div class="loading">正在扫描...</div>';
+
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {type: 'REFRESH_SCAN'}, response => {
+          if (chrome.runtime.lastError) {
+            container.innerHTML = '<div class="error">无法连接到页面</div>';
+          } else if (response === 'WHITELISTED') {
+            container.innerHTML = '<div class="whitelisted">当前域名在白名单中，已跳过扫描</div>';
+          } else if (response) {
+            displayResults(response);
+          }
+        });
+      }
+    });
+  });
+
   // 初始化扫描页面
-  const container = document.querySelector('.container');
+  const container = document.querySelector('.scanner-page .container');
   container.innerHTML = '<div class="loading">正在扫描...</div>';
 
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
@@ -265,27 +264,9 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.tabs.sendMessage(tabs[0].id, {type: 'GET_RESULTS'}, response => {
         if (chrome.runtime.lastError) {
           container.innerHTML = '<div class="error">无法连接到页面</div>';
+        } else if (response === 'WHITELISTED') {
+          container.innerHTML = '<div class="whitelisted">当前域名在白名单中，已跳过扫描</div>';
         } else if (response) {
-          displayResults(response);
-        }
-      });
-    }
-  });
-
-  window.addEventListener('resize', handleLongText);
-});
-
-// 刷新按钮点击事件处理
-document.querySelector('.refresh-btn').addEventListener('click', () => {
-  const container = document.querySelector('.container');
-  // 显示加载状态
-  container.innerHTML = '<div class="loading">正在扫描...</div>';
-
-  // 触发重新扫描
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    if (tabs[0]) {
-      chrome.tabs.sendMessage(tabs[0].id, {type: 'REFRESH_SCAN'}, response => {
-        if (response) {
           displayResults(response);
         }
       });
