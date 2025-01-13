@@ -22,6 +22,40 @@ const DOMAIN_RULES = {
   ]
 };
 
+// 更新扩展图标的badge
+function updateBadge(results) {
+  // 计算有内容的类别数量
+  const categories = [
+    results.domains,
+    results.apis,
+    results.staticFiles,
+    results.ips,
+    results.phones,
+    results.emails,
+    results.idcards,
+    results.urls,
+    results.jwts,
+    results.awsKeys,
+    results.hashes?.md5,
+    results.hashes?.sha1,
+    results.hashes?.sha256
+  ];
+
+  const nonEmptyCategories = categories.filter(category => 
+    Array.isArray(category) && category.length > 0
+  ).length;
+
+  // 更新badge
+  chrome.action.setBadgeText({ 
+    text: nonEmptyCategories > 0 ? nonEmptyCategories.toString() : ''
+  });
+
+  // 根据是否有内容设置不同的颜色
+  chrome.action.setBadgeBackgroundColor({ 
+    color: nonEmptyCategories > 0 ? '#4dabf7' : '#666666'
+  });
+}
+
 // 处理跨域请求
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'FETCH_JS') {
@@ -70,5 +104,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
 
     return true; // 保持消息通道打开
+  } else if (request.type === 'UPDATE_BADGE') {
+    // 处理badge更新请求
+    updateBadge(request.results);
   }
 }); 

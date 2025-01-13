@@ -36,6 +36,8 @@
   ],
 
   "action": {
-    "default_popup": "popup/popup.html"
+    "default_popup": "popup/popup.html",
+    "default_badge_text": "0",
+    "default_badge_background_color": "#666666"
   }
 } 

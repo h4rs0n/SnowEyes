@@ -210,8 +210,15 @@ function scanSources(sources) {
       results.hashes[hashType] = Array.from(latestResults.hashes[hashType]);
     }
     
+    // 发送扫描结果更新
     chrome.runtime.sendMessage({
       type: 'SCAN_UPDATE',
+      results: results
+    });
+
+    // 发送badge更新
+    chrome.runtime.sendMessage({
+      type: 'UPDATE_BADGE',
       results: results
     });
   };
