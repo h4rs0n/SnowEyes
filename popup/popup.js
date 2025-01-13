@@ -1,115 +1,79 @@
 // 页面切换功能
 function switchPage(pageName) {
-  // 更新导航标签状态
+  // 更新导航栏状态
   document.querySelectorAll('.nav-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.page === pageName);
-  });
-  
-  // 更新页面显示状态
-  document.querySelectorAll('.page').forEach(page => {
-    if (page.classList.contains(`${pageName}-page`)) {
-      page.classList.add('active');
-    } else {
-      page.classList.remove('active');
+    tab.classList.remove('active');
+    if (tab.dataset.page === pageName) {
+      tab.classList.add('active');
     }
   });
-  
-  // 如果切换到配置页面，加载配置
-  if (pageName === 'config') {
-    displayConfig();
-  }
+
+  // 更新页面显示
+  document.querySelectorAll('.page').forEach(page => {
+    page.style.display = 'none';
+    if (page.classList.contains(`${pageName}-page`)) {
+      page.style.display = 'block';
+      if (pageName === 'config') {
+        initConfigPage();
+      }
+    }
+  });
 }
 
 // 显示配置信息
-function displayConfig() {
-  const container = document.querySelector('.config-page .container');
-  container.innerHTML = '<div class="loading">加载配置中...</div>';
+function displayConfig(config) {
+  const container = document.querySelector('.config-page');
+  if (!config) {
+    container.innerHTML = '<div class="error">无法获取配置信息</div>';
+    return;
+  }
 
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    if (tabs[0]) {
-      chrome.tabs.sendMessage(tabs[0].id, {type: 'GET_CONFIG'}, response => {
-        if (chrome.runtime.lastError) {
-          container.innerHTML = '<div class="error">无法获取配置信息</div>';
-          return;
-        }
-        
-        const { config } = response;
-        if (!config) {
-          container.innerHTML = '<div class="error">配置信息为空</div>';
-          return;
-        }
+  let html = `
+    <div class="config-section">
+      <div class="config-group">
+        <h3>白名单域名</h3>
+        <textarea class="whitelist-input" placeholder="输入白名单域名，用逗号分隔">${config.WHITELIST ? config.WHITELIST.join(', ') : ''}</textarea>
+      </div>
 
-        // 构建配置展示HTML
-        let html = '<div class="config-section">';
-        
-        // 添加白名单展示
-        html += `
-          <div class="config-group">
-            <h3>白名单域名</h3>
-            <div class="config-content whitelist">
-              ${config.WHITELIST.map(domain => `<div class="whitelist-item">${domain}</div>`).join('')}
-            </div>
-          </div>
-        `;
-        
-        // API 配置展示
-        html += `
-          <div class="config-group">
-            <h3>API 配置</h3>
-            <div class="config-content">
-              <div class="config-item">
-                <div class="config-label">路径匹配模式：</div>
-                <div class="config-value">${config.API.PATTERN}</div>
-              </div>
-              <div class="config-item">
-                <div class="config-label">静态文件模式：</div>
-                <div class="config-value">${config.API.STATIC_FILE_PATTERN}</div>
-              </div>
-            </div>
-          </div>
-        `;
+      <div class="config-group">
+        <h3>API 配置</h3>
+        <div class="config-item">
+          <div class="config-label">API 路径匹配</div>
+          <textarea class="config-value">${config.API.PATTERN || ''}</textarea>
+        </div>
+        <div class="config-item">
+          <div class="config-label">静态文件匹配</div>
+          <textarea class="config-value">${config.API.STATIC_FILE_PATTERN || ''}</textarea>
+        </div>
+      </div>
 
-        // 域名配置展示
-        html += `
-          <div class="config-group">
-            <h3>域名配置</h3>
-            <div class="config-content">
-              <div class="config-item">
-                <div class="config-label">黑名单：</div>
-                <div class="config-value blacklist">
-                  ${config.DOMAIN.BLACKLIST.map(domain => `<div class="blacklist-item">${domain}</div>`).join('')}
-                </div>
-              </div>
-              <div class="config-item">
-                <div class="config-label">特殊域名：</div>
-                <div class="config-value">${config.DOMAIN.SPECIAL_DOMAINS.join(', ')}</div>
-              </div>
-            </div>
-          </div>
-        `;
+      <div class="config-group">
+        <h3>域名配置</h3>
+        <div class="config-item">
+          <div class="config-label">域名黑名单</div>
+          <textarea class="config-value">${config.DOMAIN.BLACKLIST ? config.DOMAIN.BLACKLIST.join(', ') : ''}</textarea>
+        </div>
+        <div class="config-item">
+          <div class="config-label">特殊域名</div>
+          <textarea class="config-value">${config.DOMAIN.SPECIAL_DOMAINS ? config.DOMAIN.SPECIAL_DOMAINS.join(', ') : ''}</textarea>
+        </div>
+      </div>
 
-        // IP 配置展示
-        html += `
-          <div class="config-group">
-            <h3>IP 配置</h3>
-            <div class="config-content">
-              <div class="config-item">
-                <div class="config-label">内网 IP 范围：</div>
-                <div class="config-value">${config.IP.PRIVATE_RANGES.join('<br>')}</div>
-              </div>
-              <div class="config-item">
-                <div class="config-label">特殊 IP 范围：</div>
-                <div class="config-value">${config.IP.SPECIAL_RANGES.join('<br>')}</div>
-              </div>
-            </div>
-          </div>
-        `;
-        
-        html += '</div>';
-        container.innerHTML = html;
-      });
-    }
-  });
+      <div class="config-group">
+        <h3>IP 配置</h3>
+        <div class="config-item">
+          <div class="config-label">私有 IP 范围</div>
+          <textarea class="config-value">${config.IP.PRIVATE_RANGES ? config.IP.PRIVATE_RANGES.join(', ') : ''}</textarea>
+        </div>
+        <div class="config-item">
+          <div class="config-label">特殊 IP 范围</div>
+          <textarea class="config-value">${config.IP.SPECIAL_RANGES ? config.IP.SPECIAL_RANGES.join(', ') : ''}</textarea>
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
 }
 
 // 显示扫描结果的函数
@@ -368,6 +332,23 @@ function handleLongText() {
     // 检查内容是否被截断
     if (item.offsetWidth < item.scrollWidth) {
       item.classList.add('truncated');
+    }
+  });
+}
+
+// 初始化配置页面
+function initConfigPage() {
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    if (tabs[0]) {
+      chrome.tabs.sendMessage(tabs[0].id, {type: 'GET_CONFIG'}, response => {
+        if (chrome.runtime.lastError) {
+          displayConfig(null);
+          return;
+        }
+
+        const { config } = response;
+        displayConfig(config);
+      });
     }
   });
 } 

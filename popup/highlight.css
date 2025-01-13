@@ -150,7 +150,7 @@ body {
 
 /* 配置页面样式 */
 .config-section {
-  padding: 8px;
+  padding: 0 12px;
 }
 
 .config-group {
@@ -160,34 +160,21 @@ body {
 .config-group h3 {
   font-size: 14px;
   color: #495057;
-  margin-bottom: 8px;
-  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.config-group h4 {
+  font-size: 14px;
+  color: #495057;
+  margin: 12px 0 8px 0;
+  font-weight: 500;
 }
 
 .config-content {
-  background: #f8f9fa;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 12px;
+  font-size: 13px;
   color: #495057;
-  word-break: break-all;
-  line-height: 1.5;
-}
-
-/* 白名单项样式 */
-.whitelist {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 6px;
-}
-
-.whitelist-item {
-  background: #e9ecef;
-  padding: 4px 8px;
-  border-radius: 4px;
-  text-align: center;
-  font-size: 12px;
-  color: #495057;
+  line-height: 1.6;
+  margin-left: 8px;
 }
 
 /* 配置项样式 */
@@ -195,35 +182,55 @@ body {
   margin-bottom: 8px;
 }
 
-.config-item:last-child {
-  margin-bottom: 0;
-}
-
 .config-label {
-  font-weight: 500;
+  font-size: 13px;
+  color: #6c757d;
   margin-bottom: 4px;
+}
+
+.config-value,
+.whitelist-input {
+  width: 100%;
+  min-height: 80px;
+  height: 120px;
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 1.4;
   color: #495057;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  resize: vertical;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
 
-.config-value {
-  font-family: monospace;
-  word-break: break-all;
-  line-height: 1.5;
+.config-value:hover,
+.whitelist-input:hover {
+  background: #fff;
+  border-color: #adb5bd;
 }
 
-/* 黑名单项样式 */
-.blacklist {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 4px;
+.config-value:focus,
+.whitelist-input:focus {
+  background: #fff;
+  border-color: #228be6;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(34,139,230,0.1);
 }
 
-.blacklist-item {
-  background: #f1f3f5;
-  padding: 3px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  text-align: center;
+/* 移除旧的白名单和黑名单输入框样式 */
+.whitelist-input, .blacklist-input {
+  display: none;
+}
+
+/* 移除旧的网格布局样式 */
+.whitelist, .blacklist {
+  margin-left: 8px;
+}
+
+.whitelist-item, .blacklist-item {
+  display: none;
 }
 
 /* 状态提示样式 */
