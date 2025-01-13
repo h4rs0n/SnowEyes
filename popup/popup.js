@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabs[0]) {
         chrome.tabs.sendMessage(tabs[0].id, {type: 'REFRESH_SCAN'}, response => {
           if (chrome.runtime.lastError) {
-            container.innerHTML = '<div class="error">无法连接到页面</div>';
+            container.innerHTML = '<div class="error">无法连接到页面，刷新试试</div>';
           } else if (response === 'WHITELISTED') {
             container.innerHTML = '<div class="whitelisted">当前域名在白名单中，已跳过扫描</div>';
           } else if (response) {
@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tabs[0]) {
       chrome.tabs.sendMessage(tabs[0].id, {type: 'GET_RESULTS'}, response => {
         if (chrome.runtime.lastError) {
-          container.innerHTML = '<div class="error">无法连接到页面</div>';
+          container.innerHTML = '<div class="error">无法连接到页面，刷新试试</div>';
         } else if (response === 'WHITELISTED') {
           container.innerHTML = '<div class="whitelisted">当前域名在白名单中，已跳过扫描</div>';
         } else if (response) {

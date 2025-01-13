@@ -448,4 +448,99 @@ body {
   align-items: center;
   gap: 8px;
 }
+
+/* 指纹嗅探页面样式 */
+.fingerprint-section {
+  padding: 10px;
+}
+
+.fingerprint-group {
+  background: #fff;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.fingerprint-group h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #495057;
+  font-weight: 600;
+}
+
+.fingerprint-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.fingerprint-label {
+  font-size: 13px;
+  color: #495057;
+  flex: 1;
+  margin-right: 10px;
+}
+
+.fingerprint-status {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.fingerprint-status.pending {
+  background: #e9ecef;
+  color: #868e96;
+}
+
+.fingerprint-status.detected {
+  background: #d3f9d8;
+  color: #2b8a3e;
+}
+
+.fingerprint-status.not-detected {
+  background: #ffe3e3;
+  color: #c92a2a;
+}
+
+/* 指纹嗅探标签样式 */
+.tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 8px;
+  color: #fff;
+}
+
+.oa-tag {
+  background: #4dabf7;  /* 浅蓝色 */
+}
+
+.erp-tag {
+  background: #845ef7;  /* 紫色 */
+}
+
+/* 指纹分组样式增强 */
+.fingerprint-group {
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.oa-group {
+  border-left-color: #4dabf7;
+}
+
+.erp-group {
+  border-left-color: #845ef7;
+}
+
+.fingerprint-group:hover {
+  transform: translateX(2px);
+}
  
