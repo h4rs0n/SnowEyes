@@ -142,12 +142,19 @@ function displayResults(results) {
       html += `
         <div class="section">
           <div class="section-header">
-            <span class="title">${title} <span class="count">(${data.length})</span></span>
+            <div class="title-wrapper">
+              <span class="title">${title}</span>
+              <span class="count">(${data.length})</span>
+            </div>
+            <button class="copy-btn" title="复制全部">
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+              复制全部
+            </button>
           </div>
           <div class="section-content">
             <div class="content-wrapper ${id}">
               ${Array.from(data).map(item => `
-                <div class="item" title="${item}">
+                <div class="item">
                   ${item}
                 </div>
               `).join('')}
@@ -166,51 +173,124 @@ function displayResults(results) {
   // 更新容器内容
   container.innerHTML = html;
 
+  // 添加复制事件监听
+  container.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const section = btn.closest('.section');
+      const items = Array.from(section.querySelectorAll('.item'));
+      const text = items.map(item => item.textContent.trim()).filter(Boolean).join('\n');
+      copyToClipboard(text, e.clientX, e.clientY);
+    });
+  });
+
+  // 添加右键复制事件监听
+  container.querySelectorAll('.item').forEach(item => {
+    item.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      copyToClipboard(item.textContent.trim(), e.clientX, e.clientY);
+    });
+  });
+
   // 处理长文本
   handleLongText();
 }
 
-// 显示复制成功的提示框
-function showCopyTooltip(element, text) {
-  // 移除页面上可能存在的其他提示框
-  document.querySelectorAll('.copy-tooltip').forEach(t => t.remove());
-  
-  // 创建新的提示框
+// 显示复制成功提示
+function showCopyTooltip(text, x, y) {
   const tooltip = document.createElement('div');
   tooltip.className = 'copy-tooltip';
   tooltip.textContent = text;
-  
-  // 将提示框添加到 body 而不是具体元素，避免定位问题
+  tooltip.style.left = `${x}px`;
+  tooltip.style.top = `${y}px`;
   document.body.appendChild(tooltip);
   
-  // 1秒后自动移除提示框
-  setTimeout(() => {
-    if (tooltip.parentNode) {
-      tooltip.remove();
-    }
-  }, 1000);
+  setTimeout(() => tooltip.remove(), 1500);
 }
 
 // 复制文本到剪贴板
-function copyText(text, element, message) {
-  // 如果是复制多行内容，将文本转换为按列排列的格式
-  const formattedText = Array.isArray(text) ? text.join('\n') : text;
-  
-  // 使用剪贴板 API 复制文本
-  navigator.clipboard.writeText(formattedText).then(() => {
-    // 显示复制成功提示
-    showCopyTooltip(element, message);
+async function copyToClipboard(text, x, y) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showCopyTooltip('复制成功', x, y);
+  } catch (err) {
+    showCopyTooltip('复制失败', x, y);
+  }
+}
+
+// 渲染结果到页面
+function renderResults(results) {
+  const container = document.querySelector('.scanner-page');
+  if (!container) return;
+
+  // 清空现有内容
+  container.innerHTML = '';
+
+  // 定义结果类型
+  const resultTypes = [
+    { id: 'domain-list', data: results.domains, title: '域名' },
+    { id: 'api-list', data: results.apis, title: 'API' },
+    { id: 'static-list', data: results.staticFiles, title: '静态文件' },
+    { id: 'ip-list', data: results.ips, title: 'IP' }
+  ];
+
+  // 渲染每种类型的结果
+  resultTypes.forEach(({ id, data, title }) => {
+    if (!data || data.size === 0) return;
+
+    const section = document.createElement('div');
+    section.className = 'section';
+
+    // 创建标题栏
+    const header = document.createElement('div');
+    header.className = 'section-header';
+
+    const titleWrapper = document.createElement('div');
+    titleWrapper.className = 'title-wrapper';
+
+    const titleText = document.createElement('span');
+    titleText.className = 'title';
+    titleText.textContent = title;
+
+    const count = document.createElement('span');
+    count.className = 'count';
+    count.textContent = `(${data.size})`;
+
+    titleWrapper.appendChild(titleText);
+    titleWrapper.appendChild(count);
+
+    // 创建复制按钮
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>复制全部';
     
-    // 添加点击反馈效果
-    if (element.classList.contains('item')) {
-      element.style.background = '#e8f5e9';
-      setTimeout(() => {
-        element.style.background = '';
-      }, 200);
-    }
-  }).catch(err => {
-    // 复制失败时显示错误提示
-    showCopyTooltip(element, '复制失败');
+    copyBtn.addEventListener('click', (e) => {
+      const allText = Array.from(data).join('\\n');
+      copyToClipboard(allText, e.clientX, e.clientY);
+    });
+
+    header.appendChild(titleWrapper);
+    header.appendChild(copyBtn);
+
+    // 创建内容区域
+    const content = document.createElement('div');
+    content.className = 'section-content';
+
+    // 创建结果项
+    Array.from(data).forEach(item => {
+      const itemElement = document.createElement('div');
+      itemElement.className = 'item';
+      itemElement.textContent = item;
+      
+      itemElement.addEventListener('click', (e) => {
+        copyToClipboard(item, e.clientX, e.clientY);
+      });
+
+      content.appendChild(itemElement);
+    });
+
+    section.appendChild(header);
+    section.appendChild(content);
+    container.appendChild(section);
   });
 }
 
