@@ -1,6 +1,6 @@
-<div style="text-align:center">
+<p align="center">
     <img src="icons/logo.png" alt="logo" width="200">
-</div>
+</p>
 
 # 雪瞳
 
