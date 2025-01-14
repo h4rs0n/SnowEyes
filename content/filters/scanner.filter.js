@@ -6,6 +6,12 @@ const SCANNER_FILTER = {
       // 去除首尾的引号
       match = match.slice(1, -1);
       
+      // 检查是否是Vue文件
+      if (match.endsWith('.vue')) {
+        resultsSet?.vueFiles?.add(match);
+        return true;
+      }
+      
       // 检查是否是静态文件
       if (SCANNER_CONFIG.API.STATIC_FILE_PATTERN.test(match)) {
         resultsSet?.staticFiles?.add(match);

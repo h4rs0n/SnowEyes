@@ -362,6 +362,10 @@ body {
   background: #b197fc;  /* 紫色 - API */
 }
 
+.vue-list .item::before {
+  background: #41B883;  /* Vue绿色 - Vue文件 */
+}
+
 .static-list .item::before {
   background: #20c997;  /* 青绿色 - 静态文件 */
 }

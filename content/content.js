@@ -27,8 +27,8 @@ const latestResults = {
   domains: new Set(),     // 域名结果集
   apis: new Set(),        // API 结果集
   staticFiles: new Set(), // 静态文件结果集
+  vueFiles: new Set(),    // Vue 文件结果集
   ips: new Set(),         // IP 地址结果集
-  internalIps: new Set(), // 内网 IP 结果集
   phones: new Set(),      // 手机号结果集
   emails: new Set(),      // 邮箱结果集
   idcards: new Set(),     // 身份证号结果集

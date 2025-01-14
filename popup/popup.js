@@ -55,6 +55,7 @@ function displayResults(results) {
   const sections = [
     { id: 'domain-list', data: results.domains, title: '域名' },
     { id: 'api-list', data: results.apis, title: 'API接口' },
+    { id: 'vue-list', data: results.vueFiles, title: 'Vue文件' },
     { id: 'static-list', data: results.staticFiles, title: '静态文件' },
     { id: 'ip-list', data: results.ips, title: 'IP地址' },
     { id: 'phone-list', data: results.phones, title: '手机号码' },
