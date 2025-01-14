@@ -31,8 +31,9 @@
 - HTML 内容扫描
 - JavaScript 文件内容扫描
 - Meta 标签内容检测
-- 数据属性（`data-*`）检测
+- 数据属性检测
 - 外部资源链接检测
+- 大文件分块处理
 
 ### 4. 智能过滤
 - 域名黑名单过滤
@@ -72,7 +73,7 @@
     <img src="icons/white.png" alt="白名单" width="80%">
 </div>
 
-### 指纹嗅探页面
+### 指纹嗅探页面（静态，开发中）
 <div style="text-align:center">
     <img src="icons/xiutan.png" alt="指纹嗅探" width="80%">
 </div>
