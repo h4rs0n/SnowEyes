@@ -3,19 +3,17 @@ const SCANNER_CONFIG = {
   // 白名单配置
   WHITELIST: [
     'github.com',
-    'stackoverflow.com',
-    'npmjs.com',
+    '360.net',
+    'bing.com',
+    'csdn.net',
+    'bilibili.com',
     'google.com',
     'youtube.com',
     'microsoft.com',
     'apple.com',
     'mozilla.org',
-    'cdn.jsdelivr.net',
-    'cdnjs.cloudflare.com',
-    'unpkg.com',
-    'jquery.com',
-    'bootstrapcdn.com',
-    'fontawesome.com'
+    'aliyun.com',
+    'mklab.cn'
   ],
 
   // API 相关配置
@@ -162,25 +160,10 @@ const SCANNER_CONFIG = {
 
   // IP 相关配置
   IP: {
-    // 内网 IP 范围
-    PRIVATE_RANGES: [
-      /^0\./,
-      /^10\./,
-      /^100\.6[4-9]\./,
-      /^127\./,
-      /^169\.254\./,
-      /^172\.(?:1[6-9]|2\d|3[0-1])\./,
-      /^192\.0\.0\./,
-      /^192\.168\./,
-      /^198\.1[8-9]\./
-    ],
-
-    // 特殊 IP 范围
+    // 特殊 IP 范围（保留地址和特殊用途地址）
     SPECIAL_RANGES: [
-      /^0\./,
-      /^224\./,
-      /^240\./,
-      /^255\.255\.255\.255/
+      /^0\.0\.0\.0$/,          // 当前网络
+      /^255\.255\.255\.255$/   // 广播地址
     ]
   },
 
@@ -201,7 +184,7 @@ const SCANNER_CONFIG = {
     PHONE: /(?<!\d|\.)(?:13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9]|198|199)\d{8}(?!\d)/g,
     EMAIL: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})?/g,
     IDCARD: /((\d{8}(0\d|10|11|12)([0-2]\d|30|31)\d{3}$)|(\d{6}(18|19|20)\d{2}(0[1-9]|10|11|12)([0-2]\d|30|31)\d{3}(\d|X|x)))/g,
-    URL: /https?:\/\/(?:[\w-]+\.)+[a-z]{2,}(?::\d{2,5})?(?:\/[^\s'"]*)?/gi,
+    URL: /(?:https?|wss?|ftp):\/\/(?:[\w-]+\.)+[a-z]{2,}|(?:\d{1,3}\.){3}\d{1,3}(?::\d{2,5})?(?:\/[^\s'"]*)?/gi,
     JWT: /(?:ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{10,}|ey[A-Za-z0-9_\/+-]{10,}\.[A-Za-z0-9._\/+-]{10,})/g,
     AWS_KEY: /AKIA[0-9A-Z]{16}/g,
     HASH: {

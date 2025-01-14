@@ -152,10 +152,6 @@ const SCANNER_FILTER = {
         return !isNaN(port) && port > 0 && port <= 65535;
       },
 
-      isPrivate(ip) {
-        return SCANNER_CONFIG.IP.PRIVATE_RANGES.some(range => range.test(ip));
-      },
-
       notSpecial(ip) {
         return !SCANNER_CONFIG.IP.SPECIAL_RANGES.some(range => range.test(ip));
       }
@@ -166,12 +162,8 @@ const SCANNER_FILTER = {
       if (!validate.port(match)) return false;
       if (!validate.notSpecial(match)) return false;
 
-      if (validate.isPrivate(match)) {
-        resultsSet?.internalIps?.add(match);
-      } else {
-        resultsSet?.ips?.add(match);
-      }
-
+      // 直接添加到IP结果集中，不区分内外网
+      resultsSet?.ips?.add(match);
       return true;
     };
   })(),
