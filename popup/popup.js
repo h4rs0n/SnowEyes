@@ -22,7 +22,7 @@ function switchPage(pageName) {
 
 // 显示配置信息
 function displayConfig(config) {
-  const container = document.querySelector('.config-page');
+  const container = document.querySelector('.config-page .container');
   if (!config) {
     container.innerHTML = '<div class="error">无法获取配置信息</div>';
     return;
@@ -31,43 +31,16 @@ function displayConfig(config) {
   let html = `
     <div class="config-section">
       <div class="config-group">
-        <h3>白名单域名</h3>
-        <textarea class="whitelist-input" placeholder="输入白名单域名，用逗号分隔">${config.WHITELIST ? config.WHITELIST.join(', ') : ''}</textarea>
-      </div>
-
-      <div class="config-group">
-        <h3>API 配置</h3>
-        <div class="config-item">
-          <div class="config-label">API 路径匹配</div>
-          <textarea class="config-value">${config.API.PATTERN || ''}</textarea>
+        <h3>扫描白名单</h3>
+        <div class="config-content">
+          以下域名将不会被扫描：
         </div>
-        <div class="config-item">
-          <div class="config-label">静态文件匹配</div>
-          <textarea class="config-value">${config.API.STATIC_FILE_PATTERN || ''}</textarea>
-        </div>
-      </div>
-
-      <div class="config-group">
-        <h3>域名配置</h3>
-        <div class="config-item">
-          <div class="config-label">域名黑名单</div>
-          <textarea class="config-value">${config.DOMAIN.BLACKLIST ? config.DOMAIN.BLACKLIST.join(', ') : ''}</textarea>
-        </div>
-        <div class="config-item">
-          <div class="config-label">特殊域名</div>
-          <textarea class="config-value">${config.DOMAIN.SPECIAL_DOMAINS ? config.DOMAIN.SPECIAL_DOMAINS.join(', ') : ''}</textarea>
-        </div>
-      </div>
-
-      <div class="config-group">
-        <h3>IP 配置</h3>
-        <div class="config-item">
-          <div class="config-label">私有 IP 范围</div>
-          <textarea class="config-value">${config.IP.PRIVATE_RANGES ? config.IP.PRIVATE_RANGES.join(', ') : ''}</textarea>
-        </div>
-        <div class="config-item">
-          <div class="config-label">特殊 IP 范围</div>
-          <textarea class="config-value">${config.IP.SPECIAL_RANGES ? config.IP.SPECIAL_RANGES.join(', ') : ''}</textarea>
+        <div class="whitelist-domains">
+          ${config.WHITELIST ? config.WHITELIST.map(domain => `
+            <div class="domain-item">
+              <span class="domain-text">${domain}</span>
+            </div>
+          `).join('') : ''}
         </div>
       </div>
     </div>
@@ -341,13 +314,12 @@ function initConfigPage() {
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     if (tabs[0]) {
       chrome.tabs.sendMessage(tabs[0].id, {type: 'GET_CONFIG'}, response => {
-        if (chrome.runtime.lastError) {
-          displayConfig(null);
+        if (chrome.runtime.lastError || !response || !response.config) {
+          const container = document.querySelector('.config-page .container');
+          container.innerHTML = '<div class="error">请刷新页面后重试</div>';
           return;
         }
-
-        const { config } = response;
-        displayConfig(config);
+        displayConfig(response.config);
       });
     }
   });

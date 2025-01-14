@@ -495,23 +495,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true; // 保持消息通道打开
   } else if (request.type === 'GET_CONFIG') {
-    // 返回配置信息，将正则表达式转换为字符串
-    const config = {
-      WHITELIST: SCANNER_CONFIG.WHITELIST,
-      API: {
-        PATTERN: SCANNER_CONFIG.API.PATTERN.toString(),
-        STATIC_FILE_PATTERN: SCANNER_CONFIG.API.STATIC_FILE_PATTERN.toString()
-      },
-      DOMAIN: {
-        BLACKLIST: SCANNER_CONFIG.DOMAIN.BLACKLIST,
-        SPECIAL_DOMAINS: SCANNER_CONFIG.DOMAIN.SPECIAL_DOMAINS
-      },
-      IP: {
-        PRIVATE_RANGES: SCANNER_CONFIG.IP.PRIVATE_RANGES.map(pattern => pattern.toString()),
-        SPECIAL_RANGES: SCANNER_CONFIG.IP.SPECIAL_RANGES.map(pattern => pattern.toString())
+    // 只返回白名单配置
+    sendResponse({
+      config: {
+        WHITELIST: SCANNER_CONFIG.WHITELIST
       }
-    };
-    sendResponse({ config });
+    });
   }
 });
 
