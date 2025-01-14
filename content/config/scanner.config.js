@@ -13,7 +13,8 @@ const SCANNER_CONFIG = {
     'apple.com',
     'mozilla.org',
     'aliyun.com',
-    'mklab.cn'
+    'mklab.cn',
+    'cnnvd.org.cn'
   ],
 
   // API 相关配置
@@ -35,7 +36,10 @@ const SCANNER_CONFIG = {
       'image/x-wmf',
       'image/x-icon',
       'image/tiff',
+      //音频类型
+      'audio/mpeg',
 
+      //数据类型
       'multipart/form-data',
     ]
   },

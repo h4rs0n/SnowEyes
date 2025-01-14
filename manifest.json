@@ -1,9 +1,15 @@
 {
   "manifest_version": 3,
 
-  "name": "网页敏感信息检测",
+  "name": "雪瞳",
   "version": "1.0",
-  "description": "网页信息检测工具",
+  "description": "洞悉无形，守护无界",
+
+  "icons": {
+    "16": "icons/logo.png",
+    "48": "icons/logo.png",
+    "128": "icons/logo.png"
+  },
 
   "permissions": [
     "activeTab",    
@@ -37,6 +43,12 @@
 
   "action": {
     "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/logo.png",
+      "32": "icons/logo.png",
+      "48": "icons/logo.png",
+      "128": "icons/logo.png"
+    },
     "default_badge_text": "0",
     "default_badge_background_color": "#666666"
   }
