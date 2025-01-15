@@ -200,6 +200,48 @@ const SCANNER_FILTER = {
   },
 
   url: (match, resultsSet) => {
+    try {
+      // 解析URL
+      const url = new URL(match);
+      const currentHost = window.location.host;
+      
+      // 检查是否是当前域名或IP
+      if (url.host === currentHost) {
+        // 获取路径部分
+        const path = url.pathname;
+      
+        if (path.endsWith('.css')) {
+          return true;
+        }
+        // 检查是否是图片文件
+        if (SCANNER_CONFIG.API.IMAGE_PATTERN.test(path)) {
+          resultsSet?.imageFiles?.add(path);
+          return true;
+        }
+        
+        // 检查是否是JS文件
+        if (SCANNER_CONFIG.API.JS_PATTERN.test(path)) {
+          resultsSet?.jsFiles?.add(path);
+          return true;
+        }
+        
+        // 检查是否是文档文件
+        if (SCANNER_CONFIG.API.DOC_PATTERN.test(path)) {
+          resultsSet?.docFiles?.add(path);
+          return true;
+        }
+        
+        // 如果不是特定类型文件，则当作API处理
+        if (!path.match(/\.[a-zA-Z0-9]+$/)) {
+          resultsSet?.apis?.add(path);
+          return true;
+        }
+      }
+    } catch (e) {
+      console.error('Error processing URL:', e);
+    }
+    
+    // 如果不是当前域名或解析失败，将完整URL添加到URL结果集
     resultsSet?.urls?.add(match);
     return true;
   },

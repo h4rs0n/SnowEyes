@@ -20,8 +20,8 @@ const SCANNER_CONFIG = {
   // API 相关配置
   API: {
     PATTERN: /['"`](?:\/|\.\.\/|\.\/)[^\/\>\< \)\(\}\,\'\"\\](?:[^\^\>\< \)\(\{\}\,\'\"\\])*?['"`]|['"`][a-zA_Z0-9]+(?<!text|application)\/(?:[^\^\>\< \)\(\{\}\,\'\"\\])*?["'`]/g,
-    // 图片文件模式
-    IMAGE_PATTERN: /\.(jpg|jpeg|png|gif|bmp|webp|svg|ico)(?:\?[^'"]*)?$/i,
+    // 音频图片模式
+    IMAGE_PATTERN: /\.(jpg|jpeg|png|gif|bmp|webp|svg|ico|mp3)(?:\?[^'"]*)?$/i,
     // JS文件模式
     JS_PATTERN: /\.(js|jsx|ts|tsx)(?:\?[^'"]*)?$/i,
     // 文档文件模式
