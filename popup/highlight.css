@@ -366,8 +366,16 @@ body {
   background: #41B883;  /* Vue绿色 - Vue文件 */
 }
 
-.static-list .item::before {
-  background: #20c997;  /* 青绿色 - 静态文件 */
+.image-list .item::before {
+  background: #ff922b;  /* 橙色 - 图片资源 */
+}
+
+.js-list .item::before {
+  background: #20c997;  /* 青绿色 - JS文件 */
+}
+
+.doc-list .item::before {
+  background: #748ffc;  /* 靛蓝色 - 文档文件 */
 }
 
 .ip-list .item::before {

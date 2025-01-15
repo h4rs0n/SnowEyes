@@ -16,7 +16,9 @@ const waitForDependencies = () => {
 const latestResults = {
   domains: new Set(),     // 域名结果集
   apis: new Set(),        // API 结果集
-  staticFiles: new Set(), // 静态文件结果集
+  imageFiles: new Set(),  // 图片文件结果集
+  jsFiles: new Set(),     // JS文件结果集
+  docFiles: new Set(),    // 文档文件结果集
   vueFiles: new Set(),    // Vue 文件结果集
   ips: new Set(),         // IP 地址结果集
   phones: new Set(),      // 手机号结果集

@@ -11,10 +11,26 @@ const SCANNER_FILTER = {
         resultsSet?.vueFiles?.add(match);
         return true;
       }
+
+      //如果是css文件则丢弃
+      if (match.endsWith('.css')) {
+        return true;
+      }
       
-      // 检查是否是静态文件
-      if (SCANNER_CONFIG.API.STATIC_FILE_PATTERN.test(match)) {
-        resultsSet?.staticFiles?.add(match);
+      if (SCANNER_CONFIG.API.IMAGE_PATTERN.test(match)) {
+        resultsSet?.imageFiles?.add(match);
+        return true;
+      }
+
+      // 检查是否是JS文件
+      if (SCANNER_CONFIG.API.JS_PATTERN.test(match)) {
+        resultsSet?.jsFiles?.add(match);
+        return true;
+      }
+
+      // 检查是否是文档文件
+      if (SCANNER_CONFIG.API.DOC_PATTERN.test(match)) {
+        resultsSet?.docFiles?.add(match);
         return true;
       }
 

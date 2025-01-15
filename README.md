@@ -66,6 +66,7 @@
 <div style="text-align:center">
     <img src="icons/souji1.png" alt="信息收集界面" width="80%">
     <img src="icons/souji2.png" alt="信息收集界面" width="80%">
+    <img src="icons/souji3.png" alt="信息收集界面" width="80%">
 </div>
 
 ### 白名单页面
@@ -121,8 +122,9 @@
 - 修复配置信息不能展示的问题
 ### 2025-01-15
 - 删除冗余代码
-- 增加第三方库跳过，减少不必要的搜索
-- 完善API分离逻辑，增加三方库过滤
+- 增加第三方库过滤，减少不必要的搜索
+- 完善API分离逻辑，增加更多的三方库
+- 拆分静态资源，提取js，文档和图片
 ---
 
 **雪瞳——洞悉无形，守护无界。**

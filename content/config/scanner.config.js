@@ -20,12 +20,18 @@ const SCANNER_CONFIG = {
   // API 相关配置
   API: {
     PATTERN: /['"`](?:\/|\.\.\/|\.\/)[^\/\>\< \)\(\}\,\'\"\\](?:[^\^\>\< \)\(\{\}\,\'\"\\])*?['"`]|['"`][a-zA_Z0-9]+(?<!text|application)\/(?:[^\^\>\< \)\(\{\}\,\'\"\\])*?["'`]/g,
-    // 静态文件后缀 - 增强匹配规则
-    STATIC_FILE_PATTERN: /\.(js|css|ico|png|webp|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|map|json|jsonp)(?:\?[^'"]*)?$/i,
+    // 图片文件模式
+    IMAGE_PATTERN: /\.(jpg|jpeg|png|gif|bmp|webp|svg|ico)(?:\?[^'"]*)?$/i,
+    // JS文件模式
+    JS_PATTERN: /\.(js|jsx|ts|tsx)(?:\?[^'"]*)?$/i,
+    // 文档文件模式
+    DOC_PATTERN: /\.(pdf|doc|docx|xls|xlsx|ppt|exe|apk|pptx|txt|md|csv)(?:\?[^'"]*)?$/i,
     // 需要跳过的第三方JS库
     SKIP_JS_FILES: [
       'layui.js',
       'layui.min.js',
+      'layui.all.js',
+      'layui.all.min.js',
       'jquery.js',
       'jquery.min.js',
       'vue.js',
