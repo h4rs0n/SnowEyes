@@ -22,6 +22,25 @@ const SCANNER_CONFIG = {
     PATTERN: /['"`](?:\/|\.\.\/|\.\/)[^\/\>\< \)\(\}\,\'\"\\](?:[^\^\>\< \)\(\{\}\,\'\"\\])*?['"`]|['"`][a-zA_Z0-9]+(?<!text|application)\/(?:[^\^\>\< \)\(\{\}\,\'\"\\])*?["'`]/g,
     // 静态文件后缀 - 增强匹配规则
     STATIC_FILE_PATTERN: /\.(js|css|ico|png|webp|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|map|json|jsonp)(?:\?[^'"]*)?$/i,
+    // 需要跳过的第三方JS库
+    SKIP_JS_FILES: [
+      'layui.js',
+      'layui.min.js',
+      'jquery.js',
+      'jquery.min.js',
+      'vue.js',
+      'vue.min.js',
+      'react.js',
+      'react.min.js',
+      'bootstrap.js',
+      'bootstrap.min.js',
+      'chart.js',
+      'chart.min.js',
+      'jquery.cookie.js',
+      'jquery.cookie.min.js',
+      'browser.min.js',
+      'polyfill.min.js'
+    ],
     // 需要过滤的内容类型
     FILTERED_CONTENT_TYPES: [
       // 图片类型

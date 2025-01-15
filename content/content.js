@@ -1,13 +1,3 @@
-// 安全获取属性值的函数
-const safeGetAttribute = (element, attr) => {
-  try {
-    const value = element[attr];
-    return typeof value === 'string' ? value : '';
-  } catch (e) {
-    return '';
-  }
-};
-
 // 等待依赖加载 - 简化检查
 const waitForDependencies = () => {
   const deps = [
@@ -41,152 +31,6 @@ const latestResults = {
     sha256: new Set()
   }
 };
-
-// 优化获取脚本内容函数
-async function getAllScriptContents() {
-  const sources = new Set();
-  const jsContents = new Set();
-
-  try {
-    // 获取当前页面的基础URL
-    const baseUrl = window.location.origin;
-    
-    // 1. 从 document.scripts 获取
-    const scripts = Array.from(document.scripts)
-      .filter(script => script?.src && typeof script.src === 'string' && script.src.trim());
-    
-    // 2. 从页面内容正则匹配获取
-    const pageContent = document.documentElement.outerHTML;
-    const jsPattern = /(?:src|href)=['"]([^'"]+\.(?:js)(?:\?[^\s'"]*)?)['"]/g;
-    const jsMatches = Array.from(pageContent.matchAll(jsPattern))
-      .map(match => {
-        const path = match[1];
-        try {
-          // 处理不同类型的路径
-          if (path.startsWith('http')) {
-            return path;
-          } else if (path.startsWith('//')) {
-            return window.location.protocol + path;
-          } else if (path.startsWith('/')) {
-            return baseUrl + path;
-          } else {
-            return new URL(path, baseUrl).href;
-          }
-        } catch (e) {
-          console.error('Error processing JS path:', e);
-          return null;
-        }
-      })
-      .filter(url => url !== null);
-
-    // 合并所有JS文件URL并去重
-    const allJsUrls = new Set([
-      ...scripts.map(script => script.src),
-      ...jsMatches
-    ]);
-    
-    // 并行获取脚本内容
-    const fetchPromises = Array.from(allJsUrls).map(async url => {
-      if (jsContents.has(url)) return;
-      jsContents.add(url);
-      
-      try {
-        const response = await new Promise(resolve => {
-          chrome.runtime.sendMessage({type: 'FETCH_JS', url: url}, resolve);
-        });
-        
-        if (response?.content) {
-          sources.add(response.content);
-        }
-      } catch (e) {
-        console.error('Error fetching script:', url, e);
-      }
-    });
-
-    await Promise.all(fetchPromises);
-  } catch (e) {
-    console.error('Error in getAllScriptContents:', e);
-  }
-
-  return sources;
-}
-
-// 优化资源收集函数
-async function getAllSources() {
-  const sources = new Set();
-  
-  try {
-    // 1. 获取 HTML 内容
-    const htmlContent = document.documentElement.innerHTML;
-    if (htmlContent) {
-      sources.add(htmlContent);
-    }
-    
-    // 2. 获取脚本内容
-    const scriptSources = await getAllScriptContents();
-    if (scriptSources) {
-      for (const source of scriptSources) {
-        if (source) sources.add(source);
-      }
-    }
-
-    // 3. 获取关键资源的 URL
-    const criticalSelectors = [
-      ['a[href^="http"]', 'href'],  // 只获取外部链接
-      ['script[src]', 'src'],
-      ['link[href]', 'href']
-    ];
-
-    for (const [selector, attr] of criticalSelectors) {
-      try {
-        const elements = document.querySelectorAll(selector);
-        for (const el of elements) {
-          const value = el[attr];
-          if (value) sources.add(value);
-        }
-      } catch (e) {
-        console.error('Error collecting resources:', e);
-      }
-    }
-
-    // 4. 获取 meta 标签的内容
-    try {
-      const metas = document.querySelectorAll('meta[content]');
-      for (const meta of metas) {
-        const content = meta.content;
-        if (content) sources.add(content);
-      }
-    } catch (e) {
-      console.error('Error collecting meta content:', e);
-    }
-
-    // 5. 获取可能包含敏感信息的数据属性
-    try {
-      const sensitiveDataAttrs = ['api', 'url', 'endpoint', 'server', 'config'];
-      for (const attr of sensitiveDataAttrs) {
-        const elements = document.querySelectorAll(`[data-${attr}]`);
-        for (const el of elements) {
-          const value = el.dataset[attr];
-          if (value) sources.add(value);
-        }
-      }
-    } catch (e) {
-      console.error('Error collecting data attributes:', e);
-    }
-  } catch (e) {
-    console.error('Error in getAllSources:', e);
-  }
-
-  // 过滤结果
-  return Array.from(sources).filter(source => 
-    source && 
-    typeof source === 'string' && 
-    source.trim().length > 3 && 
-    !source.startsWith('data:') && 
-    !source.startsWith('blob:') &&
-    !source.startsWith('javascript:')
-  );
-}
 
 // 优化扫描函数
 function scanSources(sources) {
@@ -348,6 +192,12 @@ async function initScan() {
 // 增量收集和扫描资源
 async function collectAndScanResources() {
   try {
+    // 检查是否是第三方库
+    const isThirdPartyLib = (url) => {
+      const fileName = url.split('/').pop()?.split('?')[0]?.toLowerCase() || '';
+      return SCANNER_CONFIG.API.SKIP_JS_FILES.includes(fileName);
+    };
+
     // 1. 收集并扫描关键资源的URL
     const criticalSelectors = [
       ['a[href^="http"]', 'href'],
@@ -445,6 +295,12 @@ async function collectAndScanResources() {
     const fetchPromises = Array.from(allJsUrls).map(async url => {
       if (jsContents.has(url)) return;
       jsContents.add(url);
+      
+      // 检查是否是第三方库，如果是则跳过
+      if (isThirdPartyLib(url)) {
+        logger.info('跳过第三方库:', url);
+        return;
+      }
       
       try {
         const response = await new Promise(resolve => {
