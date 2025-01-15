@@ -18,26 +18,19 @@ const SCANNER_FILTER = {
         return true;
       }
 
-      // 尝试获取文件扩展名或内容类型标识
-      let contentType = '';
-      try {
-        // 从URL中提取可能的内容类型标识
-        const lcMatch = match.toLowerCase();
-        contentType = SCANNER_CONFIG.API.FILTERED_CONTENT_TYPES.find(type => 
-          lcMatch.includes(type.toLowerCase()) || 
-          lcMatch.includes(type.split('/')[1])  // 匹配类型的后缀部分
-        ) || '';
-      } catch (e) {
-        console.error('Error extracting content type:', e);
+      // 检查是否包含被过滤的内容类型
+      const lcMatch = match.toLowerCase();
+      const shouldFilter = SCANNER_CONFIG.API.FILTERED_CONTENT_TYPES.some(type => 
+        lcMatch.includes(type.toLowerCase())
+      );
+
+      // 如果是被过滤的内容类型，直接跳过
+      if (shouldFilter) {
+        return true;
       }
 
-      // 如果URL暗示这是一个被过滤的内容类型，将其添加到静态文件中
-      if (contentType) {
-        resultsSet?.staticFiles?.add(match);
-      } else {
-        resultsSet?.apis?.add(match);
-      }
-      
+      // 添加到API结果集
+      resultsSet?.apis?.add(match);
       return true;
     };
   })(),
