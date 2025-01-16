@@ -6,8 +6,8 @@ const SCANNER_FILTER = {
       // 去除首尾的引号
       match = match.slice(1, -1);
 
-      //如果是css文件则丢弃
-      if (match.split("?")[0].endsWith('.css')) {
+      //如果是css字体文件则丢弃
+      if (SCANNER_CONFIG.API.FONT_PATTERN.test(match)) {
         return true;
       }
       
@@ -205,16 +205,17 @@ const SCANNER_FILTER = {
 
   url: (match, resultsSet) => {
     try {
+      resultsSet?.urls?.add(match);
       // 解析URL
       const url = new URL(match);
       const currentHost = window.location.host;
-      
       // 检查是否是当前域名或IP
       if (url.host === currentHost) {
         // 获取路径部分
         const path = url.pathname;
       
-        if (match.split("?")[0].endsWith('.css')) {
+        //如果是css字体文件则丢弃
+        if (SCANNER_CONFIG.API.FONT_PATTERN.test(match)) {
           return true;
         }
         // 检查是否是图片文件
@@ -246,7 +247,6 @@ const SCANNER_FILTER = {
     }
     
     // 如果不是当前域名或解析失败，将完整URL添加到URL结果集
-    resultsSet?.urls?.add(match);
     return true;
   },
 

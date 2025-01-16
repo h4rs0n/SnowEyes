@@ -27,10 +27,12 @@ const SCANNER_CONFIG = {
     JS_PATTERN: /\.(js|jsx|ts|tsx)(?:\?[^'"]*)?$/i,
     // 文档文件模式
     DOC_PATTERN: /\.(pdf|doc|docx|xls|xlsx|ppt|exe|apk|zip|pptx|txt|md|csv)(?:\?[^'"]*)?$/i,
+    // css字体模式
+    FONT_PATTERN: /\.(ttf|eot|woff|woff2|otf|css)(?:\?[^'"]*)?$/i,
     // 需要跳过的第三方JS库正则匹配规则
     SKIP_JS_PATTERNS: [
       // jQuery相关
-      /jquery(?:[.-]?\d*\.?\d*\.?\d*|-\d+\.\d+\.\d+|\.cookie)?(?:\.min)?\.js$/i,
+      /jquery(?:[.-]?\d*\.?\d*\.?\d*|-\d+\.\d+\.\d+|\.cookie)?(?:validate)?(?:\.blockui)?(?:\.min)?\.js$/i,
       
       /(?:vue|vue-router|vuex)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       
@@ -95,6 +97,9 @@ const SCANNER_CONFIG = {
       'video/x-matroska',
       'video/x-ms-asf',
       'video/quicktime',
+
+      'js/lib',
+      'js/plugin',
 
       'application/msword',
       'application/vnd.ms-word.document.macroenabled.12',

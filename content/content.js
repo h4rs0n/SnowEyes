@@ -17,17 +17,17 @@ const latestResults = {
   domains: new Set(),     // 域名结果集
   apis: new Set(),        // API 结果集
   moduleFiles: new Set(), // 模块路径结果集
-  imageFiles: new Set(),  // 音频图片结果集
-  jsFiles: new Set(),     // JS文件结果集
   docFiles: new Set(),    // 文档文件结果集
-  vueFiles: new Set(),    // Vue 文件结果集
   ips: new Set(),         // IP 地址结果集
   phones: new Set(),      // 手机号结果集
   emails: new Set(),      // 邮箱结果集
   idcards: new Set(),     // 身份证号结果集
-  urls: new Set(),        // URL 结果集
   jwts: new Set(),        // JWT Token 结果集
   awsKeys: new Set(),     // AWS Access Key 结果集
+  imageFiles: new Set(),  // 音频图片结果集
+  jsFiles: new Set(),     // JS文件结果集
+  vueFiles: new Set(),    // Vue 文件结果集
+  urls: new Set(),        // URL 结果集
   hashes: {              // 哈希结果集
     md5: new Set(),
     sha1: new Set(),
@@ -266,10 +266,10 @@ async function collectAndScanResources() {
     
     // 从页面内容匹配获取
     const pageContent = document.documentElement.outerHTML;
-    const jsPattern = /(?:src|href)=['"]([^'"]+\.(?:js)(?:\?[^\s'"]*)?)['"]/g;
+    const jsPattern = /['"](?:[^'"]+\.(?:js)(?:\?[^\s'"]*)?)['"]/g;
     const jsMatches = Array.from(pageContent.matchAll(jsPattern))
       .map(match => {
-        const path = match[1];
+        const path = match[0].slice(1, -1);
         try {
           if (path.startsWith('http')) {
             return path;
