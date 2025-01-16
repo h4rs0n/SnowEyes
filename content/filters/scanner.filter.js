@@ -80,7 +80,8 @@ const SCANNER_FILTER = {
             }
           }
 
-          // 3. 处理URL协议
+          // 3. 处理URL协议和引号
+          domain = domain.replace(/^["']/, '').replace(/["']$/, '');
           if (domain.startsWith('http://')) {
             domain = domain.slice(7);
           } else if (domain.startsWith('https://')) {
@@ -89,42 +90,18 @@ const SCANNER_FILTER = {
             domain = domain.slice(2);
           }
           
-          // 4. 如果存在路径，只保留域名部分
-          const slashIndex = domain.indexOf('/');
-          if (slashIndex !== -1) {
-            domain = domain.slice(0, slashIndex);
+          // 4. 使用过滤规则提取域名
+          const filterMatch = domain.match(SCANNER_CONFIG.PATTERNS.DOMAIN_FILTER);
+          if (filterMatch) {
+            domain = filterMatch[0];
+          } else {
+            return '';
           }
-          
-          // 5. 移除常见无关字符
-          domain = domain
-            .replace(/['"\\\/\(\)\[\]\{\}\s,;:：]+/g, '') // 移除标点符号和空白
-            .replace(/^[\.]+|[\.]+$/g, '')               // 移除首尾的点
-            .replace(/\.+/g, '.');                       // 合并多个点
           
           return domain;
         } catch {
           return '';
         }
-      },
-
-      format(domain) {
-        // 过滤特殊格式的域名
-        if (/^\w+\.top-\w+(?:\.\w+)*\.top$/.test(domain)) {
-          return false;
-        }
-        
-        return /^[a-z0-9][-a-z0-9.]*[a-z0-9]\.[a-z0-9][-a-z0-9.]*[a-z0-9]$/i.test(domain) &&
-               !/[.-]{2,}/.test(domain) &&
-               domain.split('.').every(part => part.length <= 63) &&
-               domain.length <= 253;
-      },
-
-      notBlacklisted(domain) {
-        return !SCANNER_CONFIG.DOMAIN.BLACKLIST.some(item => domain.includes(item));
-      },
-
-      isSpecial(domain) {
-        return SCANNER_CONFIG.DOMAIN.SPECIAL_DOMAINS.some(special => domain.endsWith(special));
       }
     };
 
@@ -133,18 +110,6 @@ const SCANNER_FILTER = {
       match = validate.clean(match);
       if (!match) return false;
       
-      // 验证格式
-      if (!validate.format(match)) return false;
-      
-      // 检查特殊域名
-      if (validate.isSpecial(match)) {
-        resultsSet?.domains?.add(match);
-        return true;
-      }
-
-      // 检查黑名单
-      if (!validate.notBlacklisted(match)) return false;
-
       // 添加到结果集
       resultsSet?.domains?.add(match);
       return true;

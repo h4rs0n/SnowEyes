@@ -15,16 +15,18 @@ const SCANNER_CONFIG = {
     'aliyun.com',
     'feishu.cn',
     'mklab.cn',
-    'cnnvd.org.cn'
+    'cnnvd.org.cn',
+    'qq.com',
+    'baidu.com'
   ],
 
   // API 相关配置
   API: {
     PATTERN: /['"`](?:\/|\.\.\/|\.\/)[^\/\>\< \)\(\}\,\'\"\\](?:[^\^\>\< \)\(\{\}\,\'\"\\])*?['"`]|['"`][a-zA_Z0-9]+(?<!text|application)\/(?:[^\^\>\< \)\(\{\}\,\'\"\\])*?["'`]/g,
     // 图片文件模式
-    IMAGE_PATTERN: /\.(jpg|jpeg|png|gif|bmp|webp|svg|ico|mp3|mp4|m4a)(?:\?[^'"]*)?$/i,
+    IMAGE_PATTERN: /\.(jpg|jpeg|png|gif|bmp|webp|svg|ico|mp3|mp4|m4a|wav)(?:\?[^'"]*)?$/i,
     // JS文件模式
-    JS_PATTERN: /\.(js|jsx|ts|tsx)(?:\?[^'"]*)?$/i,
+    JS_PATTERN: /\.(js|jsx|ts|tsx|less)(?:\?[^'"]*)?$/i,
     // 文档文件模式
     DOC_PATTERN: /\.(pdf|doc|docx|xls|xlsx|ppt|exe|apk|zip|pptx|txt|md|csv)(?:\?[^'"]*)?$/i,
     // css字体模式
@@ -32,7 +34,7 @@ const SCANNER_CONFIG = {
     // 需要跳过的第三方JS库正则匹配规则
     SKIP_JS_PATTERNS: [
       // jQuery相关
-      /jquery(?:[.-]?\d*\.?\d*\.?\d*|-\d+\.\d+\.\d+|\.cookie)?(?:validate)?(?:\.blockui)?(?:\.min)?\.js$/i,
+      /jquery([.-]?\d*\.?\d*\.?\d*)?(?:[\.-]cookie)?(?:[\.-]validate)?(?:[\.-]artDialog)?(?:[\.-]blockui)?(?:[\.-]min)?\.js$/i,
       
       /(?:vue|vue-router|vuex)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       
@@ -52,10 +54,10 @@ const SCANNER_CONFIG = {
       /(lodash|moment|axios)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       
       // 其他常用库
-      /(polyfill|modernizr|underscore)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      /(polyfill|modernizr|less|tinymce|jsencrypt|backbone|select2|underscore|ext-all|ext-unigui-min|exporter|v5_float_4)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       
       // 日期选择器
-      /(datepicker|datetimepicker|wdatepicker)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      /(datepicker|datetimepicker|wdatepicker|laydate)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
     
       // 语言包
       /(?:zh|en|zh-cn|zh-tw|ja|ko)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
@@ -199,6 +201,7 @@ const SCANNER_CONFIG = {
       'examples/element-ui',
       'static/js/',
       'static/css/',
+      'stylesheet/less',
 
       //日期类型
       'yyyy/mm/dd',
@@ -216,119 +219,24 @@ const SCANNER_CONFIG = {
 
   // 域名相关配置
   DOMAIN: {
-    // 域名黑名单
-    BLACKLIST: [
-      // 系统和测试域名
-      'localhost',
-      '.local',
-      '.example',
-      '.test',
-      '.invalid',
-      '.internal',
-      
-      // JavaScript 关键字和内置对象
-      'this',
-      'window',
-      'document',
-      'function',
-      'class',
-      'object',
-      'array',
-      'string',
-      'number',
-      'boolean',
-      'undefined',
-      'null',
-      'error',
-      'promise',
-      'async',
-      'await',
-      'console',
-      
-      // DOM 相关
-      'element',
-      'node',
-      'event',
-      'style',
-      'attribute',
-      'prototype',
-      'constructor',
-      'bottom',
-      'row',
-      'userinfo',
-
-      // 常见方法名
-      'show',
-      'hide',
-      'toggle',
-      'click',
-      'submit',
-      'load',
-      'unload',
-      'change',
-      'update',
-      'create',
-      'delete',
-      'remove',
-      'add',
-      'get',
-      'set',
-      'init',
-      'start',
-      'stop',
-      'pause',
-      'resume',
-      'praser',
-      'prasedurl',
-      'location',
-      'return',
-      'window',
-
-      // 常见属性名
-      'name',
-      'value',
-      'type',
-      'data',
-      'text',
-      'html',
-      'content',
-      'length',
-      'size',
-      'index',
-      'key',
-      'item',
-      'parent',
-      'child',
-      
-      // 常见变量名
-      'temp',
-      'tmp',
-      'var',
-      'obj',
-      'arr',
-      'str',
-      'num',
-      'bool',
-      'func',
-      'callback',
-      'handler',
-      'listener',
-      'options',
-      'config',
-      'settings',
-      'params',
-      'args',
-      'result',
-      'response',
-      'request',
-      'error',
-      'debug',
-      'log'
-    ],
-
-    // 特殊域名后缀
-    SPECIAL_DOMAINS: [
-      'org.cn'
+    // 域名白名单
+    WHITELIST: [
+      'github.com',
+      '360.net',
+      'bing.com',
+      'csdn.net',
+      'bilibili.com',
+      'google.com',
+      'youtube.com',
+      'microsoft.com',
+      'apple.com',
+      'mozilla.org',
+      'aliyun.com',
+      'feishu.cn',
+      'mklab.cn',
+      'cnnvd.org.cn',
+      'qq.com',
+      'baidu.com'
     ]
   },
 
@@ -343,8 +251,14 @@ const SCANNER_CONFIG = {
 
   // 正则表达式模式
   PATTERNS: {
-    // 域名匹配
-    DOMAIN: /\b(?:[a-zA-Z0-9%-]+\.)+(?:wang|club|xyz|vip|top|beer|work|ren|technology|fashion|luxe|yoga|red|love|online|ltd|chat|group|pub|run|city|live|kim|pet|space|site|tech|host|fun|store|pink|ski|design|ink|wiki|video|email|company|plus|center|cool|fund|gold|guru|life|show|team|today|world|zone|social|bio|black|blue|green|lotto|organic|poker|promo|vote|archi|voto|fit|cn|website|press|icu|art|law|shop|band|media|cab|cash|cafe|games|link|fan|net|cc|com|fans|cloud|info|pro|mobi|asia|studio|biz|vin|news|fyi|tax|tv|market|shopping|mba|sale|co|org\.cn)(?![a-zA-Z0-9._=>\(\);!}-])\b/g,
+    // 域名匹配 - HTML页面
+    DOMAIN: /\b(?:[a-zA-Z0-9%-]+\.)*?(?:[a-zA-Z0-9%-]{2,}\.)(?:wang|club|xyz|vip|top|beer|work|ren|technology|fashion|luxe|yoga|red|love|online|ltd|chat|group|pub|run|city|live|kim|pet|space|site|tech|host|fun|store|pink|ski|design|ink|wiki|video|email|company|plus|center|cool|fund|gold|guru|life|show|team|today|world|zone|social|bio|black|blue|green|lotto|organic|poker|promo|vote|archi|voto|fit|cn|website|press|icu|art|law|shop|band|media|cab|cash|cafe|games|link|fan|net|cc|com|fans|cloud|info|pro|mobi|asia|studio|biz|vin|news|fyi|tax|tv|market|shopping|mba|sale|co|org)(?:\:\d{1,5})?(?![a-zA-Z0-9._=>\(\);!}-])\b/g,
+    
+    // 域名匹配 - 资源文件
+    DOMAIN_RESOURCE: /["'](?:(?:[a-zA-Z0-9]+:)?\/\/)?(?:[a-zA-Z0-9%-]+\.)+(?:wang|club|xyz|vip|top|beer|work|ren|technology|fashion|luxe|yoga|red|love|online|ltd|chat|group|pub|run|city|live|kim|pet|space|site|tech|host|fun|store|pink|ski|design|ink|wiki|video|email|company|plus|center|cool|fund|gold|guru|life|show|team|today|world|zone|social|bio|black|blue|green|lotto|organic|poker|promo|vote|archi|voto|fit|cn|website|press|icu|art|law|shop|band|media|cab|cash|cafe|games|link|fan|net|cc|com|fans|cloud|info|pro|mobi|asia|studio|biz|vin|news|fyi|tax|tv|market|shopping|mba|sale|co|org)(?![a-z])(?:\:\d{1,5})?\S*?["']/g,
+    
+    // 域名过滤规则
+    DOMAIN_FILTER: /\b(?:[a-zA-Z0-9%-]+\.)+[a-z]{2,10}(?:\:\d{1,5})?\b/,
     
     // IP 地址匹配
     IP: /\b(?:\d{1,3}\.){3}\d{1,3}(?::\d{1,5})?\b/g,

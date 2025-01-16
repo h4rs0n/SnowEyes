@@ -36,7 +36,7 @@ const latestResults = {
 };
 
 // 优化扫描函数
-function scanSources(sources) {
+function scanSources(sources, isHtmlContent = false) {
   const seen = new Set();
   let lastUpdateTime = Date.now();
   const UPDATE_INTERVAL = 100; // 每100ms更新一次
@@ -102,7 +102,6 @@ function scanSources(sources) {
       // 处理哈希模式
       for (const [hashType, hashPattern] of Object.entries(SCANNER_CONFIG.PATTERNS.HASH)) {
         try {
-          // 确保正则表达式有全局标志
           const pattern = new RegExp(hashPattern.source, hashPattern.flags.includes('g') ? hashPattern.flags : hashPattern.flags + 'g');
           for (const match of getAllMatches(chunk, pattern)) {
             if (SCANNER_FILTER.hash[hashType.toLowerCase()](match, latestResults)) {
@@ -116,14 +115,25 @@ function scanSources(sources) {
 
       // 处理其他模式
       for (const [key, pattern] of Object.entries(SCANNER_CONFIG.PATTERNS)) {
-        if (key === 'HASH') continue;
+        if (key === 'HASH' || key === 'DOMAIN_FILTER' || key === 'DOMAIN_RESOURCE') continue;
         
         try {
-          // 确保正则表达式有全局标志
           const regex = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
           const filter = SCANNER_FILTER[key.toLowerCase()];
           
-          if (filter) {
+          // 根据内容类型选择域名匹配规则
+          if (key === 'DOMAIN') {
+            const domainPattern = isHtmlContent ? 
+              SCANNER_CONFIG.PATTERNS.DOMAIN : 
+              SCANNER_CONFIG.PATTERNS.DOMAIN_RESOURCE;
+            
+            for (const match of getAllMatches(chunk, domainPattern)) {
+              if (filter(match, latestResults)) {
+                hasNewResults = true;
+              }
+            }
+          } else if (filter) {
+            // 处理其他类型的匹配
             for (const match of getAllMatches(chunk, regex)) {
               if (filter(match, latestResults)) {
                 hasNewResults = true;
@@ -182,7 +192,7 @@ async function initScan() {
     // 立即开始扫描HTML内容
     const htmlContent = document.documentElement.innerHTML;
     if (htmlContent) {
-      scanSources([htmlContent]);
+      scanSources([htmlContent], true); // 标记为HTML内容
     }
 
     // 收集并扫描其他资源
