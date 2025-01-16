@@ -5,15 +5,15 @@ const SCANNER_FILTER = {
     return function(match, resultsSet) {
       // 去除首尾的引号
       match = match.slice(1, -1);
+
+      //如果是css文件则丢弃
+      if (match.split("?")[0].endsWith('.css')) {
+        return true;
+      }
       
       // 检查是否是Vue文件
       if (match.endsWith('.vue')) {
         resultsSet?.vueFiles?.add(match);
-        return true;
-      }
-
-      //如果是css文件则丢弃
-      if (match.endsWith('.css')) {
         return true;
       }
       
@@ -44,7 +44,11 @@ const SCANNER_FILTER = {
       if (shouldFilter) {
         return true;
       }
-
+      // 检查是否是模块路径（以./开头）
+      if (match.startsWith('./')) {
+        resultsSet?.moduleFiles?.add(match);
+        return true;
+      }
       // 添加到API结果集
       resultsSet?.apis?.add(match);
       return true;
@@ -210,7 +214,7 @@ const SCANNER_FILTER = {
         // 获取路径部分
         const path = url.pathname;
       
-        if (path.endsWith('.css')) {
+        if (match.split("?")[0].endsWith('.css')) {
           return true;
         }
         // 检查是否是图片文件

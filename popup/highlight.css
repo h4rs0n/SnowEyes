@@ -362,6 +362,10 @@ body {
   background: #b197fc;  /* 紫色 - API */
 }
 
+.module-list .item::before {
+  background: #63e6be;  /* 薄荷绿 - 模块路径 */
+}
+
 .vue-list .item::before {
   background: #41B883;  /* Vue绿色 - Vue文件 */
 }

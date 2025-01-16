@@ -13,6 +13,7 @@ const SCANNER_CONFIG = {
     'apple.com',
     'mozilla.org',
     'aliyun.com',
+    'feishu.cn',
     'mklab.cn',
     'cnnvd.org.cn'
   ],
@@ -20,40 +21,42 @@ const SCANNER_CONFIG = {
   // API 相关配置
   API: {
     PATTERN: /['"`](?:\/|\.\.\/|\.\/)[^\/\>\< \)\(\}\,\'\"\\](?:[^\^\>\< \)\(\{\}\,\'\"\\])*?['"`]|['"`][a-zA_Z0-9]+(?<!text|application)\/(?:[^\^\>\< \)\(\{\}\,\'\"\\])*?["'`]/g,
-    // 音频图片模式
-    IMAGE_PATTERN: /\.(jpg|jpeg|png|gif|bmp|webp|svg|ico|mp3)(?:\?[^'"]*)?$/i,
+    // 图片文件模式
+    IMAGE_PATTERN: /\.(jpg|jpeg|png|gif|bmp|webp|svg|ico|mp3|mp4|m4a)(?:\?[^'"]*)?$/i,
     // JS文件模式
     JS_PATTERN: /\.(js|jsx|ts|tsx)(?:\?[^'"]*)?$/i,
     // 文档文件模式
-    DOC_PATTERN: /\.(pdf|doc|docx|xls|xlsx|ppt|exe|apk|pptx|txt|md|csv)(?:\?[^'"]*)?$/i,
-    // 需要跳过的第三方JS库
-    SKIP_JS_FILES: [
-      'layui.js',
-      'layui.min.js',
-      'layui.all.js',
-      'layui.all.min.js',
-      'jquery.js',
-      'jquery.min.js',
-      'vue.js',
-      'vue.min.js',
-      'react.js',
-      'react.min.js',
-      'bootstrap.js',
-      'bootstrap.min.js',
-      'chart.js',
-      'chart.min.js',
-      'jquery.cookie.js',
-      'jquery.cookie.min.js',
-      'browser.min.js',
-      'polyfill.min.js',
-      'jqgrid.min.js',
-      'layer.min.js',
-      'wdatepicker.js',
-      'ext-base.js',
-      'ext-all.js',
-      'seajs-text.js',
-      'seajs-style.js',
-      'zh-cn.js'
+    DOC_PATTERN: /\.(pdf|doc|docx|xls|xlsx|ppt|exe|apk|zip|pptx|txt|md|csv)(?:\?[^'"]*)?$/i,
+    // 需要跳过的第三方JS库正则匹配规则
+    SKIP_JS_PATTERNS: [
+      // jQuery相关
+      /jquery(?:[.-]?\d*\.?\d*\.?\d*|-\d+\.\d+\.\d+|\.cookie)?(?:\.min)?\.js$/i,
+      
+      /(?:vue|vue-router|vuex)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      
+      // React相关
+      /(react|react-dom)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      
+      // Bootstrap相关
+      /bootstrap(?:\.bundle)?[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      
+      // UI框架相关
+      /(layui|element-ui|ant-design)[.-]?\d*\.?\d*\.?\d*(?:\.all)?(?:\.min)?\.js$/i,
+      
+      // 图表相关
+      /(echarts|chart|highcharts)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      
+      // 工具库相关
+      /(lodash|moment|axios)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      
+      // 其他常用库
+      /(polyfill|modernizr|underscore)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      
+      // 日期选择器
+      /(datepicker|datetimepicker|wdatepicker)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+    
+      // 语言包
+      /(?:zh|en|zh-cn|zh-tw|ja|ko)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
     ],
     // 需要过滤的内容类型
     FILTERED_CONTENT_TYPES: [
@@ -166,16 +169,36 @@ const SCANNER_CONFIG = {
       'modules/formula',
       'modules/syntax',
       'modules/toolbar',
+      'modules/history',
+      'modules/clipboard',
+      'modules/keyboard',
+
       'themes/bubble',
       'themes/snow',
+
+      'blots/block',
+      'blots/block/embed',
+      'blots/break',
+      'blots/container',
+      'blots/cursor',
+      'blots/embed',
+      'blots/inline',
+      'blots/scroll',
+      'blots/text',
       'ui/icons',
       'ui/picker',
       'ui/icon-picker',
       'ui/color-picker',
       'ui/tooltip',
 
+      'examples/element-ui',
+      'static/js/',
+      'static/css/',
+
       //日期类型
       'yyyy/mm/dd',
+      'dd/mm/yyyy',
+      'mm/dd/yy',
       'm/d/Y',
       'm/d/y',
 

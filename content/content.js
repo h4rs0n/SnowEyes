@@ -16,6 +16,7 @@ const waitForDependencies = () => {
 const latestResults = {
   domains: new Set(),     // 域名结果集
   apis: new Set(),        // API 结果集
+  moduleFiles: new Set(), // 模块路径结果集
   imageFiles: new Set(),  // 音频图片结果集
   jsFiles: new Set(),     // JS文件结果集
   docFiles: new Set(),    // 文档文件结果集
@@ -197,7 +198,7 @@ async function collectAndScanResources() {
     // 检查是否是第三方库
     const isThirdPartyLib = (url) => {
       const fileName = url.split('/').pop()?.split('?')[0]?.toLowerCase() || '';
-      return SCANNER_CONFIG.API.SKIP_JS_FILES.includes(fileName);
+      return SCANNER_CONFIG.API.SKIP_JS_PATTERNS.some(pattern => pattern.test(fileName));
     };
 
     // 1. 收集并扫描关键资源的URL
