@@ -28,11 +28,6 @@ const latestResults = {
   jsFiles: new Set(),     // JS文件结果集
   vueFiles: new Set(),    // Vue 文件结果集
   urls: new Set(),        // URL 结果集
-  hashes: {              // 哈希结果集
-    md5: new Set(),
-    sha1: new Set(),
-    sha256: new Set()
-  }
 };
 
 // 优化扫描函数
@@ -99,23 +94,9 @@ function scanSources(sources, isHtmlContent = false) {
 
     // 对大文本进行分块处理
     for (const chunk of splitIntoChunks(source)) {
-      // 处理哈希模式
-      for (const [hashType, hashPattern] of Object.entries(SCANNER_CONFIG.PATTERNS.HASH)) {
-        try {
-          const pattern = new RegExp(hashPattern.source, hashPattern.flags.includes('g') ? hashPattern.flags : hashPattern.flags + 'g');
-          for (const match of getAllMatches(chunk, pattern)) {
-            if (SCANNER_FILTER.hash[hashType.toLowerCase()](match, latestResults)) {
-              hasNewResults = true;
-            }
-          }
-        } catch (e) {
-          console.error('Error processing hash pattern:', hashType, e);
-        }
-      }
-
       // 处理其他模式
       for (const [key, pattern] of Object.entries(SCANNER_CONFIG.PATTERNS)) {
-        if (key === 'HASH' || key === 'DOMAIN_FILTER' || key === 'DOMAIN_RESOURCE') continue;
+        if (key === 'DOMAIN_FILTER' || key === 'DOMAIN_RESOURCE') continue;
         
         try {
           const regex = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');

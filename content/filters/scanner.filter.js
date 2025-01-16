@@ -223,21 +223,6 @@ const SCANNER_FILTER = {
   aws_key: (match, resultsSet) => {
     resultsSet?.awsKeys?.add(match);
     return true;
-  },
-
-  hash: {
-    md5: (match, resultsSet) => {
-      resultsSet?.hashes?.md5?.add(match);
-      return true;
-    },
-    sha1: (match, resultsSet) => {
-      resultsSet?.hashes?.sha1?.add(match);
-      return true;
-    },
-    sha256: (match, resultsSet) => {
-      resultsSet?.hashes?.sha256?.add(match);
-      return true;
-    }
   }
 };
 
