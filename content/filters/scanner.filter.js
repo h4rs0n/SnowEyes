@@ -49,8 +49,15 @@ const SCANNER_FILTER = {
         resultsSet?.moduleFiles?.add(match);
         return true;
       }
-      // 添加到API结果集
-      resultsSet?.apis?.add(match);
+
+      // 区分绝对路径和相对路径
+      if (match.startsWith('/')) {
+        // 绝对路径
+        resultsSet?.absoluteApis?.add(match);
+      } else {
+        // 相对路径
+        resultsSet?.apis?.add(match);
+      }
       return true;
     };
   })(),
@@ -180,7 +187,7 @@ const SCANNER_FILTER = {
         const path = url.pathname;
       
         //如果是css字体文件则丢弃
-        if (SCANNER_CONFIG.API.FONT_PATTERN.test(match)) {
+        if (SCANNER_CONFIG.API.FONT_PATTERN.test(path)) {
           return true;
         }
         // 检查是否是图片文件
@@ -203,7 +210,12 @@ const SCANNER_FILTER = {
         
         // 如果不是特定类型文件，则当作API处理
         if (!path.match(/\.[a-zA-Z0-9]+$/)) {
-          resultsSet?.apis?.add(path);
+          // 区分绝对路径和相对路径
+          if (path.startsWith('/')) {
+            resultsSet?.absoluteApis?.add(path);
+          } else {
+            resultsSet?.apis?.add(path);
+          }
           return true;
         }
       }

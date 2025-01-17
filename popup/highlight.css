@@ -359,7 +359,11 @@ body {
 }
 
 .api-list .item::before {
-  background: #b197fc;  /* 紫色 - API */
+  background: #b197fc;  /* 紫色 - 相对路径API */
+}
+
+.absolute-api-list .item::before {
+  background: #9775fa;  /* 深紫色 - 绝对路径API */
 }
 
 .module-list .item::before {

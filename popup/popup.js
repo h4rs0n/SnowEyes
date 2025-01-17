@@ -54,22 +54,20 @@ function displayResults(results) {
   // 定义要显示的数据部分
   const sections = [
     { id: 'domain-list', data: results.domains, title: '域名' },
-    { id: 'api-list', data: results.apis, title: 'API接口' },
+    { id: 'absolute-api-list', data: results.absoluteApis, title: 'API接口(绝对路径)' },
+    { id: 'api-list', data: results.apis, title: 'API接口(相对路径)' },
     { id: 'module-list', data: results.moduleFiles, title: '模块路径' },
     { id: 'doc-list', data: results.docFiles, title: '文档文件' },
     { id: 'ip-list', data: results.ips, title: 'IP地址' },
     { id: 'phone-list', data: results.phones, title: '手机号码' },
     { id: 'email-list', data: results.emails, title: '邮箱' },
     { id: 'idcard-list', data: results.idcards, title: '身份证号' },
+    { id: 'url-list', data: results.urls, title: 'URL' },
     { id: 'jwt-list', data: results.jwts, title: 'JWT Token' },
     { id: 'aws-list', data: results.awsKeys, title: 'AWS Key' },
-    { id: 'image-list', data: results.imageFiles, title: '音频图片' },
-    { id: 'js-list', data: results.jsFiles, title: 'JS文件' },
     { id: 'vue-list', data: results.vueFiles, title: 'Vue文件' },
-    { id: 'url-list', data: results.urls, title: 'URL' },
-    { id: 'hash-md5-list', data: results.hashes?.md5, title: 'MD5哈希' },
-    { id: 'hash-sha1-list', data: results.hashes?.sha1, title: 'SHA1哈希' },
-    { id: 'hash-sha256-list', data: results.hashes?.sha256, title: 'SHA256哈希' }
+    { id: 'js-list', data: results.jsFiles, title: 'JS文件' },
+    { id: 'image-list', data: results.imageFiles, title: '图片资源' }
   ];
 
   // 获取容器

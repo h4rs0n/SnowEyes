@@ -15,7 +15,8 @@ const waitForDependencies = () => {
 // 存储扫描结果的集合
 const latestResults = {
   domains: new Set(),     // 域名结果集
-  apis: new Set(),        // API 结果集
+  absoluteApis: new Set(),// API 结果集（绝对路径）
+  apis: new Set(),        // API 结果集（相对路径）
   moduleFiles: new Set(), // 模块路径结果集
   docFiles: new Set(),    // 文档文件结果集
   ips: new Set(),         // IP 地址结果集
