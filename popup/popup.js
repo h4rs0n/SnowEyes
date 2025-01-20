@@ -59,6 +59,7 @@ function displayResults(results) {
     { id: 'module-list', data: results.moduleFiles, title: '模块路径' },
     { id: 'doc-list', data: results.docFiles, title: '文档文件' },
     { id: 'ip-list', data: results.ips, title: 'IP地址' },
+    { id: 'company-list', data: results.companies, title: '公司机构' },
     { id: 'phone-list', data: results.phones, title: '手机号码' },
     { id: 'email-list', data: results.emails, title: '邮箱' },
     { id: 'idcard-list', data: results.idcards, title: '身份证号' },
@@ -67,6 +68,7 @@ function displayResults(results) {
     { id: 'image-list', data: results.imageFiles, title: '图片资源' },
     { id: 'vue-list', data: results.vueFiles, title: 'Vue文件' },
     { id: 'js-list', data: results.jsFiles, title: 'JS文件' },
+    { id: 'github-list', data: results.githubUrls, title: 'GitHub链接' },
     { id: 'url-list', data: results.urls, title: 'URL' }
   ];
 

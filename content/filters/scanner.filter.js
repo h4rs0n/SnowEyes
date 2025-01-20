@@ -151,6 +151,12 @@ const SCANNER_FILTER = {
 
   url: (match, resultsSet) => {
     try {
+      // 检查是否是GitHub URL
+      if (match.toLowerCase().includes('github.com/')) {
+        resultsSet?.githubUrls?.add(match);
+        return true;
+      }
+
       resultsSet?.urls?.add(match);
       // 解析URL
       const url = new URL(match);
@@ -197,7 +203,6 @@ const SCANNER_FILTER = {
       console.error('Error processing URL:', e);
     }
     
-    // 如果不是当前域名或解析失败，将完整URL添加到URL结果集
     return true;
   },
 
@@ -208,6 +213,11 @@ const SCANNER_FILTER = {
 
   aws_key: (match, resultsSet) => {
     resultsSet?.awsKeys?.add(match);
+    return true;
+  },
+
+  company: (match, resultsSet) => {
+    resultsSet?.companies?.add(match);
     return true;
   }
 };

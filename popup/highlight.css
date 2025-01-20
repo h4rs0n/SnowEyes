@@ -406,6 +406,10 @@ body {
   background: #4dabf7;  /* 浅蓝 - URL */
 }
 
+.github-list .item::before {
+  background: #24292e;  /* GitHub黑 - GitHub链接 */
+}
+
 .jwt-list .item::before {
   background: #ff922b;  /* 橙色 - JWT Token */
 }
@@ -424,6 +428,10 @@ body {
 
 .hash-sha256-list .item::before {
   background: #82c91e;  /* 黄绿色 - SHA256哈希 */
+}
+
+.company-list .item::before {
+  background: #845ef7;  /* 紫色 - 机构公司 */
 }
 
 /* 自定义滚动条样式 */

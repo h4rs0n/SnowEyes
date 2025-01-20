@@ -29,6 +29,8 @@ const latestResults = {
   jsFiles: new Set(),     // JS文件结果集
   vueFiles: new Set(),    // Vue 文件结果集
   urls: new Set(),        // URL 结果集
+  githubUrls: new Set(),  // GitHub URL 结果集
+  companies: new Set(),   // 公司机构结果集
 };
 
 // 优化扫描函数
