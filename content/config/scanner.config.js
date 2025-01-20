@@ -28,13 +28,13 @@ const SCANNER_CONFIG = {
     // JS文件模式
     JS_PATTERN: /\.(js|jsx|ts|tsx|less)(?:\?[^'"]*)?$/i,
     // 文档文件模式
-    DOC_PATTERN: /\.(pdf|doc|docx|xls|xlsx|ppt|exe|apk|zip|pptx|txt|rar|md|csv)(?:\?[^'"]*)?$/i,
+    DOC_PATTERN: /\.(pdf|doc|docx|xls|xlsx|ppt|exe|apk|zip|7z|dll|dmg|pptx|txt|rar|md|swf|csv)(?:\?[^'"]*)?$/i,
     // css字体模式
     FONT_PATTERN: /\.(ttf|eot|woff|woff2|otf|css)(?:\?[^'"]*)?$/i,
     // 需要跳过的第三方JS库正则匹配规则
     SKIP_JS_PATTERNS: [
       // jQuery相关
-      /jquery([.-]?\d*\.?\d*\.?\d*)?(?:[\.-]cookie)?(?:[\.-]validate)?(?:[\.-]artDialog)?(?:[\.-]blockui)?(?:[\.-]min)?\.js$/i,
+      /jquery([.-]?\d*\.?\d*\.?\d*)?(?:[\.-]cookie)?(?:[\.-]fancybox)?(?:[\.-]validate)?(?:[\.-]artDialog)?(?:[\.-]blockui)?(?:[\.-]pack)?(?:[\.-]min)?\.js$/i,
       
       /(?:vue|vue-router|vuex)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       
@@ -45,7 +45,7 @@ const SCANNER_CONFIG = {
       /bootstrap(?:\.bundle)?[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       
       // UI框架相关
-      /(layui|element-ui|ant-design)[.-]?\d*\.?\d*\.?\d*(?:\.all)?(?:\.min)?\.js$/i,
+      /(layui|layer|liger|h-ui|element-ui|ant-design)[.-]?\d*\.?\d*\.?\d*(?:\.all)?(?:\.admin)?(?:\.min)?\.js$/i,
       
       // 图表相关
       /(echarts|chart|highcharts)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
@@ -54,7 +54,7 @@ const SCANNER_CONFIG = {
       /(lodash|moment|axios)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       
       // 其他常用库
-      /(polyfill|modernizr|less|lhgdialog|seajs-style|seajs-text|tinymce|jsencrypt|backbone|select2|underscore|ext-all|ext-unigui-min|exporter|v5_float_4)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      /(polyfill|modernizr|less|isotope.pkgd|lhgdialog|kendo.web|seajs-style|seajs-text|tinymce|jsencrypt|backbone|select2|underscore|ext-all|ext-unigui-min|exporter|v5_float_4)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       
       // 日期选择器
       /(datepicker|datetimepicker|wdatepicker|laydate)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
@@ -94,6 +94,9 @@ const SCANNER_CONFIG = {
       //音频类型
       'audio/mpeg',
       'audio/mp3',
+      'audio/aac',
+      'audio/ogg',
+      'audio/x-pn-realaudio-plugin',
       'video/mp4',
       'video/ogg',
       'video/x-msvideo',
@@ -101,11 +104,11 @@ const SCANNER_CONFIG = {
       'video/x-ms-asf',
       'video/quicktime',
 
-      'audio/aac',
-      'audio/ogg',
-
+      'js/',
       'js/lib',
       'js/plugin',
+
+      'partial/ajax',
 
       'application/msword',
       'application/vnd.ms-word.document.macroenabled.12',
@@ -207,12 +210,16 @@ const SCANNER_CONFIG = {
 
       'chrome/',
       'firefox/',
+      'edge/',
+      'image/',
       'node_modules/',
 
       'examples/element-ui',
       'static/js/',
       'static/css/',
       'stylesheet/less',
+
+      'xx/xx',
 
       //日期类型
       'yyyy/mm/dd',
@@ -249,6 +256,11 @@ const SCANNER_CONFIG = {
       'cnnvd.org.cn',
       'qq.com',
       'baidu.com'
+    ],
+    // 域名黑名单
+    BLACKLIST: [
+      'el.datepicker.today',
+      'obj.style.top'
     ]
   },
 
@@ -287,10 +299,10 @@ const SCANNER_CONFIG = {
     PHONE: /(?<!\d|\.)(?:13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9]|198|199)\d{8}(?!\d)/g,
     EMAIL: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+(?!\.png)\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})?/g,
     IDCARD: /(?:\d{8}(?:0\d|10|11|12)(?:[0-2]\d|30|31)\d{3}$)|(?:\d{6}(?:18|19|20)\d{2}(?:0[1-9]|10|11|12)(?:[0-2]\d|30|31)\d{3}(?:\d|X|x))(?!\d)/g,
-    URL: /(?:https?|wss?|ftp):\/\/(?:(?:[\w-]+\.)+[a-z]{2,}|(?:\d{1,3}\.){3}\d{1,3})(?::\d{2,5})?(?:\/[^\s\>\}'"]*)?/gi,
+    URL: /(?:https?|wss?|ftp):\/\/(?:(?:[\w-]+\.)+[a-z]{2,}|(?:\d{1,3}\.){3}\d{1,3})(?::\d{2,5})?(?:\/[^\s\>\)\}\<'"]*)?/gi,
     JWT: /(?:ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{10,}|ey[A-Za-z0-9_\/+-]{10,}\.[A-Za-z0-9._\/+-]{10,})/g,
     AWS_KEY: /AKIA[0-9A-Z]{16}/g,
-    COMPANY: /[\u4e00-\u9fa5]+(?:公司|集团|云|厅)/g
+    COMPANY: /(?:(?!.*(?:银行))[\u4e00-\u9fa5]{4,15}公司|[\u4e00-\u9fa5]{2,15}(?:软件|科技|集团))(?![\u4e00-\u9fa5])/g
   }
 };
 
