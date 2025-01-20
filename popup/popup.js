@@ -62,12 +62,12 @@ function displayResults(results) {
     { id: 'phone-list', data: results.phones, title: '手机号码' },
     { id: 'email-list', data: results.emails, title: '邮箱' },
     { id: 'idcard-list', data: results.idcards, title: '身份证号' },
-    { id: 'url-list', data: results.urls, title: 'URL' },
     { id: 'jwt-list', data: results.jwts, title: 'JWT Token' },
     { id: 'aws-list', data: results.awsKeys, title: 'AWS Key' },
+    { id: 'image-list', data: results.imageFiles, title: '图片资源' },
     { id: 'vue-list', data: results.vueFiles, title: 'Vue文件' },
     { id: 'js-list', data: results.jsFiles, title: 'JS文件' },
-    { id: 'image-list', data: results.imageFiles, title: '图片资源' }
+    { id: 'url-list', data: results.urls, title: 'URL' }
   ];
 
   // 获取容器

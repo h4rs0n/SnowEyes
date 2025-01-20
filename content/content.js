@@ -80,8 +80,8 @@ function scanSources(sources, isHtmlContent = false) {
     
     let match;
     try {
-      while ((match = pattern.exec(text)) !== null) {
-        yield match[0];
+      for (const match of text.matchAll(pattern)) {
+        yield match[0]; // 返回匹配的 IP 地址
       }
     } catch (e) {
       console.error('Error in pattern matching:', e);
@@ -97,19 +97,29 @@ function scanSources(sources, isHtmlContent = false) {
     for (const chunk of splitIntoChunks(source)) {
       // 处理其他模式
       for (const [key, pattern] of Object.entries(SCANNER_CONFIG.PATTERNS)) {
-        if (key === 'DOMAIN_FILTER' || key === 'DOMAIN_RESOURCE') continue;
+        if (key === 'DOMAIN_FILTER' || key === 'DOMAIN_RESOURCE' || key === 'IP_RESOURCE') continue;
         
         try {
           const regex = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
           const filter = SCANNER_FILTER[key.toLowerCase()];
           
-          // 根据内容类型选择域名匹配规则
+          // 根据内容类型选择匹配规则
           if (key === 'DOMAIN') {
             const domainPattern = isHtmlContent ? 
               SCANNER_CONFIG.PATTERNS.DOMAIN : 
               SCANNER_CONFIG.PATTERNS.DOMAIN_RESOURCE;
             
             for (const match of getAllMatches(chunk, domainPattern)) {
+              if (filter(match, latestResults)) {
+                hasNewResults = true;
+              }
+            }
+          } else if (key === 'IP') {
+            const ipPattern = isHtmlContent ? 
+              SCANNER_CONFIG.PATTERNS.IP : 
+              SCANNER_CONFIG.PATTERNS.IP_RESOURCE;
+            
+            for (const match of getAllMatches(chunk, ipPattern)) {
               if (filter(match, latestResults)) {
                 hasNewResults = true;
               }

@@ -71,10 +71,11 @@ const SCANNER_FILTER = {
       // 清理和标准化域名
       clean(domain) {
         try {
-          // 1. 转小写
+          // 1. 处理引号
+          domain = domain.replace(/^['"]|['"]$/g, '');
+          // 2. 转小写
           domain = domain.toLowerCase();
-          
-          // 2. URL解码（使用缓存）
+          // 3. URL解码（使用缓存）
           if (decodeCache.has(domain)) {
             domain = decodeCache.get(domain);
           } else {
@@ -86,28 +87,17 @@ const SCANNER_FILTER = {
               decodeCache.set(domain, domain);
             }
           }
-
-          // 3. 处理URL协议和引号
-          domain = domain.replace(/^["']/, '').replace(/["']$/, '');
-          if (domain.startsWith('http://')) {
-            domain = domain.slice(7);
-          } else if (domain.startsWith('https://')) {
-            domain = domain.slice(8);
-          } else if (domain.startsWith('//')) {
-            domain = domain.slice(2);
-          }
-          
           // 4. 使用过滤规则提取域名
           const filterMatch = domain.match(SCANNER_CONFIG.PATTERNS.DOMAIN_FILTER);
           if (filterMatch) {
             domain = filterMatch[0];
           } else {
-            return '';
+            return false;
           }
           
           return domain;
         } catch {
-          return '';
+          return false;
         }
       }
     };
@@ -116,7 +106,6 @@ const SCANNER_FILTER = {
       // 清理和标准化域名
       match = validate.clean(match);
       if (!match) return false;
-      
       // 添加到结果集
       resultsSet?.domains?.add(match);
       return true;
@@ -126,35 +115,20 @@ const SCANNER_FILTER = {
   // IP 过滤器
   ip: (function() {
     const validate = {
-      format(ip) {
-        const ipOnly = ip.split(':')[0];
-        const parts = ipOnly.split('.');
-        if (parts.length !== 4) return false;
-        
-        return parts.every(part => {
-          const num = parseInt(part, 10);
-          return !isNaN(num) && num >= 0 && num <= 255;
-        });
-      },
-
-      port(ip) {
-        if (!ip.includes(':')) return true;
-        const port = parseInt(ip.split(':')[1], 10);
-        return !isNaN(port) && port > 0 && port <= 65535;
-      },
-
       notSpecial(ip) {
         return !SCANNER_CONFIG.IP.SPECIAL_RANGES.some(range => range.test(ip));
       }
     };
 
     return function(match, resultsSet) {
-      if (!validate.format(match)) return false;
-      if (!validate.port(match)) return false;
-      if (!validate.notSpecial(match)) return false;
-
-      // 直接添加到IP结果集中，不区分内外网
-      resultsSet?.ips?.add(match);
+      // 提取纯IP地址（带端口）
+      match = match.replace(/^[`'"]|[`'"]$/g, '');
+      const ipMatch = match.match(SCANNER_CONFIG.PATTERNS.IP);
+      if (ipMatch) {
+        const extractedIp = ipMatch[0];
+        if (!validate.notSpecial(extractedIp)) return false;
+        resultsSet?.ips?.add(extractedIp);
+      }
       return true;
     };
   })(),
