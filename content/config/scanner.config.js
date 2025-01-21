@@ -1,25 +1,5 @@
 // 统一的扫描器配置
 const SCANNER_CONFIG = {
-  // 白名单配置
-  WHITELIST: [
-    'github.com',
-    '360.net',
-    'bing.com',
-    'csdn.net',
-    'bilibili.com',
-    'google.com',
-    'youtube.com',
-    'microsoft.com',
-    'apple.com',
-    'mozilla.org',
-    'aliyun.com',
-    'feishu.cn',
-    'mklab.cn',
-    'cnnvd.org.cn',
-    'qq.com',
-    'baidu.com'
-  ],
-
   // API 相关配置
   API: {
     PATTERN: /['"`](?:\/|\.\.\/|\.\/)[^\/\>\< \)\(\}\,\'\"\\](?:[^\^\>\< \)\(\{\}\,\'\"\\])*?['"`]|['"`][a-zA_Z0-9]+(?<!text|application)\/(?:[^\^\>\< \)\(\{\}\,\'\"\\])*?["'`]/g,

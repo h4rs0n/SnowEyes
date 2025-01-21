@@ -1,44 +1,24 @@
-// 域名验证规则
-const DOMAIN_RULES = {
-  // 常见的误报关键词
-  invalidKeywords: [
-    // JavaScript 关键字和内置对象
-    'prototype', 'constructor', 'function', 'object', 'array', 'string', 
-    'number', 'boolean', 'error', 'date', 'regexp', 'promise', 'proxy',
-    'class', 'super', 'this', 'window', 'document', 'global', 'process',
-    'require', 'module', 'exports', 'define', 'import', 'export',
-    'default', 'return', 'yield', 'async', 'await', 'static', 'get', 'set',
-    
-    // DOM 相关
-    'event', 'element', 'node', 'style', 'color', 'font', 'text', 'size',
-    'width', 'height', 'scroll', 'click', 'mouse', 'key', 'touch', 'focus',
-    'blur', 'load', 'unload', 'ready', 'change', 'submit', 'reset', 'select',
-    
-    // 常见属性和方法名
-    'data', 'type', 'name', 'value', 'index', 'count', 'length', 'size',
-    'key', 'keys', 'item', 'items', 'list', 'array', 'map', 'set',
-    'detail', 'time', 'date', 'path', 'file', 'files', 'image', 'audio',
-    'video', 'media', 'source', 'target', 'parent', 'child', 'root'
-  ]
-};
-
 // 更新扩展图标的badge
 function updateBadge(results) {
   // 计算有内容的类别数量
   const categories = [
     results.domains,
+    results.absoluteApis,
     results.apis,
-    results.staticFiles,
+    results.moduleFiles,
+    results.docFiles,
     results.ips,
     results.phones,
     results.emails,
     results.idcards,
-    results.urls,
     results.jwts,
     results.awsKeys,
-    results.hashes?.md5,
-    results.hashes?.sha1,
-    results.hashes?.sha256
+    results.imageFiles,
+    results.jsFiles,
+    results.vueFiles,
+    results.urls,
+    results.githubUrls,
+    results.companies,
   ];
 
   const nonEmptyCategories = categories.filter(category => 

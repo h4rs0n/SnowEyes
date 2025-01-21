@@ -45,14 +45,7 @@ function scanSources(sources, isHtmlContent = false) {
     const results = {};
     // 处理普通结果
     for (const key in latestResults) {
-      if (key !== 'hashes') {
         results[key] = Array.from(latestResults[key]);
-      }
-    }
-    // 单独处理哈希结果
-    results.hashes = {};
-    for (const hashType in latestResults.hashes) {
-      results.hashes[hashType] = Array.from(latestResults.hashes[hashType]);
     }
     
     // 发送扫描结果更新
@@ -153,7 +146,7 @@ function scanSources(sources, isHtmlContent = false) {
 
 // 检查域名是否在白名单中
 function isInWhitelist(hostname) {
-  return SCANNER_CONFIG.WHITELIST.some(domain => {
+  return SCANNER_CONFIG.DOMAIN.WHITELIST.some(domain => {
     // 完全匹配或者是子域名
     return hostname === domain || hostname.endsWith('.' + domain);
   });
@@ -174,13 +167,7 @@ async function initScan() {
     
     // 清空之前的结果
     Object.keys(latestResults).forEach(key => {
-      if (key === 'hashes') {
-        Object.keys(latestResults.hashes).forEach(hashType => {
-          latestResults.hashes[hashType].clear();
-        });
-      } else {
         latestResults[key].clear();
-      }
     });
 
     // 立即开始扫描HTML内容
@@ -361,7 +348,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // 只返回白名单配置
     sendResponse({
       config: {
-        WHITELIST: SCANNER_CONFIG.WHITELIST
+        WHITELIST: SCANNER_CONFIG.DOMAIN.WHITELIST
       }
     });
   }
