@@ -57,6 +57,7 @@ const SCANNER_FILTER = {
         resultsSet?.absoluteApis?.add(match);
       } else {
         // 相对路径
+        if (/^(audio|blots|core|ace|icon|css|formats|image|js|modules|text|themes|ui|video|static|attributors|application)/.test(match)) return false;
         if(match.length<=4) return false;
         resultsSet?.apis?.add(match);
       }
@@ -183,7 +184,7 @@ const SCANNER_FILTER = {
       
         //如果是css字体文件则丢弃
         if (SCANNER_CONFIG.API.FONT_PATTERN.test(path)) {
-          return true;
+          return false;
         }
         // 检查是否是图片文件
         if (SCANNER_CONFIG.API.IMAGE_PATTERN.test(path)) {
@@ -239,9 +240,12 @@ const SCANNER_FILTER = {
   credentials: (match, resultsSet) => {
     // 检查是否是空值
     const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
-    if (!valueMatch[1].replace(/['"]/g,'').length) {
+    var key = valueMatch[0].replace(/['"]/g,'').toLowerCase();
+    var value = valueMatch[1].replace(/['"]/g,'').toLowerCase();
+    if (!value.length||key==value) {
       return false; 
     }
+    if (/^coord/.test(key)||/^\//.test(value)) return false;
     
     resultsSet?.credentials?.add(match);
     return true;
@@ -250,9 +254,15 @@ const SCANNER_FILTER = {
   cookie: (match, resultsSet) => {
     // 检查是否是空值
     const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
-    if (valueMatch[1].replace(/['"]/g,'').length<4||valueMatch[1]=="token") {
+    if (valueMatch[1].replace(/['"]/g,'').length<4) {
       return false;
     }
+    var key = valueMatch[0].replace(/['"]/g,'').toLowerCase();
+    var value = valueMatch[1].replace(/['"]/g,'').toLowerCase();
+    if (!value.length||key==value) {
+      return false; 
+    }
+    if (/^func|variable|newline|null|error|object|brac|beare|str|self|void|num|atom|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|pare|ident|reg|invalid/i.test(value)) return false;
     resultsSet?.cookies?.add(match);
     return true;
   }
