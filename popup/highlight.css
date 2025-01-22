@@ -422,6 +422,14 @@ body {
   background: #845ef7;  /* 紫色 - 机构公司 */
 }
 
+.credentials-list .item::before {
+  background: #e64980;  /* 粉红色 - 用户名密码 */
+}
+
+.cookie-list .item::before {
+  background: #fd7e14;  /* 橙色 - Cookie */
+}
+
 /* 自定义滚动条样式 */
 ::-webkit-scrollbar {
   width: 6px;

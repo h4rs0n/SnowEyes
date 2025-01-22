@@ -58,6 +58,8 @@ function displayResults(results) {
     { id: 'api-list', data: results.apis, title: 'API接口(相对路径)' },
     { id: 'module-list', data: results.moduleFiles, title: '模块路径' },
     { id: 'doc-list', data: results.docFiles, title: '文档文件' },
+    { id: 'credentials-list', data: results.credentials, title: '用户名密码' },
+    { id: 'cookie-list', data: results.cookies, title: 'Cookie' },
     { id: 'ip-list', data: results.ips, title: 'IP地址' },
     { id: 'company-list', data: results.companies, title: '公司机构' },
     { id: 'phone-list', data: results.phones, title: '手机号码' },
@@ -69,7 +71,7 @@ function displayResults(results) {
     { id: 'vue-list', data: results.vueFiles, title: 'Vue文件' },
     { id: 'js-list', data: results.jsFiles, title: 'JS文件' },
     { id: 'github-list', data: results.githubUrls, title: 'GitHub链接' },
-    { id: 'url-list', data: results.urls, title: 'URL' }
+    { id: 'url-list', data: results.urls, title: 'URL' },
   ];
 
   // 获取容器

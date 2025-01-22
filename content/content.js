@@ -31,6 +31,8 @@ const latestResults = {
   urls: new Set(),        // URL 结果集
   githubUrls: new Set(),  // GitHub URL 结果集
   companies: new Set(),   // 公司机构结果集
+  credentials: new Set(),  // 用户名密码结果集
+  cookies: new Set(),      // Cookie结果集
 };
 
 // 优化扫描函数

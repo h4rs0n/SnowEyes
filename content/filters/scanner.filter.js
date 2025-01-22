@@ -8,7 +8,7 @@ const SCANNER_FILTER = {
 
       //如果是css字体文件则丢弃
       if (SCANNER_CONFIG.API.FONT_PATTERN.test(match)) {
-        return true;
+        return false;
       }
       
       // 检查是否是Vue文件
@@ -37,12 +37,12 @@ const SCANNER_FILTER = {
       // 检查是否包含被过滤的内容类型
       const lcMatch = match.toLowerCase();
       const shouldFilter = SCANNER_CONFIG.API.FILTERED_CONTENT_TYPES.some(type => 
-        lcMatch.includes(type.toLowerCase())
+        lcMatch==type.toLowerCase()
       );
 
       // 如果是被过滤的内容类型，直接跳过
       if (shouldFilter) {
-        return true;
+        return false;
       }
       // 检查是否是模块路径（以./开头）
       if (match.startsWith('./')) {
@@ -53,9 +53,11 @@ const SCANNER_FILTER = {
       // 区分绝对路径和相对路径
       if (match.startsWith('/')) {
         // 绝对路径
+        if(match.length<=4&&/[A-Z\.\/\#\+\?23]/.test(match.slice(1))) return false;
         resultsSet?.absoluteApis?.add(match);
       } else {
         // 相对路径
+        if(match.length<=4) return false;
         resultsSet?.apis?.add(match);
       }
       return true;
@@ -89,7 +91,7 @@ const SCANNER_FILTER = {
           }
           // 4. 使用过滤规则提取域名
           const filterMatch = domain.match(SCANNER_CONFIG.PATTERNS.DOMAIN_FILTER);
-          if (filterMatch) {
+          if (filterMatch && filterMatch[0].split('.')[0]!="el") {
             domain = filterMatch[0];
           } else {
             return false;
@@ -99,6 +101,13 @@ const SCANNER_FILTER = {
         } catch {
           return false;
         }
+      },
+
+      // 检查是否在黑名单中
+      notInBlacklist(domain) {
+        return !SCANNER_CONFIG.DOMAIN.BLACKLIST.some(blacklisted => 
+          domain.includes(blacklisted)
+        );
       }
     };
 
@@ -106,6 +115,12 @@ const SCANNER_FILTER = {
       // 清理和标准化域名
       match = validate.clean(match);
       if (!match) return false;
+
+      // 检查是否在黑名单中
+      if (!validate.notInBlacklist(match)) {
+        return false;
+      }
+
       // 添加到结果集
       resultsSet?.domains?.add(match);
       return true;
@@ -218,6 +233,27 @@ const SCANNER_FILTER = {
 
   company: (match, resultsSet) => {
     resultsSet?.companies?.add(match);
+    return true;
+  },
+
+  credentials: (match, resultsSet) => {
+    // 检查是否是空值
+    const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
+    if (!valueMatch[1].replace(/['"]/g,'').length) {
+      return false; 
+    }
+    
+    resultsSet?.credentials?.add(match);
+    return true;
+  },
+
+  cookie: (match, resultsSet) => {
+    // 检查是否是空值
+    const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
+    if (valueMatch[1].replace(/['"]/g,'').length<4||valueMatch[1]=="token") {
+      return false;
+    }
+    resultsSet?.cookies?.add(match);
     return true;
   }
 };

@@ -14,7 +14,7 @@ const SCANNER_CONFIG = {
     // 需要跳过的第三方JS库正则匹配规则
     SKIP_JS_PATTERNS: [
       // jQuery相关
-      /jquery([.-]?\d*\.?\d*\.?\d*)?(?:[\.-]cookie)?(?:[\.-]fancybox)?(?:[\.-]validate)?(?:[\.-]artDialog)?(?:[\.-]blockui)?(?:[\.-]pack)?(?:[\.-]min)?\.js$/i,
+      /jquery([.-]?\d*\.?\d*\.?\d*)?(?:[\.-]cookie)?(?:[\.-]fancybox)?(?:[\.-]validate)?(?:[\.-]artDialog)?(?:[\.-]blockui)?(?:[\.-]pack)?(?:[\.-]base64)?(?:[\.-]md5)?(?:[\.-]min)?\.js$/i,
       
       /(?:vue|vue-router|vuex)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       
@@ -25,16 +25,16 @@ const SCANNER_CONFIG = {
       /bootstrap(?:\.bundle)?[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       
       // UI框架相关
-      /(layui|layer|liger|h-ui|element-ui|ant-design)[.-]?\d*\.?\d*\.?\d*(?:\.all)?(?:\.admin)?(?:\.min)?\.js$/i,
+      /(layui|layer|liger|h-ui|element-ui|ueditor|kindeditor|ant-design)[.-]?\d*\.?\d*\.?\d*(?:[\.-]all)?(?:\.admin)?(?:\.config)?(?:[\.-]min)?\.js$/i,
       
       // 图表相关
       /(echarts|chart|highcharts)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       
       // 工具库相关
-      /(lodash|moment|axios)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      /(lodash|moment|tableexport|axios|plupload|pqgrid)[.-]?\d*\.?\d*\.?\d*(?:\.full)?(?:\.min)?\.js$/i,
       
       // 其他常用库
-      /(polyfill|modernizr|less|isotope.pkgd|lhgdialog|kendo.web|seajs-style|seajs-text|tinymce|jsencrypt|backbone|select2|underscore|ext-all|ext-unigui-min|exporter|v5_float_4)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      /(polyfill|modernizr|device|less|isotope.pkgd|lhgdialog|kendo.web|seajs-style|seajs-text|tinymce|jsencrypt|backbone|select2|underscore|ext-all|ext-unigui-min|exporter|v5_float_4)[.-]?\d*\.?\d*\.?\d*(?:[\.-]dev)?(?:[\.-]min)?\.js$/i,
       
       // 日期选择器
       /(datepicker|datetimepicker|wdatepicker|laydate)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
@@ -44,52 +44,6 @@ const SCANNER_CONFIG = {
     ],
     // 需要过滤的内容类型
     FILTERED_CONTENT_TYPES: [
-      // 图片类型
-      'image/jpeg',
-      'image/gif',
-      'image/bmp',
-      'image/png',
-      'image/x-png',
-      'image/webp',
-      'image/svg+xml',
-      'image/x-emf',
-      'image/x-wmf',
-      'image/x-icon',
-      'image/tiff',
-      'image/heic',
-
-      //文本类型
-      'text/yaml',
-      'text/markdown',
-      'text/plain',
-      'text/csv',
-      'text/html',
-      'text/xml',
-      'text/css',
-      'text/javascript',
-      'text/json',
-      'text/x-yaml',
-      'text/tab-separated-values',
-      'text/tab-separated-values',
-      //音频类型
-      'audio/mpeg',
-      'audio/mp3',
-      'audio/aac',
-      'audio/ogg',
-      'audio/x-pn-realaudio-plugin',
-      'video/mp4',
-      'video/ogg',
-      'video/x-msvideo',
-      'video/x-matroska',
-      'video/x-ms-asf',
-      'video/quicktime',
-
-      'js/',
-      'js/lib',
-      'js/plugin',
-
-      'partial/ajax',
-
       'application/msword',
       'application/vnd.ms-word.document.macroenabled.12',
       'application/vnd.ms-word.template.macroenabled.12',
@@ -136,7 +90,39 @@ const SCANNER_CONFIG = {
       'attributors/style/word-break',
       'attributors/style/word-spacing',
       'attributors/style/writing-mode',
+      //音频类型
+      'audio/mpeg',
+      'audio/mp3',
+      'audio/aac',
+      'audio/ogg',
+      'audio/mp4',
+      'audio/adts',
+      'audio/webm',
+      'audio/x-pn-realaudio-plugin',
+      'audio/x-mpegurl',
+      'audio/x-caf',
+      'audio/wav',
+      'audio/flac',
 
+      'blots/',
+      'blots/block',
+      'blots/block/embed',
+      'blots/break',
+      'blots/container',
+      'blots/cursor',
+      'blots/embed',
+      'blots/inline',
+      'blots/scroll',
+      'blots/text',
+
+      "core/theme",
+      'core/module',
+
+      'css/',
+      'css/lib',
+      'css/plugin',
+
+      'formats/',
       'formats/align',
       'formats/background',
       'formats/color',
@@ -161,7 +147,26 @@ const SCANNER_CONFIG = {
       'formats/list/item',
       'formats/ins',
       'formats/divider',
+      // 图片类型
+      'image/',
+      'image/jpeg',
+      'image/gif',
+      'image/bmp',
+      'image/png',
+      'image/x-png',
+      'image/webp',
+      'image/svg+xml',
+      'image/x-emf',
+      'image/x-wmf',
+      'image/x-icon',
+      'image/tiff',
+      'image/heic',
 
+      'js/',
+      'js/lib',
+      'js/plugin',
+
+      'modules/',
       'modules/formula',
       'modules/syntax',
       'modules/toolbar',
@@ -169,37 +174,58 @@ const SCANNER_CONFIG = {
       'modules/clipboard',
       'modules/keyboard',
       'modules/ImageResize',
+          
+      'multipart/form-data',
 
+      'node_modules/',
+
+      'pause/break',
+      'partial/ajax',
+
+      //文本类型
+      'text/yaml',
+      'text/markdown',
+      'text/plain',
+      'text/csv',
+      'text/html',
+      'text/xml',
+      'text/css',
+      'text/javascript',
+      'text/json',
+      'text/x-yaml',
+      'text/tab-separated-values',
+      'text/tab-separated-values',
+
+      'themes/',
       'themes/bubble',
       'themes/snow',
 
-      'blots/block',
-      'blots/block/embed',
-      'blots/break',
-      'blots/container',
-      'blots/cursor',
-      'blots/embed',
-      'blots/inline',
-      'blots/scroll',
-      'blots/text',
       'ui/icons',
       'ui/picker',
       'ui/icon-picker',
       'ui/color-picker',
       'ui/tooltip',
 
+      'video/mp2t',
+      'video/mp4',
+      'video/ogg',
+      'video/webm',
+      'video/x-msvideo',
+      'video/x-matroska',
+      'video/x-ms-asf',
+      'video/quicktime',
+      'video/x-mpegurl',
+      'video/mpegurl',
+
       'chrome/',
       'firefox/',
       'edge/',
-      'image/',
-      'node_modules/',
 
       'examples/element-ui',
       'static/js/',
       'static/css/',
       'stylesheet/less',
-
-      'xx/xx',
+      'jpg/jpeg/png/pdf',
 
       //日期类型
       'yyyy/mm/dd',
@@ -208,11 +234,9 @@ const SCANNER_CONFIG = {
       'yy/mm/dd',
       'm/d/Y',
       'm/d/y',
+      'xx/xx',
 
-      'jpg/jpeg/png/pdf',
-
-      //数据类型
-      'multipart/form-data',
+      'zrender/vml/vml'
     ]
   },
 
@@ -240,7 +264,10 @@ const SCANNER_CONFIG = {
     // 域名黑名单
     BLACKLIST: [
       'el.datepicker.today',
-      'obj.style.top'
+      'obj.style.top',
+      'window.top',
+      'mydragdiv.style.top',
+      'container.style.top'
     ]
   },
 
@@ -256,10 +283,10 @@ const SCANNER_CONFIG = {
   // 正则表达式模式
   PATTERNS: {
     // 域名匹配 - HTML页面
-    DOMAIN: /\b(?:(?!this)[a-zA-Z0-9%-]+\.)*?(?:(?!this)[a-zA-Z0-9%-]{2,}\.)(?:wang|club|xyz|vip|top|beer|work|ren|technology|fashion|luxe|yoga|red|love|online|ltd|chat|group|pub|run|city|live|kim|pet|space|site|tech|host|fun|store|pink|ski|design|ink|wiki|video|email|company|plus|center|cool|fund|gold|guru|life|show|team|today|world|zone|social|bio|black|blue|green|lotto|organic|poker|promo|vote|archi|voto|fit|cn|website|press|icu|art|law|shop|band|media|cab|cash|cafe|games|link|fan|net|cc|com|fans|cloud|info|pro|mobi|asia|studio|biz|vin|news|fyi|tax|tv|market|shopping|mba|sale|co|org)(?:\:\d{1,5})?(?![a-zA-Z0-9._=>\(\);!}-])\b/g,
+    DOMAIN: /\b(?:(?!this)[a-z0-9%-]+\.)*?(?:(?!this)[a-z0-9%-]{2,}\.)(?:wang|club|xyz|vip|top|beer|work|ren|technology|fashion|luxe|yoga|red|love|online|ltd|chat|group|pub|run|city|live|kim|pet|space|site|tech|host|fun|store|pink|ski|design|ink|wiki|video|email|company|plus|center|cool|fund|gold|guru|life|show|team|today|world|zone|social|bio|black|blue|green|lotto|organic|poker|promo|vote|archi|voto|fit|cn|website|press|icu|art|law|shop|band|media|cab|cash|cafe|games|link|fan|net|cc|com|fans|cloud|info|pro|mobi|asia|studio|biz|vin|news|fyi|tax|tv|market|shopping|mba|sale|co|org)(?:\:\d{1,5})?(?![a-zA-Z0-9._=>\(\);!}-])\b/g,
     
     // 域名匹配 - 资源文件
-    DOMAIN_RESOURCE: /["'](?:(?:[a-zA-Z0-9]+:)?\/\/)?(?:(?!this)[a-zA-Z0-9%-]+\.)+(?:wang|club|xyz|vip|top|beer|work|ren|technology|fashion|luxe|yoga|red|love|online|ltd|chat|group|pub|run|city|live|kim|pet|space|site|tech|host|fun|store|pink|ski|design|ink|wiki|video|email|company|plus|center|cool|fund|gold|guru|life|show|team|today|world|zone|social|bio|black|blue|green|lotto|organic|poker|promo|vote|archi|voto|fit|cn|website|press|icu|art|law|shop|band|media|cab|cash|cafe|games|link|fan|net|cc|com|fans|cloud|info|pro|mobi|asia|studio|biz|vin|news|fyi|tax|tv|market|shopping|mba|sale|co|org)(?![a-zA-Z0-9])(?:\:\d{1,5})?\S*?["']/g,
+    DOMAIN_RESOURCE: /["'](?:(?:[a-z0-9]+:)?\/\/)?(?:(?!this)[a-z0-9%-]+\.)+(?:wang|club|xyz|vip|top|beer|work|ren|technology|fashion|luxe|yoga|red|love|online|ltd|chat|group|pub|run|city|live|kim|pet|space|site|tech|host|fun|store|pink|ski|design|ink|wiki|video|email|company|plus|center|cool|fund|gold|guru|life|team|today|world|zone|social|bio|black|blue|green|lotto|organic|poker|promo|vote|archi|voto|fit|cn|website|press|icu|art|law|shop|band|media|cab|cash|cafe|games|link|fan|net|cc|com|fans|cloud|info|pro|mobi|asia|studio|biz|vin|news|fyi|tax|tv|market|shopping|mba|sale|co|org)(?![a-zA-Z0-9.])(?:\:\d{1,5})?\S*?["']/g,
     
     // 域名过滤规则
     DOMAIN_FILTER: /\b(?:[a-zA-Z0-9%-]+\.)+[a-z]{2,10}(?:\:\d{1,5})?\b/,
@@ -280,9 +307,13 @@ const SCANNER_CONFIG = {
     EMAIL: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+(?!\.png)\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})?/g,
     IDCARD: /(?:\d{8}(?:0\d|10|11|12)(?:[0-2]\d|30|31)\d{3}$)|(?:\d{6}(?:18|19|20)\d{2}(?:0[1-9]|10|11|12)(?:[0-2]\d|30|31)\d{3}(?:\d|X|x))(?!\d)/g,
     URL: /(?:https?|wss?|ftp):\/\/(?:(?:[\w-]+\.)+[a-z]{2,}|(?:\d{1,3}\.){3}\d{1,3})(?::\d{2,5})?(?:\/[^\s\>\)\}\<'"]*)?/gi,
-    JWT: /(?:ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{10,}|ey[A-Za-z0-9_\/+-]{10,}\.[A-Za-z0-9._\/+-]{10,})/g,
+    JWT: /["'](?:ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{10,}|ey[A-Za-z0-9_\/+-]{10,}\.[A-Za-z0-9._\/+-]{10,})["']/g,
     AWS_KEY: /AKIA[0-9A-Z]{16}/g,
-    COMPANY: /(?:[\u4e00-\u9fa5]{4,15}公司|[\u4e00-\u9fa5]{2,15}(?:软件|科技|集团))(?![\u4e00-\u9fa5])/g
+    COMPANY: /(?:[\u4e00-\u9fa5\（\）]{4,15}公司|[\u4e00-\u9fa5]{2,15}(?:软件|科技|集团))(?!法)/g,
+    // 用户名密码匹配
+    CREDENTIALS: /(?:(['"])\b(?:\w*(?:pwd|pass|user|admin|root|sys|test)\w*)\1|\b(?:\w*(?:pwd|pass|user|admin|root|sys|test)\w*))\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(]*"|'(?!\+)[^\,\s\'\(]*'|[\d\s]+)/g,
+    // Cookie匹配
+    COOKIE: /\b(?:token|PHPSESSID|JSESSIONID)\s*[:=]\s*["']?(?!this|self|null|localStorage)(?:[a-zA-Z0-9]+)["']?/g
   }
 };
 
