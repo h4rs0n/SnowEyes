@@ -92,7 +92,8 @@ const SCANNER_FILTER = {
           }
           // 4. 使用过滤规则提取域名
           const filterMatch = domain.match(SCANNER_CONFIG.PATTERNS.DOMAIN_FILTER);
-          if (filterMatch && filterMatch[0].split('.')[0]!="el") {
+          if (/\b[a-z]+\.(?:top|bottom)-[a-z]+\.top\b/.test(filterMatch[0])) return false;
+          if (filterMatch && filterMatch[0].split('.')[0]!="el" && filterMatch[0].split('.')[0]!="e") {
             domain = filterMatch[0];
           } else {
             return false;
