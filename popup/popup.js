@@ -67,7 +67,6 @@ function displayResults(results) {
     { id: 'ip-list', data: results.ips, title: 'IP地址' },
     { id: 'company-list', data: results.companies, title: '公司机构' },
     { id: 'jwt-list', data: results.jwts, title: 'JWT Token' },
-    { id: 'aws-list', data: results.awsKeys, title: 'AWS Key' },
     { id: 'image-list', data: results.imageFiles, title: '图片资源' },
     { id: 'github-list', data: results.githubUrls, title: 'GitHub链接' },
     { id: 'vue-list', data: results.vueFiles, title: 'Vue文件' },

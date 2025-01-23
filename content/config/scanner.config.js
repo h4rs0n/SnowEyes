@@ -93,7 +93,9 @@ const SCANNER_CONFIG = {
       'window.top',
       'mydragdiv.style.top',
       'container.style.top',
-      'location.host'
+      'location.host',
+      'page.info',
+      'res.info'
     ]
   },
 
@@ -121,11 +123,10 @@ const SCANNER_CONFIG = {
     IDCARD: /(?:\d{8}(?:0\d|10|11|12)(?:[0-2]\d|30|31)\d{3}$)|(?:\d{6}(?:18|19|20)\d{2}(?:0[1-9]|10|11|12)(?:[0-2]\d|30|31)\d{3}(?:\d|X|x))(?!\d)/g,
     URL: /(?:https?|wss?|ftp):\/\/(?:(?:[\w-]+\.)+[a-z]{2,}|(?:\d{1,3}\.){3}\d{1,3})(?::\d{2,5})?(?:\/[^\s\>\)\}\<'"]*)?/gi,
     JWT: /["'](?:ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{10,}|ey[A-Za-z0-9_\/+-]{10,}\.[A-Za-z0-9._\/+-]{10,})["']/g,
-    AWS_KEY: /AKIA[0-9A-Z]{16}/g,
     COMPANY: /(?:[\u4e00-\u9fa5\（\）]{4,15}(?:公司|中心)|[\u4e00-\u9fa5]{2,15}(?:软件|科技|集团))(?!法|点|与|查)/g,
     CREDENTIALS: /(?:(['"])\b(?:\w*(?:pwd|pass|user|member|secret|account|admin|root|system)[_-]?(?:id|name)?[0-9]*?)\1|\b(?:\w*(?:pwd|pass|user|secret|account|admin|root|system)[_-]?(?:id|name)?[0-9]*?))\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(]*"|'(?!\+)[^\,\s\'\(]*'|[\d\s]+)/gi,    // Cookie匹配
     COOKIE: /\b\w*(?:token|PHPSESSID|JSESSIONID)\s*[:=]\s*["']?(?!localStorage)(?:[a-zA-Z0-9-]{4,})["']?/ig,
-    ID_KEY: /["'](wx[a-z0-9]{15,18})["']/g
+    ID_KEY: /(?:(wx[a-z0-9]{15,18})|AKIA[0-9A-Z]{16}|LTAI[A-Za-z\d]{12,30}|AIza[0-9A-Za-z_\-]{35})|AKID[A-Za-z\d]{13,40}|JDC_[0-9A-Z]{25,40}|(?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}|(?:AKLT|AKTP)[a-zA-Z0-9]{35,50}|(glpat-[a-zA-Z0-9\-=_]{20,22})|((?:ghp|gho|ghu|ghs|ghr|github_pat)_[a-zA-Z0-9_]{36,255})|APID[a-zA-Z0-9]{32,42}|(ww[a-z0-9]{15,18})/g
   }
 };
 

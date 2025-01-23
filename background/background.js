@@ -12,7 +12,6 @@ function updateBadge(results) {
     results.emails,
     results.idcards,
     results.jwts,
-    results.awsKeys,
     results.imageFiles,
     results.jsFiles,
     results.vueFiles,

@@ -24,7 +24,6 @@ const latestResults = {
   emails: new Set(),      // 邮箱结果集
   idcards: new Set(),     // 身份证号结果集
   jwts: new Set(),        // JWT Token 结果集
-  awsKeys: new Set(),     // AWS Access Key 结果集
   imageFiles: new Set(),  // 音频图片结果集
   jsFiles: new Set(),     // JS文件结果集
   vueFiles: new Set(),    // Vue 文件结果集
