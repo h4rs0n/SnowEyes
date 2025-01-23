@@ -19,6 +19,9 @@ function updateBadge(results) {
     results.urls,
     results.githubUrls,
     results.companies,
+    results.credentials,
+    results.cookies,
+    results.idKeys,     // 添加ID密钥结果集
   ];
 
   const nonEmptyCategories = categories.filter(category => 

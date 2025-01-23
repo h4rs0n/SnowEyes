@@ -262,8 +262,13 @@ const SCANNER_FILTER = {
     if (!value.length||key==value) {
       return false; 
     }
-    if (/^func|variable|newline|null|error|object|brac|beare|str|self|void|num|atom|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|pare|ident|reg|invalid/i.test(value)) return false;
+    if (/^func|variable|newline|null|error|data|object|brac|beare|str|self|void|num|atom|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|pare|ident|reg|invalid/i.test(value)) return false;
     resultsSet?.cookies?.add(match);
+    return true;
+  },
+
+  id_key: (match, resultsSet) => {
+    resultsSet?.idKeys?.add(match);
     return true;
   }
 };

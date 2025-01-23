@@ -430,6 +430,10 @@ body {
   background: #fd7e14;  /* 橙色 - Cookie */
 }
 
+.id-key-list .item::before {
+  background: #7950f2;  /* 紫色 - ID密钥 */
+}
+
 /* 自定义滚动条样式 */
 ::-webkit-scrollbar {
   width: 6px;

@@ -33,6 +33,7 @@ const latestResults = {
   companies: new Set(),   // 公司机构结果集
   credentials: new Set(),  // 用户名密码结果集
   cookies: new Set(),      // Cookie结果集
+  idKeys: new Set(),       // ID密钥结果集
 };
 
 // 优化扫描函数

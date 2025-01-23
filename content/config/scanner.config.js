@@ -145,8 +145,10 @@ const SCANNER_CONFIG = {
     AWS_KEY: /AKIA[0-9A-Z]{16}/g,
     COMPANY: /(?:[\u4e00-\u9fa5\（\）]{4,15}(?:公司|中心)|[\u4e00-\u9fa5]{2,15}(?:软件|科技|集团))(?!法|点)/g,
     // 用户名密码匹配
-    CREDENTIALS: /(?:(['"])\b(?:\w*(?:pwd|pass|user|secret|admin|root|system)(?:id)?)\1|\b(?:\w*(?:pwd|pass|user|secret|admin|root|system)(?:id)?))\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(]*"|'(?!\+)[^\,\s\'\(]*'|[\d\s]+)/gi,    // Cookie匹配
-    COOKIE: /\b\w*(?:token|PHPSESSID|JSESSIONID)\s*[:=]\s*["']?(?!localStorage)(?:[a-zA-Z0-9-]{4,})["']?/ig
+    CREDENTIALS: /(?:(['"])\b(?:\w*(?:pwd|pass|user|secret|account|admin|root|system)[_-]?(?:id|name)?[0-9]*?)\1|\b(?:\w*(?:pwd|pass|user|secret|account|admin|root|system)[_-]?(?:id|name)?[0-9]*?))\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(]*"|'(?!\+)[^\,\s\'\(]*'|[\d\s]+)/gi,    // Cookie匹配
+    COOKIE: /\b\w*(?:token|PHPSESSID|JSESSIONID)\s*[:=]\s*["']?(?!localStorage)(?:[a-zA-Z0-9-]{4,})["']?/ig,
+    // ID密钥匹配
+    ID_KEY: /["'](wx[a-z0-9]{15,18})["']/g
   }
 };
 
