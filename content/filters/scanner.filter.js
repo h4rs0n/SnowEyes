@@ -241,11 +241,12 @@ const SCANNER_FILTER = {
     // 检查是否是空值
     const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
     var key = valueMatch[0].replace(/['"]/g,'').toLowerCase();
-    var value = valueMatch[1].replace(/['"]/g,'').toLowerCase();
-    if (!value.length||key==value) {
+    var value = valueMatch[1].replace(/['"\{\}\[\]\，\：\。\？]/g,'').toLowerCase();
+    if (!value.length) {
       return false; 
     }
     if (/^coord/.test(key)||/^\//.test(value)) return false;
+    if (/^[\u4e00-\u9fa5]+$/.test(value)) return false;
     
     resultsSet?.credentials?.add(match);
     return true;
@@ -262,7 +263,7 @@ const SCANNER_FILTER = {
     if (!value.length||key==value) {
       return false; 
     }
-    if (/^func|variable|newline|null|error|data|object|brac|beare|str|self|void|num|atom|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|pare|ident|reg|invalid/i.test(value)) return false;
+    if (/^func|variable|input|true|false|newline|null|error|data|object|brac|beare|str|self|void|num|atom|opts|token|params|result|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|pare|ident|reg|invalid/i.test(value)) return false;
     resultsSet?.cookies?.add(match);
     return true;
   },
