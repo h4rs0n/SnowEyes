@@ -234,6 +234,7 @@ const SCANNER_FILTER = {
   },
 
   company: (match, resultsSet) => {
+    if (/请|输入|前往|整个|常用/.test(match)) return false;
     resultsSet?.companies?.add(match);
     return true;
   },
@@ -246,7 +247,7 @@ const SCANNER_FILTER = {
     if (!value.length) {
       return false; 
     }
-    if (/^coord/.test(key)||/^\//.test(value)) return false;
+    if (/^coord/.test(key)||/^\/|true|false|register|signUp|name/i.test(value)||value.length<=1) return false;
     if (/^[\u4e00-\u9fa5]+$/.test(value)) return false;
     
     resultsSet?.credentials?.add(match);
@@ -264,12 +265,23 @@ const SCANNER_FILTER = {
     if (!value.length||key==value) {
       return false; 
     }
-    if (/^func|variable|input|true|false|newline|null|error|data|object|brac|beare|str|self|void|num|atom|opts|token|params|result|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|pare|ident|reg|invalid/i.test(value)) return false;
+    if (/^func|variable|input|true|false|newline|null|unexpected|error|data|object|brac|beare|str|self|void|num|atom|opts|token|params|result|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|pare|ident|reg|invalid/i.test(value)) return false;
     resultsSet?.cookies?.add(match);
     return true;
   },
 
   id_key: (match, resultsSet) => {
+    if (match.match(/[:=]/)) {
+      // 检查是否是空值
+      const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
+      var key = valueMatch[0].replace(/['"]/g,'');
+      var value = valueMatch[1].replace(/['"]/g,'');
+      if (!value.length||key.toLowerCase()==value.toLowerCase()) {
+        return false; 
+      }
+      if(key=="key"&&(value.length<=8||/\b[_a-z]+(?:[A-Z][a-z]+)+\b/.test(value))) return false;
+      if(/size|row|dict|up|highlight|cabin/i.test(key)||/input|about|video|null|top|gener|lendar|login|item|init|print|finger|mark|Down|up|ctrl|play|row|ntal|has|range|New|json|url|uri|long|big|ence|html|event|tion|comp|default|set|broad|status|dom|use|rect|ment|guard|dentified|opera|main|tech/i.test(value)||value.length<=3) return false;
+    }
     resultsSet?.idKeys?.add(match);
     return true;
   }

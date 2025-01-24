@@ -36,80 +36,156 @@ const latestResults = {
 };
 
 // 优化扫描函数
-function scanSources(sources, isHtmlContent = false) {
-  const seen = new Set();
-  let lastUpdateTime = Date.now();
-  const UPDATE_INTERVAL = 100; // 每100ms更新一次
-  const MAX_CHUNK_SIZE = 100000; // 减小块大小到100KB
-  
-  // 发送更新的函数
-  const sendUpdate = () => {
-    const results = {};
-    for (const key in latestResults) {
-      results[key] = Array.from(latestResults[key]);
-    }
-    chrome.runtime.sendMessage({
-      type: 'SCAN_UPDATE',
-      results: results
-    });
-    chrome.runtime.sendMessage({
-      type: 'UPDATE_BADGE',
-      results: results
-    });
-  };
-
-  // 分块处理大文本
-  function* splitIntoChunks(text) {
-    const length = text.length;
-    let lastIndex = 0;
+async function scanSources(sources, isHtmlContent = false) {
+  try {
+    const seen = new Set();
+    let lastUpdateTime = Date.now();
+    const UPDATE_INTERVAL = 100; // 每100ms更新一次
+    const MAX_CHUNK_SIZE = 100000; // 减小块大小到100KB
     
-    // 使用换行符作为自然分割点
-    for (let i = 0; i < length; i++) {
-      if (i - lastIndex >= MAX_CHUNK_SIZE || text[i] === '\n') {
-        yield text.slice(lastIndex, i);
-        lastIndex = i;
+    // 发送更新的函数
+    const sendUpdate = () => {
+      try {
+        const results = {};
+        for (const key in latestResults) {
+          results[key] = Array.from(latestResults[key]);
+        }
+        chrome.runtime.sendMessage({
+          type: 'SCAN_UPDATE',
+          results: results
+        }).catch(() => {
+          // 忽略消息发送失败的错误
+        });
+        
+        chrome.runtime.sendMessage({
+          type: 'UPDATE_BADGE',
+          results: results
+        }).catch(() => {
+          // 忽略消息发送失败的错误
+        });
+      } catch (e) {
+        // 扩展上下文失效时忽略错误
+        if (e.message !== 'Extension context invalidated.') {
+          window.logger.error('发送更新出错:', e);
+        }
+      }
+    };
+
+    // 分块处理大文本
+    function* splitIntoChunks(text) {
+      const length = text.length;
+      let lastIndex = 0;
+      
+      // 使用换行符作为自然分割点
+      for (let i = 0; i < length; i++) {
+        if (i - lastIndex >= MAX_CHUNK_SIZE || text[i] === '\n') {
+          yield text.slice(lastIndex, i);
+          lastIndex = i;
+        }
+      }
+      if (lastIndex < length) {
+        yield text.slice(lastIndex);
       }
     }
-    if (lastIndex < length) {
-      yield text.slice(lastIndex);
-    }
-  }
 
-  // 优化匹配函数
-  const matchPatterns = (chunk, isHtmlContent = false) => {
-    // 预先编译正则表达式
-    const patterns = Object.entries(SCANNER_CONFIG.PATTERNS);
+    // 优化匹配函数
+    const matchPatterns = (chunk, isHtmlContent = false) => {
+      // 预先编译正则表达式
+      const patterns = Object.entries(SCANNER_CONFIG.PATTERNS);
 
-    // 批量处理所有模式
-    for (const [key, pattern] of patterns) {
-      const filter = SCANNER_FILTER[key.toLowerCase()];
-      if (!filter) continue;
+      // 批量处理所有模式
+      for (const [key, pattern] of patterns) {
+        const filter = SCANNER_FILTER[key.toLowerCase()];
+        if (!filter) continue;
 
-      let match;
-      let lastIndex = 0;
-      let maxIterations = 10000;
-      
-      try {
-        // 根据内容类型选择合适的模式
-        if (key === 'IP') {
-          // 使用不同的IP匹配模式
-          const ipPattern = isHtmlContent ? pattern : SCANNER_CONFIG.PATTERNS.IP_RESOURCE;
-          const matches = chunk.match(ipPattern);
-          if (matches) {
-            matches.forEach(match => filter(match, latestResults));
-          }
-          continue;
-        }
+        let match;
+        let lastIndex = 0;
+        let maxIterations = 10000;
         
-        // 域名使用不同的匹配模式
-        if (key === 'DOMAIN') {
-          const domainPattern = isHtmlContent ? pattern : SCANNER_CONFIG.PATTERNS.DOMAIN_RESOURCE;
-          while ((match = domainPattern.exec(chunk)) !== null) {
-            if (domainPattern.lastIndex <= lastIndex) {
-              window.logger.warn(`检测到可能的无限循环: ${key}`);
+        try {
+          // 根据内容类型选择合适的模式
+          if (key === 'IP') {
+            // 使用不同的IP匹配模式
+            const ipPattern = isHtmlContent ? pattern : SCANNER_CONFIG.PATTERNS.IP_RESOURCE;
+            const matches = chunk.match(ipPattern);
+            if (matches) {
+              matches.forEach(match => filter(match, latestResults));
+            }
+            continue;
+          }
+          
+          // 域名使用不同的匹配模式
+          if (key === 'DOMAIN') {
+            const domainPattern = isHtmlContent ? pattern : SCANNER_CONFIG.PATTERNS.DOMAIN_RESOURCE;
+            while ((match = domainPattern.exec(chunk)) !== null) {
+              if (domainPattern.lastIndex <= lastIndex) {
+                window.logger.warn(`检测到可能的无限循环: ${key}`);
+                break;
+              }
+              lastIndex = domainPattern.lastIndex;
+              
+              if (--maxIterations <= 0) {
+                window.logger.warn(`达到最大迭代次数: ${key}`);
+                break;
+              }
+              
+              filter(match[0], latestResults);
+            }
+            continue;
+          }
+
+          // API模式特殊处理
+          if (key === 'API' && pattern && typeof pattern === 'object') {
+            const apiPattern = SCANNER_CONFIG.API.PATTERN;
+            while ((match = apiPattern.exec(chunk)) !== null) {
+              if (apiPattern.lastIndex <= lastIndex) {
+                window.logger.warn(`检测到可能的无限循环: API Pattern`);
+                break;
+              }
+              lastIndex = apiPattern.lastIndex;
+              
+              if (--maxIterations <= 0) {
+                window.logger.warn(`达到最大迭代次数: API`);
+                break;
+              }
+              
+              filter(match[0], latestResults);
+            }
+            continue;
+          }
+
+          // ID_KEY模式特殊处理
+          if (pattern && pattern.type === 'ID_KEY') {
+            // 对每个模式进行匹配
+            for (const {pattern: idKeyPattern} of pattern.patterns) {
+              let patternLastIndex = 0;  // 每个模式独立的 lastIndex
+              while ((match = idKeyPattern.exec(chunk)) !== null) {
+                if (idKeyPattern.lastIndex <= patternLastIndex) {
+                  window.logger.warn(`检测到可能的无限循环: ID_KEY Pattern`);
+                  break;
+                }
+                patternLastIndex = idKeyPattern.lastIndex;
+                
+                if (--maxIterations <= 0) {
+                  window.logger.warn(`达到最大迭代次数: ID_KEY`);
+                  break;
+                }
+                
+                filter(match[0], latestResults);
+              }
+              // 重置正则表达式的 lastIndex
+              idKeyPattern.lastIndex = 0;
+            }
+            continue;
+          }
+
+          // 其他模式使用exec
+          while ((match = pattern.exec(chunk)) !== null) {
+            if (pattern.lastIndex <= lastIndex) {
+              window.logger.warn(`检测到可能的无限循环: ${pattern}`);
               break;
             }
-            lastIndex = domainPattern.lastIndex;
+            lastIndex = pattern.lastIndex;
             
             if (--maxIterations <= 0) {
               window.logger.warn(`达到最大迭代次数: ${key}`);
@@ -117,85 +193,53 @@ function scanSources(sources, isHtmlContent = false) {
             }
             
             filter(match[0], latestResults);
+            if (!pattern.global) break;
           }
-          continue;
+        } catch (e) {
+          window.logger.error(`匹配${key}出错:`, e);
         }
+      }
+    };
 
-        // API模式特殊处理
-        if (key === 'API' && pattern && typeof pattern === 'object') {
-          const apiPattern = SCANNER_CONFIG.API.PATTERN;
-          while ((match = apiPattern.exec(chunk)) !== null) {
-            if (apiPattern.lastIndex <= lastIndex) {
-              window.logger.warn(`检测到可能的无限循环: API Pattern`);
-              break;
-            }
-            lastIndex = apiPattern.lastIndex;
-            
-            if (--maxIterations <= 0) {
-              window.logger.warn(`达到最大迭代次数: API`);
-              break;
-            }
-            
-            filter(match[0], latestResults);
-          }
-          continue;
-        }
+    // 处理单个源
+    const processSource = (source) => {
+      if (!source || seen.has(source)) return;
+      seen.add(source);
 
-        // 其他模式使用exec
-        while ((match = pattern.exec(chunk)) !== null) {
-          if (pattern.lastIndex <= lastIndex) {
-            window.logger.warn(`检测到可能的无限循环: ${pattern}`);
-            break;
-          }
-          lastIndex = pattern.lastIndex;
+      try {
+        // 对大文本进行分块处理
+        for (const chunk of splitIntoChunks(source)) {
+          matchPatterns(chunk, isHtmlContent);  // 传递 isHtmlContent 参数
           
-          if (--maxIterations <= 0) {
-            window.logger.warn(`达到最大迭代次数: ${key}`);
-            break;
+          // 定期更新结果
+          if (Date.now() - lastUpdateTime > UPDATE_INTERVAL) {
+            sendUpdate();
+            lastUpdateTime = Date.now();
+            // 给主线程一个喘息的机会
+            return new Promise(resolve => setTimeout(resolve, 0));
           }
-          
-          filter(match[0], latestResults);
-          if (!pattern.global) break;
         }
       } catch (e) {
-        window.logger.error(`匹配${key}出错:`, e);
+        window.logger.error('处理源时出错:', e);
       }
-    }
-  };
+    };
 
-  // 处理单个源
-  const processSource = (source) => {
-    if (!source || seen.has(source)) return;
-    seen.add(source);
-
-    try {
-      // 对大文本进行分块处理
-      for (const chunk of splitIntoChunks(source)) {
-        matchPatterns(chunk, isHtmlContent);  // 传递 isHtmlContent 参数
-        
-        // 定期更新结果
-        if (Date.now() - lastUpdateTime > UPDATE_INTERVAL) {
-          sendUpdate();
-          lastUpdateTime = Date.now();
-          // 给主线程一个喘息的机会
-          return new Promise(resolve => setTimeout(resolve, 0));
-        }
+    // 主扫描函数
+    const scan = async () => {
+      for (const source of sources) {
+        await processSource(source);
       }
-    } catch (e) {
-      window.logger.error('处理源时出错:', e);
-    }
-  };
+      sendUpdate(); // 最后更新一次
+    };
 
-  // 主扫描函数
-  const scan = async () => {
-    for (const source of sources) {
-      await processSource(source);
+    // 开始扫描
+    scan().catch(e => window.logger.error('扫描出错:', e));
+  } catch (e) {
+    // 扩展上下文失效时忽略错误
+    if (e.message !== 'Extension context invalidated.') {
+      window.logger.error('扫描出错:', e);
     }
-    sendUpdate(); // 最后更新一次
-  };
-
-  // 开始扫描
-  scan().catch(e => window.logger.error('扫描出错:', e));
+  }
 }
 
 // 检查域名是否在白名单中
@@ -286,8 +330,11 @@ async function initScan() {
       collectAndScanResources();
     }, 100);
 
-  } catch (error) {
-    window.logger.error('扫描失败:', error);
+  } catch (e) {
+    // 扩展上下文失效时忽略错误
+    if (e.message !== 'Extension context invalidated.') {
+      window.logger.error('初始化扫描出错:', e);
+    }
   }
 }
 
@@ -427,39 +474,48 @@ async function collectAndScanResources() {
 
 // 监听来自 popup 的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'GET_RESULTS') {
-    // 检查是否在白名单中
-    const currentHostname = window.location.hostname.toLowerCase();
-    if (isInWhitelist(currentHostname)) {
-      sendResponse('WHITELISTED');
-      return;
-    }
-    // 返回当前的扫描结果
-    sendResponse(Object.fromEntries(
-      Object.entries(latestResults).map(([key, value]) => [key, Array.from(value)])
-    ));
-  } else if (request.type === 'REFRESH_SCAN') {
-    // 检查是否在白名单中
-    const currentHostname = window.location.hostname.toLowerCase();
-    if (isInWhitelist(currentHostname)) {
-      sendResponse('WHITELISTED');
-      return;
-    }
-    // 重新执行扫描
-    initScan().then(() => {
+  try {
+    if (request.type === 'GET_RESULTS') {
+      // 检查是否在白名单中
+      const currentHostname = window.location.hostname.toLowerCase();
+      if (isInWhitelist(currentHostname)) {
+        sendResponse('WHITELISTED');
+        return;
+      }
+      // 返回当前的扫描结果
       sendResponse(Object.fromEntries(
         Object.entries(latestResults).map(([key, value]) => [key, Array.from(value)])
       ));
-    });
-    return true; // 保持消息通道打开
-  } else if (request.type === 'GET_CONFIG') {
-    // 只返回白名单配置
-    sendResponse({
-      config: {
-        WHITELIST: SCANNER_CONFIG.DOMAIN.WHITELIST
+    } else if (request.type === 'REFRESH_SCAN') {
+      // 检查是否在白名单中
+      const currentHostname = window.location.hostname.toLowerCase();
+      if (isInWhitelist(currentHostname)) {
+        sendResponse('WHITELISTED');
+        return;
       }
-    });
+      // 重新执行扫描
+      initScan().then(() => {
+        sendResponse(Object.fromEntries(
+          Object.entries(latestResults).map(([key, value]) => [key, Array.from(value)])
+        ));
+      });
+      return true; // 保持消息通道打开
+    } else if (request.type === 'GET_CONFIG') {
+      // 只返回白名单配置
+      sendResponse({
+        config: {
+          WHITELIST: SCANNER_CONFIG.DOMAIN.WHITELIST
+        }
+      });
+    }
+  } catch (e) {
+    // 扩展上下文失效时忽略错误
+    if (e.message !== 'Extension context invalidated.') {
+      window.logger.error('处理消息出错:', e);
+    }
+    sendResponse(null);
   }
+  return true; // 保持消息通道打开
 });
 
 // 在页面加载完成后开始扫描
