@@ -155,7 +155,25 @@ const SCANNER_CONFIG = {
       {name: 'Apple开发者密钥', pattern: /APID[a-zA-Z0-9]{32,42}/g},
       {name: '企业微信密钥', pattern: /ww[a-z0-9]{15,18}/g},
       {name: 'key', pattern: /(?:['"]?(?:\w*(?:key|secret|bucket)\w*)["']?)\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(]*"|'(?!\+)[^\,\s\'\(]*'|[\d\s]+)/ig}
-    ]
+    ],
+    // 关键词黑名单
+    KEY_BLACKLIST: new Set([
+      'size', 'row', 'dict', 'up', 'highlight', 'cabin'
+    ]),
+    // 值黑名单
+    VALUE_BLACKLIST: new Set([
+      'input', 'about', 'video', 'null', 'top', 'gener', 'charlendar',
+      'login', 'read', 'black', 'hand', 'next', 'nect', 'system',
+      'load', 'red', 'green', 'shift', 'item', 'init', 'print',
+      'finger', 'mark', 'down', 'up', 'ctrl', 'play', 'row', 'ntal',
+      'has', 'range', 'new', 'json', 'url', 'uri', 'long', 'big',
+      'html', 'event', 'tion', 'comp', 'default', 'set', 'serve',
+      'broad', 'status', 'dom', 'use', 'rect', 'ment', 'guard', 'index',
+      'dentified', 'opera', 'main', 'tech','insert', 'char','command',
+      'visual','get', 'type','write','error','array','parse','inter',
+      'statis','discard','extract','full','white','refer','parent',
+      'convert','crypt','normal','single','double','triple','more'
+    ])
   }
 };
 

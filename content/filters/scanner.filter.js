@@ -234,7 +234,7 @@ const SCANNER_FILTER = {
   },
 
   company: (match, resultsSet) => {
-    if (/请|输入|前往|整个|常用/.test(match)) return false;
+    if (/请|输入|前往|整个|常用|咨询|为中心|目前|任务|推动|一家|项目|等|造价|判断|通过|为了|可以|掌握|传统/.test(match)) return false;
     resultsSet?.companies?.add(match);
     return true;
   },
@@ -276,12 +276,42 @@ const SCANNER_FILTER = {
       const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
       var key = valueMatch[0].replace(/['"]/g,'');
       var value = valueMatch[1].replace(/['"]/g,'');
-      if (!value.length||key.toLowerCase()==value.toLowerCase()) {
-        return false; 
+      
+      // 转换为小写进行检查
+      const keyLower = key.toLowerCase();
+      const valueLower = value.toLowerCase();
+      
+      if (!value.length || keyLower === valueLower) {
+        return false;
       }
-      if(key=="key"&&(value.length<=8||/\b[_a-z]+(?:[A-Z][a-z]+)+\b/.test(value))) return false;
-      if(/size|row|dict|up|highlight|cabin/i.test(key)||/input|about|video|null|top|gener|lendar|login|item|init|print|finger|mark|Down|up|ctrl|play|row|ntal|has|range|New|json|url|uri|long|big|ence|html|event|tion|comp|default|set|broad|status|dom|use|rect|ment|guard|dentified|opera|main|tech/i.test(value)||value.length<=3) return false;
+
+      // 检查key是否在黑名单中
+      // if (SCANNER_CONFIG.ID_KEY.KEY_BLACKLIST.has(keyLower)) {
+      //   return false;
+      // }
+      for (const blackWord of SCANNER_CONFIG.ID_KEY.KEY_BLACKLIST) {
+        if (keyLower.includes(blackWord)) {
+          return false;
+        }
+      }
+
+      // 检查value是否包含黑名单词
+      for (const blackWord of SCANNER_CONFIG.ID_KEY.VALUE_BLACKLIST) {
+        if (valueLower.includes(blackWord)) {
+          return false;
+        }
+      }
+
+      // 其他检查
+      if (key === "key" && (value.length <= 8 || /\b[_a-z]+(?:[A-Z][a-z]+)+\b/.test(value))) {
+        return false;
+      }
+
+      if (value.length <= 3) {
+        return false;
+      }
     }
+    
     resultsSet?.idKeys?.add(match);
     return true;
   }
