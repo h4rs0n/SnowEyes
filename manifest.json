@@ -14,7 +14,9 @@
   "permissions": [
     "activeTab",    
     "scripting",    
-    "storage"       
+    "storage",
+    "webRequest",
+    "cookies"    
   ],
 
   "host_permissions": [

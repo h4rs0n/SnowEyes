@@ -596,4 +596,30 @@ body {
   font-size: 13px;
   margin-bottom: 8px;
 }
+
+/* 服务器指纹样式 */
+.server-tag {
+  background: #20c997;  /* 青绿色 */
+}
+
+.server-group {
+  border-left-color: #20c997;
+}
+
+.fingerprint-value {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.fingerprint-value.detected {
+  background: #d3f9d8;
+  color: #2b8a3e;
+}
+
+.header-value {
+  font-family: monospace;
+  word-break: break-all;
+}
  

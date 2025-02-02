@@ -254,6 +254,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 添加导航标签点击事件
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => {
+      if (tab.dataset.page === 'fingerprint') {
+        initFingerprintPage();
+      }
       switchPage(tab.dataset.page);
     });
   });
@@ -329,4 +332,121 @@ function initConfigPage() {
       });
     }
   });
-} 
+}
+
+// 更新服务器指纹信息
+function updateServerFingerprints(fingerprints) {
+  const fingerprintSection = document.querySelector('.fingerprint-section');
+  
+  // 清空现有的指纹组
+  fingerprintSection.innerHTML = '';
+  
+  // 处理 Server 头
+  if (fingerprints.server) {
+    const [name, version] = fingerprints.server.split('/');
+    addFingerprint(fingerprintSection, {
+      type: 'Server',
+      name: name,
+      description: `返回头包含${name.toLowerCase()}声明，${version ? '版本号为' + version : '版本号未知'}`,
+      value: version || '版本未知'
+    });
+  }
+
+  // 处理技术栈识别结果
+  if (fingerprints.technology) {
+    addFingerprint(fingerprintSection, {
+      type: 'Technology',
+      name: fingerprints.technology.name,
+      description: fingerprints.technology.description,
+      value: '版本未知'
+    });
+  }
+
+  // 处理其他响应头
+  for (const [headerName, headerValue] of Object.entries(fingerprints.headers)) {
+    let name, version;
+    
+    // 解析头信息
+    if (headerValue.includes('/')) {
+      [name, version] = headerValue.split('/');
+    } else {
+      name = headerValue;
+      version = null;
+    }
+
+    // 根据不同的头类型设置不同的显示名称
+    const headerTypes = {
+      'x-powered-by': 'Powered By',
+      'x-aspnet-version': 'ASP.NET',
+      'x-runtime': 'Runtime'
+    };
+
+    addFingerprint(fingerprintSection, {
+      type: headerTypes[headerName.toLowerCase()] || headerName,
+      name: name,
+      description: `返回头包含${name.toLowerCase()}声明，${version ? '版本号为' + version : '版本号未知'}`,
+      value: version || '版本未知'
+    });
+  }
+}
+
+// 添加单个指纹组
+function addFingerprint(container, info) {
+  const group = document.createElement('div');
+  group.className = 'fingerprint-group';
+  group.innerHTML = `
+    <h3>
+      <span class="tag server-tag">${info.type}</span>
+      ${info.name}
+    </h3>
+    <div class="fingerprint-item">
+      <div class="fingerprint-label">${info.description}</div>
+      <div class="fingerprint-value server-value detected">${info.value}</div>
+    </div>
+  `;
+  container.appendChild(group);
+}
+
+// 监听来自 background 的消息
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.type === 'UPDATE_FINGERPRINTS' && message.fingerprints) {
+    console.log('Received fingerprints:', message.fingerprints); // 添加调试日志
+    updateServerFingerprints(message.fingerprints);
+  }
+});
+
+// 初始化指纹页面
+function initFingerprintPage() {
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    if (tabs[0]) {
+      console.log('Requesting fingerprints for tab:', tabs[0].id); // 添加调试日志
+      chrome.runtime.sendMessage({
+        type: 'GET_FINGERPRINTS',
+        tabId: tabs[0].id
+      }, response => {
+        console.log('Received response:', response); // 添加调试日志
+        if (response) {
+          updateServerFingerprints(response);
+        }
+      });
+    }
+  });
+}
+
+// 添加消息监听器处理 popup 的请求
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'GET_FINGERPRINTS') {
+    const fingerprints = serverFingerprints.get(request.tabId);
+    if (fingerprints) {
+      sendResponse({
+        server: fingerprints.server,
+        headers: Object.fromEntries(fingerprints.headers),
+        technology: fingerprints.technology
+      });
+    } else {
+      sendResponse(null);
+    }
+    return true;
+  }
+  // ... 其他代码
+}); 

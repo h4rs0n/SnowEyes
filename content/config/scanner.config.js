@@ -4,11 +4,11 @@ const SCANNER_CONFIG = {
   API: {
     PATTERN: /['"`](?:\/|\.\.\/|\.\/)[^\/\>\< \)\(\}\,\'\"\\](?:[^\^\>\< \)\(\{\}\,\'\"\\])*?['"`]|['"`][a-zA_Z0-9]+(?<!text|application)\/(?:[^\^\>\< \)\(\{\}\,\'\"\\])*?["'`]/g,
     // 图片文件模式
-    IMAGE_PATTERN: /\.(jpg|jpeg|png|gif|bmp|webp|svg|ico|mp3|mp4|m4a|wav)(?:\?[^'"]*)?$/i,
+    IMAGE_PATTERN: /\.(jpg|jpeg|png|gif|bmp|webp|svg|ico|mp3|mp4|m4a|wav|swf)(?:\?[^'"]*)?$/i,
     // JS文件模式
     JS_PATTERN: /\.(js|jsx|ts|tsx|less)(?:\?[^'"]*)?$/i,
     // 文档文件模式
-    DOC_PATTERN: /\.(pdf|doc|docx|xls|xlsx|ppt|exe|apk|zip|7z|dll|dmg|pptx|txt|rar|md|swf|csv)(?:\?[^'"]*)?$/i,
+    DOC_PATTERN: /\.(pdf|doc|docx|xls|xlsx|ppt|exe|apk|zip|7z|dll|dmg|pptx|txt|rar|md|csv)(?:\?[^'"]*)?$/i,
     // css字体模式
     FONT_PATTERN: /\.(ttf|eot|woff|woff2|otf|css)(?:\?[^'"]*)?$/i,
     // 需要跳过的第三方JS库正则匹配规则
@@ -175,7 +175,8 @@ const SCANNER_CONFIG = {
       'convert','crypt','normal','single','double','triple','more', 'message',
       'tool','tance','popper','region', 'radio', 'area', 'tip', 'color', 'hid',
       'old', 'place', 'parm', 'axis', 'high', 'ture', 'simple', 'bool', 'pick', 
-      'date', 'cancel', 'croll', 'late', 'note', 'confirm', 'length'
+      'date', 'cancel', 'croll', 'late', 'note', 'confirm', 'length', 'class',
+      'param','tend', 'title', 'work','lang'
     ])
   }
 };

@@ -38,8 +38,117 @@ function updateBadge(results) {
   });
 }
 
-// 处理跨域请求
+// 存储服务器指纹信息
+let serverFingerprints = new Map();  // 使用 Map 存储每个标签页的指纹信息
+
+// 监听网络请求
+chrome.webRequest.onHeadersReceived.addListener(
+  (details) => {
+    // 只处理主文档请求
+    if (details.type === 'main_frame') {
+      const headers = details.responseHeaders;
+      if (headers) {
+        const fingerprints = {
+          server: null,
+          headers: new Map(),
+          technology: null
+        };
+
+        // 遍历所有响应头
+        headers.forEach(header => {
+          const name = header.name.toLowerCase();
+          
+          if (name === 'server') {
+            fingerprints.server = header.value;
+          }
+          else if (['x-powered-by', 'x-aspnet-version', 'x-runtime'].includes(name)) {
+            fingerprints.headers.set(name, header.value);
+          }
+          else if (name === 'set-cookie') {
+            const tech = identifyTechnology(header.value);
+            if (tech) {
+              fingerprints.technology = tech;
+            }
+          }
+        });
+
+        // 如果没有从 Set-Cookie 头识别出技术，尝试从现有 cookies 识别
+        if (!fingerprints.technology) {
+          chrome.cookies.getAll({url: details.url}, (cookies) => {
+            if (cookies && cookies.length > 0) {
+              // 将所有 cookie 名称拼接起来用于识别
+              console.log(cookies);
+              const cookieNames = cookies.map(cookie => cookie.name).join(';');
+              console.log(cookieNames);
+              const tech = identifyTechnology(cookieNames);
+              if (tech) {
+                fingerprints.technology = tech;
+                // 更新存储
+                serverFingerprints.set(details.tabId, fingerprints);
+                // 通知更新
+                try {
+                  chrome.tabs.sendMessage(details.tabId, {
+                    type: 'UPDATE_FINGERPRINTS',
+                    fingerprints: {
+                      server: fingerprints.server,
+                      headers: Object.fromEntries(fingerprints.headers),
+                      technology: fingerprints.technology
+                    }
+                  }).catch(() => {});
+                } catch (e) {}
+              }
+            }
+          });
+        }
+
+        // 存储该标签页的指纹信息
+        serverFingerprints.set(details.tabId, fingerprints);
+
+        // 延迟发送消息，等待内容脚本加载
+        setTimeout(() => {
+          try {
+            chrome.tabs.sendMessage(details.tabId, {
+              type: 'UPDATE_FINGERPRINTS',
+              fingerprints: {
+                server: fingerprints.server,
+                headers: Object.fromEntries(fingerprints.headers),
+                technology: fingerprints.technology
+              }
+            }).catch(() => {
+              // 忽略发送失败的错误
+            });
+          } catch (e) {
+            // 忽略错误
+          }
+        }, 1000);  // 延迟1秒
+      }
+    }
+  },
+  { urls: ['<all_urls>'] },
+  ['responseHeaders']
+);
+
+// 监听标签页关闭事件，清理数据
+chrome.tabs.onRemoved.addListener((tabId) => {
+  serverFingerprints.delete(tabId);
+});
+
+// 添加消息监听器处理 popup 的请求
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'GET_FINGERPRINTS') {
+    // 获取当前标签页的指纹信息
+    const fingerprints = serverFingerprints.get(request.tabId);
+    if (fingerprints) {
+      sendResponse({
+        server: fingerprints.server,
+        headers: Object.fromEntries(fingerprints.headers),
+        technology: fingerprints.technology
+      });
+    } else {
+      sendResponse(null);
+    }
+    return true;
+  }
   if (request.type === 'FETCH_JS') {
     // 使用 fetch API 获取文件内容
     fetch(request.url, {
@@ -90,4 +199,43 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // 处理badge更新请求
     updateBadge(request.results);
   }
-}); 
+});
+
+// 识别技术栈
+function identifyTechnology(cookieHeader) {
+  const patterns = {
+    'PHP': {
+      pattern: /PHPSESSID/i,
+      description: '通过Session Cookie识别，使用PHP作为服务端语言'
+    },
+    'ASP.NET': {
+      pattern: /ASP\.NET_SessionId/i,
+      description: '通过Session Cookie识别，使用ASP.NET作为服务端语言'
+    },
+    'Java': {
+      pattern: /JSESSIONID/i,
+      description: '通过Session Cookie识别，使用Java作为服务端语言'
+    },
+    'Django': {
+      pattern: /sessionid.*django/i,
+      description: '通过Session Cookie识别，使用Django(Python)作为服务端框架'
+    },
+    'Rails': {
+      pattern: /_session_id=.*rack/i,
+      description: '通过Session Cookie识别，使用Ruby on Rails作为服务端框架'
+    },
+    'Laravel': {
+      pattern: /laravel_session/i,
+      description: '通过Session Cookie识别，使用Laravel(PHP)作为服务端框架'
+    }
+  };
+
+  for (const [tech, {pattern, description}] of Object.entries(patterns)) {
+    if (pattern.test(cookieHeader)) {
+      console.log(tech);
+      return {name: tech, description};
+    }
+  }
+
+  return null;
+} 
