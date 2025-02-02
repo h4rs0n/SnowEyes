@@ -1,3 +1,14 @@
+// 正则表达式缓存
+const regexCache = {
+  // 预编译常用的正则表达式
+  coordPattern: /^coord/,
+  valuePattern: /^\/|true|false|register|signUp|name/i,
+  chinesePattern: /^[\u4e00-\u9fa5]+$/,
+  keywordPattern: /^func|variable|input|true|false|newline|null|unexpected|error|data|object|brac|beare|str|self|void|num|atom|opts|token|params|result|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|return|case|pare|ident|reg|invalid/i,
+  camelCasePattern: /\b[_a-z]+(?:[A-Z][a-z]+)+\b/,
+  filterPattern: /请|输入|前往|整个|常用|咨询|为中心|以上|目前|任务|推动|一家|项目|等|造价|判断|通过|为了|可以|掌握|传统/
+};
+
 // 统一的扫描过滤器
 const SCANNER_FILTER = {
   // API 过滤器
@@ -234,7 +245,7 @@ const SCANNER_FILTER = {
   },
 
   company: (match, resultsSet) => {
-    if (/请|输入|前往|整个|常用|咨询|为中心|目前|任务|推动|一家|项目|等|造价|判断|通过|为了|可以|掌握|传统/.test(match)) return false;
+    if (regexCache.filterPattern.test(match)) return false;
     resultsSet?.companies?.add(match);
     return true;
   },
@@ -247,8 +258,8 @@ const SCANNER_FILTER = {
     if (!value.length) {
       return false; 
     }
-    if (/^coord/.test(key)||/^\/|true|false|register|signUp|name/i.test(value)||value.length<=1) return false;
-    if (/^[\u4e00-\u9fa5]+$/.test(value)) return false;
+    if (regexCache.coordPattern.test(key) || regexCache.valuePattern.test(value) || value.length<=1) return false;
+    if (regexCache.chinesePattern.test(value)) return false;
     
     resultsSet?.credentials?.add(match);
     return true;
@@ -265,7 +276,7 @@ const SCANNER_FILTER = {
     if (!value.length||key==value) {
       return false; 
     }
-    if (/^func|variable|input|true|false|newline|null|unexpected|error|data|object|brac|beare|str|self|void|num|atom|opts|token|params|result|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|pare|ident|reg|invalid/i.test(value)) return false;
+    if (regexCache.keywordPattern.test(value)) return false;
     resultsSet?.cookies?.add(match);
     return true;
   },
@@ -286,9 +297,6 @@ const SCANNER_FILTER = {
       }
 
       // 检查key是否在黑名单中
-      // if (SCANNER_CONFIG.ID_KEY.KEY_BLACKLIST.has(keyLower)) {
-      //   return false;
-      // }
       for (const blackWord of SCANNER_CONFIG.ID_KEY.KEY_BLACKLIST) {
         if (keyLower.includes(blackWord)) {
           return false;
@@ -303,7 +311,7 @@ const SCANNER_FILTER = {
       }
 
       // 其他检查
-      if (key === "key" && (value.length <= 8 || /\b[_a-z]+(?:[A-Z][a-z]+)+\b/.test(value))) {
+      if (key === "key" && (value.length <= 8 || regexCache.camelCasePattern.test(value))) {
         return false;
       }
 

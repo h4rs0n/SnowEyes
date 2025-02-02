@@ -21,7 +21,7 @@ const SCANNER_CONFIG = {
       // Bootstrap相关
       /bootstrap(?:\.bundle)?[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       // UI框架相关
-      /(layui|layer|liger|h-ui|element-ui|ueditor|kindeditor|ant-design)[.-]?\d*\.?\d*\.?\d*(?:[\.-]all)?(?:\.admin)?(?:\.config)?(?:[\.-]min)?\.js$/i,
+      /(layui|lay|layer|liger|h-ui|element-ui|ueditor|kindeditor|ant-design)[.-]?\d*\.?\d*\.?\d*(?:[\.-]all)?(?:\.admin)?(?:[\.-]config)?(?:[\.-]min)?\.js$/i,
       // 图表相关
       /(echarts|chart|highcharts)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,     
       // 工具库相关
@@ -154,7 +154,7 @@ const SCANNER_CONFIG = {
       {name: 'GitHub Token2', pattern: /(?:ghp|gho|ghu|ghs|ghr|github_pat)_[a-zA-Z0-9_]{36,255}/g},
       {name: 'Apple开发者密钥', pattern: /APID[a-zA-Z0-9]{32,42}/g},
       {name: '企业微信密钥', pattern: /ww[a-z0-9]{15,18}/g},
-      {name: 'key', pattern: /(?:['"]?(?:\w*(?:key|secret|bucket)\w*)["']?)\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(]*"|'(?!\+)[^\,\s\'\(]*'|[\d\s]+)/ig}
+      {name: 'key', pattern: /(?:['"]?(?:\w*(?:key|secret|oss|bucket)\w*)["']?)\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(]*"|'(?!\+)[^\,\s\'\(]*'|[\d\s]+)/ig}
     ],
     // 关键词黑名单
     KEY_BLACKLIST: new Set([
@@ -162,17 +162,20 @@ const SCANNER_CONFIG = {
     ]),
     // 值黑名单
     VALUE_BLACKLIST: new Set([
-      'input', 'about', 'video', 'null', 'top', 'gener', 'charlendar',
-      'login', 'read', 'black', 'hand', 'next', 'nect', 'system',
-      'load', 'red', 'green', 'shift', 'item', 'init', 'print',
-      'finger', 'mark', 'down', 'up', 'ctrl', 'play', 'row', 'ntal',
-      'has', 'range', 'new', 'json', 'url', 'uri', 'long', 'big',
-      'html', 'event', 'tion', 'comp', 'default', 'set', 'serve',
-      'broad', 'status', 'dom', 'use', 'rect', 'ment', 'guard', 'index',
-      'dentified', 'opera', 'main', 'tech','insert', 'char','command',
-      'visual','get', 'type','write','error','array','parse','inter',
-      'statis','discard','extract','full','white','refer','parent',
-      'convert','crypt','normal','single','double','triple','more'
+      'input', 'about', 'video', 'null', 'top', 'gener', 'charlendar', 'content',
+      'login', 'read', 'black', 'hand', 'next', 'nect', 'system', 'panel', 'body',
+      'load', 'red', 'green', 'shift', 'item', 'init', 'print','button','left',
+      'finger', 'mark', 'down', 'up', 'ctrl', 'play', 'row', 'ntal', 'header','contain',
+      'has', 'range', 'new', 'json', 'url', 'uri', 'long', 'big','right', 'slider',
+      'html', 'event', 'tion', 'comp', 'default', 'set', 'serve','select', 'view',
+      'broad', 'status', 'dom', 'use', 'rect', 'ment', 'guard', 'index', 'link',
+      'dentified', 'opera', 'main', 'tech','insert', 'char','command', 'core',
+      'visual','get', 'type','write','error','array','parse','inter', 'size',
+      'statis','discard','extract','full','white','refer','parent', 'wrap',
+      'convert','crypt','normal','single','double','triple','more', 'message',
+      'tool','tance','popper','region', 'radio', 'area', 'tip', 'color', 'hid',
+      'old', 'place', 'parm', 'axis', 'high', 'ture', 'simple', 'bool', 'pick', 
+      'date', 'cancel', 'croll', 'late', 'note', 'confirm', 'length'
     ])
   }
 };

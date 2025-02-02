@@ -275,7 +275,7 @@ async function initScan() {
         if (htmlContent) {
           scanSources([htmlContent], true);
         }
-      }, 2000); // 2秒内的变化会被合并为一次扫描
+      }, 1000); // 2秒内的变化会被合并为一次扫描
     };
 
     // 使用 MutationObserver 监听 DOM 变化
