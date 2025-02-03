@@ -597,13 +597,67 @@ body {
   margin-bottom: 8px;
 }
 
-/* 服务器指纹样式 */
-.server-tag {
+/* Web服务器指纹样式 */
+.webserver-tag {
   background: #20c997;  /* 青绿色 */
 }
 
-.server-group {
+.webserver-group {
   border-left-color: #20c997;
+}
+
+/* 操作系统指纹样式 */
+.os-tag {
+  background: #ff922b;  /* 橙色 */
+}
+
+.os-group {
+  border-left-color: #ff922b;
+}
+
+/* SSL指纹样式 */
+.ssl-tag {
+  background: #51cf66;  /* 绿色 */
+}
+
+.ssl-group {
+  border-left-color: #51cf66;
+}
+
+/* 模块指纹样式 */
+.module-tag {
+  background: #339af0;  /* 蓝色 */
+}
+
+.module-group {
+  border-left-color: #339af0;
+}
+
+/* 技术栈指纹样式 */
+.technology-tag {
+  background: #845ef7;  /* 紫色 */
+}
+
+.technology-group {
+  border-left-color: #845ef7;
+}
+
+/* Powered By 指纹样式 */
+.poweredby-tag {  /* 修改为驼峰式命名，去掉空格和横线 */
+  background: #4dabf7;  /* 浅蓝色 */
+}
+
+.poweredby-group {  /* 修改为驼峰式命名，去掉空格和横线 */
+  border-left-color: #4dabf7;
+}
+
+/* 安全组件指纹样式 */
+.security-tag {
+  background: #e64980;  /* 粉红色 */
+}
+
+.security-group {
+  border-left-color: #e64980;
 }
 
 .fingerprint-value {

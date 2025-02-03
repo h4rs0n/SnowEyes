@@ -337,18 +337,64 @@ function initConfigPage() {
 // 更新服务器指纹信息
 function updateServerFingerprints(fingerprints) {
   const fingerprintSection = document.querySelector('.fingerprint-section');
-  
-  // 清空现有的指纹组
   fingerprintSection.innerHTML = '';
   
-  // 处理 Server 头
-  if (fingerprints.server) {
-    const [name, version] = fingerprints.server.split('/');
-    addFingerprint(fingerprintSection, {
-      type: 'Server',
-      name: name,
-      description: `返回头包含${name.toLowerCase()}声明，${version ? '版本号为' + version : '版本号未知'}`,
-      value: version || '版本未知'
+  // 处理服务器组件信息
+  if (fingerprints.serverComponents) {
+    const components = fingerprints.serverComponents;
+    
+    // 显示Web服务器信息
+    if (components.webServer) {
+      const server = components.webServer;
+      let description = `通过Server响应头识别Web服务器为${server.name}`;
+      
+      if (server.subType) {
+        description += `(${server.subType})`;
+      }
+      
+      if (server.component) {
+        description += `，使用${server.component.name}组件(版本${server.component.version})`;
+      } else if (server.version) {
+        description += `，版本号为${server.version}`;
+      }
+
+      addFingerprint(fingerprintSection, {
+        type: 'WebServer',
+        name: server.subType ? `${server.name} ${server.subType}` : server.name,
+        description: description,
+        value: server.component ? server.component.version : (server.version || '版本未知')
+      });
+    }
+
+    // 显示操作系统信息
+    if (components.os) {
+      addFingerprint(fingerprintSection, {
+        type: 'OS',
+        name: components.os.name,
+        description: `通过Server响应头识别服务器操作系统为${components.os.name}`,
+        value: components.os.version
+
+      });
+    }
+
+    // 显示扩展信息
+    components.extensions.forEach(ext => {
+      addFingerprint(fingerprintSection, {
+        type: 'SSL',
+        name: ext.name,
+        description: `通过Server响应头识别Web服务器扩展为${ext.name}，版本号为${ext.version}`,
+        value: ext.version
+      });
+    });
+
+    // 显示模块信息
+    components.modules.forEach(mod => {
+      addFingerprint(fingerprintSection, {
+        type: 'Module',
+        name: mod.name,
+        description: `通过Server响应头识别服务器模块为${mod.name}，版本号为${mod.version}`,
+        value: mod.version
+      });
     });
   }
 
@@ -358,15 +404,42 @@ function updateServerFingerprints(fingerprints) {
       type: 'Technology',
       name: fingerprints.technology.name,
       description: fingerprints.technology.description,
-      value: '版本未知'
+      value: fingerprints.technology.description.match(/版本号为([^，]+)/)?.[1] || '版本未知'
     });
   }
 
   // 处理其他响应头
   for (const [headerName, headerValue] of Object.entries(fingerprints.headers)) {
+    // 如果这个头的信息已经在 technology 中显示过，就跳过
+    if (fingerprints.technology && 
+        headerName.toLowerCase() === 'x-powered-by' && 
+        headerValue.toLowerCase().includes(fingerprints.technology.name.toLowerCase())) {
+      continue;
+    }
+
+    // 特殊处理 ASP.NET 相关头
+    if (headerName.toLowerCase() === 'x-aspnetmvc-version') {
+      addFingerprint(fingerprintSection, {
+        type: 'Technology',
+        name: 'ASP.NET MVC',
+        description: `通过X-AspNetMvc-Version响应头识别，网站使用ASP.NET MVC框架，版本号为${headerValue}`,
+        value: headerValue
+      });
+      continue;
+    }
+
+    if (headerName.toLowerCase() === 'x-aspnet-version') {
+      addFingerprint(fingerprintSection, {
+        type: 'Technology',
+        name: 'ASP.NET Runtime',
+        description: `通过X-AspNet-Version响应头识别，网站运行在.NET Framework ${headerValue}环境`,
+        value: headerValue
+      });
+      continue;
+    }
+
+    // 其他头的处理保持不变
     let name, version;
-    
-    // 解析头信息
     if (headerValue.includes('/')) {
       [name, version] = headerValue.split('/');
     } else {
@@ -374,9 +447,8 @@ function updateServerFingerprints(fingerprints) {
       version = null;
     }
 
-    // 根据不同的头类型设置不同的显示名称
     const headerTypes = {
-      'x-powered-by': 'Powered By',
+      'x-powered-by': 'PoweredBy',
       'x-aspnet-version': 'ASP.NET',
       'x-runtime': 'Runtime'
     };
@@ -384,19 +456,42 @@ function updateServerFingerprints(fingerprints) {
     addFingerprint(fingerprintSection, {
       type: headerTypes[headerName.toLowerCase()] || headerName,
       name: name,
-      description: `返回头包含${name.toLowerCase()}声明，${version ? '版本号为' + version : '版本号未知'}`,
+      description: `通过${headerName}响应头识别${name}，${version ? '版本号为' + version : '版本号未知'}`,
       value: version || '版本未知'
     });
   }
+
+  // 显示安全组件信息
+  if (fingerprints.security) {
+    const security = fingerprints.security;
+    addFingerprint(fingerprintSection, {
+      type: 'Security',
+      name: security.name,
+      description: `通过X-Safe-Firewall响应头识别安全防护组件为${security.name}，版本号为${security.version}`,
+      value: security.version
+    });
+  }
+}
+
+// 解析服务器信息
+function parseServerInfo(serverHeader) {
+  const parts = serverHeader.split(' ');
+  const [name, version] = parts[0].split('/');
+  // 如果有额外信息（如 OpenSSL 版本等），将其添加到版本信息中
+  const extraInfo = parts.slice(1).join(' ');
+  return {
+    name: name,
+    version: extraInfo ? `${version} ${extraInfo}` : version
+  };
 }
 
 // 添加单个指纹组
 function addFingerprint(container, info) {
   const group = document.createElement('div');
-  group.className = 'fingerprint-group';
+  group.className = `fingerprint-group ${info.type.toLowerCase()}-group`;
   group.innerHTML = `
     <h3>
-      <span class="tag server-tag">${info.type}</span>
+      <span class="tag ${info.type.toLowerCase()}-tag">${info.type}</span>
       ${info.name}
     </h3>
     <div class="fingerprint-item">
