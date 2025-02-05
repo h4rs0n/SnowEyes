@@ -1,3 +1,11 @@
+// 在文件开头添加动态扫描状态变量
+let dynamicScanEnabled = true;
+
+// 在初始化时获取设置
+chrome.storage.local.get(['dynamicScan'], (result) => {
+  dynamicScanEnabled = result.dynamicScan !== false;
+});
+
 // 等待依赖加载 - 简化检查
 const waitForDependencies = () => {
   const deps = [
@@ -280,6 +288,9 @@ async function initScan() {
 
     // 使用 MutationObserver 监听 DOM 变化
     const observer = new MutationObserver((mutations) => {
+      // 如果动态扫描被禁用，直接返回
+      if (!dynamicScanEnabled) return;
+
       // 过滤掉不重要的变化
       const significantChanges = mutations.filter(mutation => {
         // 忽略文本内容的微小变化
@@ -344,6 +355,7 @@ async function collectAndScanResources() {
     // 检查是否是第三方库
     const isThirdPartyLib = (url) => {
       const fileName = url.split('/').pop()?.split('?')[0]?.toLowerCase() || '';
+      // console.log('fileName', fileName);
       return SCANNER_CONFIG.API.SKIP_JS_PATTERNS.some(pattern => pattern.test(fileName));
     };
 
@@ -507,6 +519,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           WHITELIST: SCANNER_CONFIG.DOMAIN.WHITELIST
         }
       });
+    } else if (request.type === 'UPDATE_DYNAMIC_SCAN') {
+      dynamicScanEnabled = request.enabled;
+      sendResponse({ success: true });
     }
   } catch (e) {
     // 扩展上下文失效时忽略错误

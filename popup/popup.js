@@ -22,31 +22,18 @@ function switchPage(pageName) {
 
 // 显示配置信息
 function displayConfig(config) {
-  const container = document.querySelector('.config-page .container');
+  const whitelistDomains = document.querySelector('.whitelist-domains');
   if (!config) {
-    container.innerHTML = '<div class="error">无法获取配置信息</div>';
+    whitelistDomains.innerHTML = '<div class="error">无法获取配置信息</div>';
     return;
   }
 
-  let html = `
-    <div class="config-section">
-      <div class="config-group">
-        <h3>扫描白名单</h3>
-        <div class="config-content">
-          以下域名将不会被扫描：
-        </div>
-        <div class="whitelist-domains">
-          ${config.WHITELIST ? config.WHITELIST.map(domain => `
-            <div class="domain-item">
-              <span class="domain-text">${domain}</span>
-            </div>
-          `).join('') : ''}
-        </div>
-      </div>
+  // 显示白名单域名
+  whitelistDomains.innerHTML = config.WHITELIST ? config.WHITELIST.map(domain => `
+    <div class="domain-item">
+      <span class="domain-text">${domain}</span>
     </div>
-  `;
-
-  container.innerHTML = html;
+  `).join('') : '';
 }
 
 // 显示扫描结果的函数
@@ -322,6 +309,7 @@ function handleLongText() {
 function initConfigPage() {
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     if (tabs[0]) {
+      // 获取配置信息
       chrome.tabs.sendMessage(tabs[0].id, {type: 'GET_CONFIG'}, response => {
         if (chrome.runtime.lastError || !response || !response.config) {
           const container = document.querySelector('.config-page .container');
@@ -329,6 +317,26 @@ function initConfigPage() {
           return;
         }
         displayConfig(response.config);
+        
+        // 获取动态扫描设置
+        chrome.storage.local.get(['dynamicScan'], (result) => {
+          const dynamicScanCheckbox = document.getElementById('dynamicScan');
+          if (dynamicScanCheckbox) {
+            dynamicScanCheckbox.checked = result.dynamicScan !== false; // 默认开启
+            
+            // 添加变更监听
+            dynamicScanCheckbox.addEventListener('change', (e) => {
+              const enabled = e.target.checked;
+              chrome.storage.local.set({ dynamicScan: enabled });
+              
+              // 通知 content script 更新设置
+              chrome.tabs.sendMessage(tabs[0].id, {
+                type: 'UPDATE_DYNAMIC_SCAN',
+                enabled: enabled
+              });
+            });
+          }
+        });
       });
     }
   });

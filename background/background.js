@@ -109,6 +109,14 @@ function parseServerHeader(serverHeader) {
           name: name,
           version: part.includes('/') ? part.split('/')[1] : null
         };
+        
+        // 如果是 IIS，直接判定为 Windows 系统
+        if (serverName.includes('microsoft-iis') && !components.os) {
+          components.os = {
+            name: 'Windows',
+            version: 'windows'
+          };
+        }
       }
     }
     // 处理其他组件

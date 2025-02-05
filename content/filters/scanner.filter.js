@@ -276,19 +276,22 @@ const SCANNER_FILTER = {
     if (!value.length||key==value) {
       return false; 
     }
-    if (regexCache.keywordPattern.test(value)) return false;
+
+    for (const blackWord of SCANNER_CONFIG.BLACKLIST.VALUES) {
+      if (value.includes(blackWord)) {
+        return false;
+      }
+    }
     resultsSet?.cookies?.add(match);
     return true;
   },
 
   id_key: (match, resultsSet) => {
     if (match.match(/[:=]/)) {
-      // 检查是否是空值
       const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
       var key = valueMatch[0].replace(/['"]/g,'');
       var value = valueMatch[1].replace(/['"]/g,'');
       
-      // 转换为小写进行检查
       const keyLower = key.toLowerCase();
       const valueLower = value.toLowerCase();
       
@@ -303,8 +306,8 @@ const SCANNER_FILTER = {
         }
       }
 
-      // 检查value是否包含黑名单词
-      for (const blackWord of SCANNER_CONFIG.ID_KEY.VALUE_BLACKLIST) {
+      // 检查value是否在统一黑名单中
+      for (const blackWord of SCANNER_CONFIG.BLACKLIST.VALUES) {
         if (valueLower.includes(blackWord)) {
           return false;
         }

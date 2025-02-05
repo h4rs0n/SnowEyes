@@ -14,24 +14,24 @@ const SCANNER_CONFIG = {
     // 需要跳过的第三方JS库正则匹配规则
     SKIP_JS_PATTERNS: [
       // jQuery相关
-      /jquery([.-]?\d*\.?\d*\.?\d*)?(?:[\.-]cookie)?(?:[\.-]fancybox)?(?:[\.-]validate)?(?:[\.-]artDialog)?(?:[\.-]blockui)?(?:[\.-]pack)?(?:[\.-]base64)?(?:[\.-]md5)?(?:[\.-]min)?\.js$/i,
-      /(?:vue|vue-router|vuex)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      /^jquery([.-]?\d*\.?\d*\.?\d*)?(?:[\.-]cookie)?(?:[\.-]fancybox)?(?:[\.-]validate)?(?:[\.-]artDialog)?(?:[\.-]blockui)?(?:[\.-]pack)?(?:[\.-]base64)?(?:[\.-]md5)?(?:[\.-]min)?\.js$/i,
+      /^(?:vue|vue-router|vuex)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       // React相关
-      /(react|react-dom)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      /^(react|react-dom)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
       // Bootstrap相关
-      /bootstrap(?:\.bundle)?[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      /^bootstrap(?:\.bundle)?[.-]?\d*\.?\d*\.?\d*(?:[\.-]datepicker|datetimepicker)?(?:[\.-]zh-CN)?(?:[\.-]min)?\.js$/i,
       // UI框架相关
-      /(layui|lay|layer|liger|h-ui|element-ui|ueditor|kindeditor|ant-design)[.-]?\d*\.?\d*\.?\d*(?:[\.-]all)?(?:\.admin)?(?:[\.-]config)?(?:[\.-]min)?\.js$/i,
+      /^(layui|lay|layer|liger|h-ui|element-ui|ueditor|kindeditor|ant-design)[.-]?\d*\.?\d*\.?\d*(?:[\.-]all)?(?:\.admin)?(?:[\.-]config)?(?:[\.-]min)?\.js$/i,
       // 图表相关
-      /(echarts|chart|highcharts)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,     
+      /^(echarts|chart|highcharts)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,     
       // 工具库相关
-      /(lodash|moment|tableexport|axios|plupload|pqgrid)[.-]?\d*\.?\d*\.?\d*(?:\.full)?(?:\.min)?\.js$/i,     
+      /^(lodash|moment|tableexport|axios|plupload|pqgrid)[.-]?\d*\.?\d*\.?\d*(?:\.full)?(?:\.min)?\.js$/i,     
       // 其他常用库
-      /(polyfill|modernizr|device|less|isotope.pkgd|lhgdialog|kendo.web|seajs-style|seajs-text|tinymce|jsencrypt|backbone|select2|underscore|ext-all|ext-unigui-min|exporter|v5_float_4)[.-]?\d*\.?\d*\.?\d*(?:[\.-]dev)?(?:[\.-]min)?\.js$/i,      
+      /^(polyfill|modernizr|device|less|isotope.pkgd|lhgdialog|kendo.web|dataTables|editor|seajs-style|seajs-text|tinymce|jsencrypt|backbone|select2|underscore|ext-all|ext-unigui-min|exporter|buttons|v5_float_4)[.-]?\d*\.?\d*\.?\d*(?:[\.-]dev)?(?:[\.-]html5|bootstrap|print|full)?(?:[\.-]min)?\.js$/i,      
       // 日期选择器
-      /(datepicker|datetimepicker|wdatepicker|laydate)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,   
+      /^(datepicker|datetimepicker|wdatepicker|laydate)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,   
       // 语言包
-      /(?:zh|en|zh-cn|zh-tw|ja|ko)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
+      /^(?:zh|en|zh-cn|zh-tw|ja|ko)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,
     ],
     // 需要过滤的内容类型
     FILTERED_CONTENT_TYPES: [  
@@ -139,6 +139,31 @@ const SCANNER_CONFIG = {
     }
   },
 
+  // 统一的黑名单配置
+  BLACKLIST: {
+    // 值黑名单 - 从 ID_KEY 配置中移出
+    VALUES: new Set([
+      'input', 'about', 'video', 'null', 'top', 'gener', 'charlendar', 'met',
+      'login', 'read', 'black', 'hand', 'next', 'nect', 'system', 'panel', 'body',
+      'load', 'red', 'green', 'shift', 'item', 'init', 'print','button','left',
+      'finger', 'mark', 'down', 'up', 'ctrl', 'play', 'row', 'ntal', 'header',
+      'has', 'range', 'new', 'json', 'url', 'uri', 'long', 'big','right', 'slider',
+      'html', 'tion', 'default', 'set', 'serve','select', 'view', 'false', 'expect',
+      'broad', 'status', 'dom', 'use', 'rect', 'guard', 'index', 'link',
+      'opera', 'main', 'tech','insert', 'char', 'core', 'turn',  'number', 'atom',
+      'visual','get', 'type','write','error','array','parse','inter', 'size',
+      'statis','card','extract','full','white','refer', 'wrap', 'emp', 'this',
+      'crypt','normal','single','double','triple','more', 'message', 'profile',
+      'tool','tance','popper', 'radio', 'area', 'tip', 'color', 'hid',
+      'old', 'place', 'parm', 'axis', 'high', 'true', 'simple', 'bool', 'pick', 
+      'date', 'cancel', 'croll', 'late', 'note', 'length', 'class', 'light',
+      'param','tend', 'title', 'work','lang', 'func', 'variable', 'dark',
+      'data', 'object', 'brac', 'beare', 'string', 'self', 'void',
+      'opts', 'token', 'result', 'text', 'con', 'stor', 'sup', 'pun',
+      'key', 'com', 'ent', 'case', 'pare', 'dent', 'reg', 'invalid'
+    ])
+  },
+
   // ID密钥相关配置
   ID_KEY: {
     PATTERNS: [
@@ -158,25 +183,7 @@ const SCANNER_CONFIG = {
     ],
     // 关键词黑名单
     KEY_BLACKLIST: new Set([
-      'size', 'row', 'dict', 'up', 'highlight', 'cabin'
-    ]),
-    // 值黑名单
-    VALUE_BLACKLIST: new Set([
-      'input', 'about', 'video', 'null', 'top', 'gener', 'charlendar', 'content',
-      'login', 'read', 'black', 'hand', 'next', 'nect', 'system', 'panel', 'body',
-      'load', 'red', 'green', 'shift', 'item', 'init', 'print','button','left',
-      'finger', 'mark', 'down', 'up', 'ctrl', 'play', 'row', 'ntal', 'header','contain',
-      'has', 'range', 'new', 'json', 'url', 'uri', 'long', 'big','right', 'slider',
-      'html', 'event', 'tion', 'comp', 'default', 'set', 'serve','select', 'view',
-      'broad', 'status', 'dom', 'use', 'rect', 'ment', 'guard', 'index', 'link',
-      'dentified', 'opera', 'main', 'tech','insert', 'char','command', 'core',
-      'visual','get', 'type','write','error','array','parse','inter', 'size',
-      'statis','discard','extract','full','white','refer','parent', 'wrap',
-      'convert','crypt','normal','single','double','triple','more', 'message',
-      'tool','tance','popper','region', 'radio', 'area', 'tip', 'color', 'hid',
-      'old', 'place', 'parm', 'axis', 'high', 'ture', 'simple', 'bool', 'pick', 
-      'date', 'cancel', 'croll', 'late', 'note', 'confirm', 'length', 'class',
-      'param','tend', 'title', 'work','lang'
+      'size', 'row', 'dict', 'up', 'highlight', 'cabin', 'cross'
     ])
   }
 };

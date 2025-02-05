@@ -68,7 +68,33 @@
 
   <!-- 配置页面 -->
   <div class="page config-page">
-    <div class="container"></div>
+    <div class="container">
+      <div class="config-section">
+        <div class="config-group">
+          <h3>扫描白名单</h3>
+          <div class="config-content">
+            以下域名将不会被扫描：
+          </div>
+          <div class="whitelist-domains">
+            <!-- 白名单域名将在这里动态显示 -->
+          </div>
+        </div>
+
+        <!-- 添加动态扫描控制 -->
+        <div class="config-group">
+          <h3>扫描设置</h3>
+          <div class="config-item">
+            <label class="switch-wrapper">
+              <input type="checkbox" id="dynamicScan" class="switch-input">
+              <span class="switch-label">动态扫描</span>
+            </label>
+            <div class="config-desc">
+              启用后将自动扫描页面动态变化的内容，适用于单页应用等动态渲染的页面
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="popup.js"></script>
