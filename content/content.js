@@ -355,7 +355,6 @@ async function collectAndScanResources() {
     // 检查是否是第三方库
     const isThirdPartyLib = (url) => {
       const fileName = url.split('/').pop()?.split('?')[0]?.toLowerCase() || '';
-      // console.log('fileName', fileName);
       return SCANNER_CONFIG.API.SKIP_JS_PATTERNS.some(pattern => pattern.test(fileName));
     };
 

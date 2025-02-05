@@ -84,7 +84,7 @@ const SCANNER_CONFIG = {
       'mklab.cn',
       'cnnvd.org.cn',
       'qq.com',
-      'baidu.com'
+      // 'baidu.com'
     ],
     // 域名黑名单
     BLACKLIST: [
@@ -156,14 +156,18 @@ const SCANNER_CONFIG = {
       'crypt','normal','single','double','triple','more', 'age', 'clude', 'pect',
       'tool','tance','popper', 'radio', 'area', 'tip', 'color', 'hid', 'trans',
       'old', 'place', 'parm', 'axis', 'high', 'true', 'simple', 'bool', 'pick', 
-      'date', 'cancel', 'croll', 'late', 'note', 'length', 'class', 'light',
+      'date', 'cancel', 'croll', 'late', 'note', 'length', 'class', 'light', 'info',
       'param','tend', 'title', 'work','lang', 'func', 'able', 'dark', 'term',
       'data', 'object', 'brac', 'beare', 'str', 'self', 'void', 'apply', 'pace',
-      'opts', 'token', 'sult', 'text', 'con', 'stor', 'sup', 'pun', 'back',
-      'key', 'com', 'ent', 'case', 'pare', 'dent', 'reg', 'valid', 'blot',
-      'pro', 'port', 'begin', 'fine','reif','cord', 'module', 'else', 'alias'
+      'opts', 'token', 'sult', 'text', 'con', 'stor', 'sup', 'pun', 'back', 'cret',
+      'key', 'com', 'ent', 'case', 'pare', 'dent', 'reg', 'valid', 'blot', 'share',
+      'pro', 'port', 'begin', 'fine','reif','cord', 'module', 'else', 'alias', 'verify',
+      'fail', 'clear', 'rend', 'sub', 'leav', 'hint', 'fetch', 'coll', 'phony', 'move',
+      'create', 'search', 'create', 'break','switch','with','final', 'base', 'bug', 'rate',
+      'catch','hile','lete','post','name','pre'
     ])
   },
+
 
   // ID密钥相关配置
   ID_KEY: {

@@ -67,6 +67,12 @@ function parseServerHeader(serverHeader) {
           name: 'Linux',
           version: osInfo
         };
+      }else if (osInfo.toLowerCase().includes('ubuntu')) {
+        components.os = {
+          name: 'Ubuntu',
+          version: osInfo
+        };
+
       }
       return;
     }
@@ -167,6 +173,35 @@ function parseServerHeader(serverHeader) {
   return components;
 }
 
+// 在 parseServerHeader 函数后添加 webpack 检测函数
+function detectWebpack(pageContent) {
+  // 检查页面内容中的特征
+  if (/(webpackJsonp|__webpack_require__|webpack-dev-server)/.test(pageContent)) {
+    return {
+      name: 'Webpack',
+      description: '通过页面特征识别到Webpack构建工具'
+    };
+  }
+
+  // 检查 chunk 文件命名特征
+  if (/(?:chunk|main|app|vendor|common)s?(?:[-.][a-f0-9]{8,20})*.(?:css|js)/.test(pageContent)) {
+    return {
+      name: 'Webpack',
+      description: '通过文件命名特征识别到Webpack构建工具'
+    };
+  }
+
+  // 检查 sourcemap 特征
+  if (/\/\/# sourceMappingURL=.*\.[a-f0-9]{8,20}\.js\.map/.test(pageContent)) {
+    return {
+      name: 'Webpack',
+      description: '通过Source Map特征识别到Webpack构建工具'
+    };
+  }
+
+  return null;
+}
+
 // 监听网络请求
 chrome.webRequest.onHeadersReceived.addListener(
   (details) => {
@@ -189,6 +224,16 @@ chrome.webRequest.onHeadersReceived.addListener(
           if (name === 'server') {
             fingerprints.server = header.value;
             fingerprints.serverComponents = parseServerHeader(header.value);
+          }
+          else if (name === 'strict-transport-security') {
+            // 解析 HSTS 头
+            const maxAge = header.value.match(/max-age=(\d+)/)?.[1] || 'unknown';
+            fingerprints.security = {
+              name: 'HSTS',
+              description: `通过Strict-Transport-Security响应头识别，网站启用了HSTS安全策略，max-age=${maxAge}秒`,
+              version: maxAge,  // 使用 maxAge 作为版本号显示
+              provider: 'Strict-Transport-Security'  // 添加 provider 字段以符合显示逻辑
+            };
           }
           else if (name === 'x-powered-by') {
             // 从 X-Powered-By 识别技术栈
@@ -275,6 +320,32 @@ chrome.webRequest.onHeadersReceived.addListener(
             }
           });
         }
+
+        // 在处理完响应头后,尝试检测 webpack
+        fetch(details.url)
+          .then(response => response.text())
+          .then(body => {
+            const webpackTech = detectWebpack(body);
+            if (webpackTech && !fingerprints.technology) {
+              fingerprints.technology = webpackTech;
+              // 更新存储
+              serverFingerprints.set(details.tabId, fingerprints);
+              // 通知更新
+              try {
+                chrome.tabs.sendMessage(details.tabId, {
+                  type: 'UPDATE_FINGERPRINTS',
+                  fingerprints: {
+                    server: fingerprints.server,
+                    serverComponents: fingerprints.serverComponents,
+                    headers: Object.fromEntries(fingerprints.headers),
+                    technology: fingerprints.technology,
+                    security: fingerprints.security
+                  }
+                }).catch(() => {});
+              } catch (e) {}
+            }
+          })
+          .catch(() => {/* 忽略错误 */});
 
         // 存储该标签页的指纹信息
         serverFingerprints.set(details.tabId, fingerprints);
@@ -412,7 +483,6 @@ function identifyTechnology(cookieHeader) {
 
   for (const [tech, {pattern, description}] of Object.entries(patterns)) {
     if (pattern.test(cookieHeader)) {
-      console.log(tech);
       return {name: tech, description};
     }
   }
@@ -465,7 +535,8 @@ function parseSecurityHeader(headerValue) {
       name: '360安全防火墙',
       provider: parts[0],  // zhuji.360.cn
       version: parts[1],   // 1.0.8.8
-      extra: parts[2]      // F1W1
+      extra: parts[2],      // F1W1
+      description: `通过X-Safe-Firewall响应头识别安全防护组件为360安全防火墙，版本号为${parts[1]}, 附带信息${parts[2]}`
     };
   }
   return null;

@@ -411,7 +411,7 @@ function updateServerFingerprints(fingerprints) {
     addFingerprint(fingerprintSection, {
       type: 'Technology',
       name: fingerprints.technology.name,
-      description: fingerprints.technology.description,
+      description: fingerprints.technology.description || `通过页面特征识别到${fingerprints.technology.name}`,
       value: fingerprints.technology.description.match(/版本号为([^，]+)/)?.[1] || '版本未知'
     });
   }
@@ -475,7 +475,7 @@ function updateServerFingerprints(fingerprints) {
     addFingerprint(fingerprintSection, {
       type: 'Security',
       name: security.name,
-      description: `通过X-Safe-Firewall响应头识别安全防护组件为${security.name}，版本号为${security.version}`,
+      description: security.description,  // 直接使用组件提供的描述
       value: security.version
     });
   }
