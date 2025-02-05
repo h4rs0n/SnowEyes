@@ -143,24 +143,25 @@ const SCANNER_CONFIG = {
   BLACKLIST: {
     // 值黑名单 - 从 ID_KEY 配置中移出
     VALUES: new Set([
-      'input', 'about', 'video', 'null', 'top', 'gener', 'charlendar', 'met',
+      'input', 'about', 'video', 'null', 'top', 'gener', 'node', 'met', 'when', 'face',
       'login', 'read', 'black', 'hand', 'next', 'nect', 'system', 'panel', 'body',
       'load', 'red', 'green', 'shift', 'item', 'init', 'print','button','left',
-      'finger', 'mark', 'down', 'up', 'ctrl', 'play', 'row', 'ntal', 'header',
-      'has', 'range', 'new', 'json', 'url', 'uri', 'long', 'big','right', 'slider',
-      'html', 'tion', 'default', 'set', 'serve','select', 'view', 'false', 'expect',
-      'broad', 'status', 'dom', 'use', 'rect', 'guard', 'index', 'link',
-      'opera', 'main', 'tech','insert', 'char', 'core', 'turn',  'number', 'atom',
+      'finger', 'mark', 'down', 'up', 'ctrl', 'play', 'row', 'ntal', 'head', 'low',
+      'has', 'range', 'new', 'json', 'url', 'uri', 'long', 'big','right', 'slid',
+      'html', 'tion', 'default', 'set', 'serve','select', 'view', 'false', 'less',
+      'broad', 'status', 'dom', 'use', 'rect', 'guard', 'index', 'link', 'close',
+      'opera', 'main', 'tech','insert', 'char', 'core', 'turn',  'num', 'atom',
       'visual','get', 'type','write','error','array','parse','inter', 'size',
       'statis','card','extract','full','white','refer', 'wrap', 'emp', 'this',
-      'crypt','normal','single','double','triple','more', 'message', 'profile',
-      'tool','tance','popper', 'radio', 'area', 'tip', 'color', 'hid',
+      'crypt','normal','single','double','triple','more', 'age', 'clude', 'pect',
+      'tool','tance','popper', 'radio', 'area', 'tip', 'color', 'hid', 'trans',
       'old', 'place', 'parm', 'axis', 'high', 'true', 'simple', 'bool', 'pick', 
       'date', 'cancel', 'croll', 'late', 'note', 'length', 'class', 'light',
-      'param','tend', 'title', 'work','lang', 'func', 'variable', 'dark',
-      'data', 'object', 'brac', 'beare', 'string', 'self', 'void',
-      'opts', 'token', 'result', 'text', 'con', 'stor', 'sup', 'pun',
-      'key', 'com', 'ent', 'case', 'pare', 'dent', 'reg', 'invalid'
+      'param','tend', 'title', 'work','lang', 'func', 'able', 'dark', 'term',
+      'data', 'object', 'brac', 'beare', 'str', 'self', 'void', 'apply', 'pace',
+      'opts', 'token', 'sult', 'text', 'con', 'stor', 'sup', 'pun', 'back',
+      'key', 'com', 'ent', 'case', 'pare', 'dent', 'reg', 'valid', 'blot',
+      'pro', 'port', 'begin', 'fine','reif','cord', 'module', 'else', 'alias'
     ])
   },
 
@@ -179,8 +180,9 @@ const SCANNER_CONFIG = {
       {name: 'GitHub Token2', pattern: /(?:ghp|gho|ghu|ghs|ghr|github_pat)_[a-zA-Z0-9_]{36,255}/g},
       {name: 'Apple开发者密钥', pattern: /APID[a-zA-Z0-9]{32,42}/g},
       {name: '企业微信密钥', pattern: /ww[a-z0-9]{15,18}/g},
-      {name: 'key', pattern: /(?:['"]?(?:\w*(?:key|secret|oss|bucket)\w*)["']?)\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(]*"|'(?!\+)[^\,\s\'\(]*'|[\d\s]+)/ig}
+      {name: 'key', pattern: /(?:['"]?(?:\w*(?:key|secret|oss|bucket)\w*)["']?)\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(\>\<]*"|'(?!\+)[^\,\s\'\(\>\<]*'|[\d\s]+)/ig}
     ],
+
     // 关键词黑名单
     KEY_BLACKLIST: new Set([
       'size', 'row', 'dict', 'up', 'highlight', 'cabin', 'cross'
