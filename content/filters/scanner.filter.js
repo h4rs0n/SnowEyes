@@ -252,7 +252,7 @@ const SCANNER_FILTER = {
 
   credentials: (match, resultsSet) => {
     // 检查是否是空值
-    const valueMatch = match.replace(/\s+/g,'').split(/[:=]/,2);
+    const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
     console.log(valueMatch);
     var key = valueMatch[0].replace(/['"]/g,'').toLowerCase();
     var value = valueMatch[1].replace(/['"\{\}\[\]\，\：\。\？\?\!\>\<]/g,'').toLowerCase();

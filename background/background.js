@@ -79,7 +79,7 @@ function parseServerHeader(serverHeader) {
 
     // 先检查是否是已知的Web服务器
     const serverName = part.split('/')[0].toLowerCase();
-    if (/apache|nginx|iis|litespeed/i.test(serverName)) {
+    if (/apache|nginx|iis|litespeed|resin/i.test(serverName)) {
       // 处理 Apache 的特殊变体
       if (serverName.includes('apache')) {
         if (serverName.includes('coyote')) {
@@ -170,6 +170,7 @@ function parseServerHeader(serverHeader) {
     }
   });
 
+  console.log(components);
   return components;
 }
 
