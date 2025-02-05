@@ -170,7 +170,6 @@ function parseServerHeader(serverHeader) {
     }
   });
 
-  console.log(components);
   return components;
 }
 

@@ -2,7 +2,7 @@
 const regexCache = {
   // 预编译常用的正则表达式
   coordPattern: /^coord/,
-  valuePattern: /^\/|true|false|register|signUp|name/i,
+  valuePattern: /^\/|true|false|register|signUp|name|http/i,
   chinesePattern: /^[\u4e00-\u9fa5]+$/,
   keywordPattern: /^func|variable|input|true|false|newline|null|http|unexpected|error|data|object|brac|beare|str|self|void|num|atom|opts|token|params|result|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|return|case|pare|ident|reg|invalid/i,
   camelCasePattern: /\b[_a-z]+(?:[A-Z][a-z]+)+\b/,
@@ -253,13 +253,11 @@ const SCANNER_FILTER = {
   credentials: (match, resultsSet) => {
     // 检查是否是空值
     const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
-    console.log(valueMatch);
     var key = valueMatch[0].replace(/['"]/g,'').toLowerCase();
     var value = valueMatch[1].replace(/['"\{\}\[\]\，\：\。\？\?\!\>\<]/g,'').toLowerCase();
     if (!value.length) {
       return false; 
     }
-    console.log(key,value);
     if (regexCache.coordPattern.test(key) || regexCache.valuePattern.test(value) || value.length<=1) return false;
     if (regexCache.chinesePattern.test(value)) return false;
     
