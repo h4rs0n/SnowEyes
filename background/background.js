@@ -398,6 +398,20 @@ chrome.webRequest.onHeadersReceived.addListener(
           else if (name === 'x-safe-firewall') {
             fingerprints.security = parseSecurityHeader(header.value);
           }
+
+          // 添加对 X-XSS-Protection 头的处理
+          else if (name === 'x-xss-protection') {
+            // 解析 XSS Protection 头
+            const mode = header.value.includes('mode=block') ? '，启用了阻止模式' : '';
+            const enabled = header.value.startsWith('1') ? '启用' : '禁用';
+            
+            fingerprints.security = {
+              name: 'XSS Protection',
+              description: `通过X-XSS-Protection响应头识别，网站${enabled}了XSS防护${mode}`,
+              version: enabled === '启用' ? '1' : '0',
+              provider: 'X-XSS-Protection'
+            };
+          }
         });
         chrome.cookies.getAll({url: details.url}, (cookies) => {
           if (cookies && cookies.length > 0) {
