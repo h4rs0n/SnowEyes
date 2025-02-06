@@ -356,10 +356,13 @@ function updateServerFingerprints(fingerprints) {
       const server = components.webServer;
       let description = `通过Server响应头识别Web服务器为${server.name}`;
       
-      if (server.subType) {
+      if (server.subType=='Proxy') {
+        description = `通过Server响应头识别Web服务器使用了${server.name}作为反向代理/CDN`;
+      }else{
         description += `(${server.subType})`;
       }
       
+
       if (server.component) {
         description += `，使用${server.component.name}组件(版本${server.component.version})`;
       } else if (server.version) {

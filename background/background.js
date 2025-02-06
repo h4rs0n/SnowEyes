@@ -179,7 +179,15 @@ function parseServerHeader(serverHeader) {
 
     // 先检查是否是已知的Web服务器
     const serverName = part.split('/')[0].toLowerCase();
-    if (/apache|nginx|iis|litespeed|resin/i.test(serverName)) {
+    if (/apache|nginx|iis|litespeed|resin|cloudflare/i.test(serverName)) {
+      if(serverName.includes('cloudflare')){
+        components.webServer = {
+          name: 'Cloudflare',
+          subType: 'Proxy',
+          version: null
+        };
+        return;
+      }
       // 处理 Apache 的特殊变体
       if (serverName.includes('apache')) {
         if (serverName.includes('coyote')) {
@@ -267,6 +275,12 @@ function parseServerHeader(serverHeader) {
           type: 'other'
         });
       }
+    }else{
+      components.webServer = {
+        name: serverName,
+        version: null
+      };
+
     }
   });
 
