@@ -5,7 +5,7 @@ const regexCache = {
   chinesePattern: /^[\u4e00-\u9fa5]+$/,
   keywordPattern: /^func|variable|input|true|false|newline|null|http|unexpected|error|data|object|brac|beare|str|self|void|num|atom|opts|token|params|result|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|return|case|pare|ident|reg|invalid/i,
   camelCasePattern: /\b[_a-z]+(?:[A-Z][a-z]+)+\b/,
-  filterPattern: /请|输入|前往|整个|常用|咨询|为中心|以上|目前|任务|推动|需要|直接|识别|获取|用于|清除|遍历|一家|项目|等|造价|判断|通过|为了|可以|掌握|传统|杀毒|为了|允许|分析/
+  filterPattern: /请|输入|前往|整个|常用|咨询|为中心|是否|以上|目前|任务|推动|需要|直接|识别|获取|用于|清除|遍历|一家|项目|等|造价|判断|通过|为了|可以|掌握|传统|杀毒|为了|允许|分析/
 };
 
 // 统一的扫描过滤器
@@ -251,7 +251,7 @@ const SCANNER_FILTER = {
     // 检查是否是空值
     const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
     var key = valueMatch[0].replace(/['"]/g,'').toLowerCase();
-    var value = valueMatch[1].replace(/['"\{\}\[\]\，\：\。\？\?\!\>\<]/g,'').toLowerCase();
+    var value = valueMatch[1].replace(/['"\{\}\[\]\，\：\。\？\、\?\!\>\<]/g,'').toLowerCase();
     if (!value.length) {
       return false; 
     }
@@ -320,6 +320,20 @@ const SCANNER_FILTER = {
     }
     
     resultsSet?.idKeys?.add(match);
+    return true;
+  },
+
+  // 构建工具检测过滤器
+  finger: (match, resultsSet) => {
+    chrome.runtime.sendMessage({
+      type: 'UPDATE_BUILDER',
+      builder: {
+        name: 'Webpack',
+        description: '通过页面特征识别到Webpack构建工具，用于前端资源打包',
+        version: 'Webpack'
+      }
+    });
+    resultsSet?.fingers?.add(match);
     return true;
   }
 };

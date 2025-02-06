@@ -136,8 +136,16 @@ const SCANNER_CONFIG = {
         type: 'ID_KEY',
         patterns: SCANNER_CONFIG.ID_KEY.PATTERNS
       };
+    },
+    get FINGER() {
+      return {
+        type: 'FINGER',
+
+        patterns: SCANNER_CONFIG.FINGER.PATTERNS
+      };
     }
   },
+
 
   // 统一的黑名单配置
   BLACKLIST: {
@@ -184,13 +192,20 @@ const SCANNER_CONFIG = {
       {name: 'GitHub Token2', pattern: /(?:ghp|gho|ghu|ghs|ghr|github_pat)_[a-zA-Z0-9_]{36,255}/g},
       {name: 'Apple开发者密钥', pattern: /APID[a-zA-Z0-9]{32,42}/g},
       {name: '企业微信密钥', pattern: /ww[a-z0-9]{15,18}/g},
-      {name: 'key', pattern: /(?:['"]?(?:\w*(?:key|secret|oss|bucket)\w*)["']?)\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(\>\<]*"|'(?!\+)[^\,\s\'\(\>\<]*'|[\d\s]+)/ig}
+      {name: 'key', pattern: /(?:['"]?(?:\w*(?:key|secret|oss|bucket)\w*)|ak["']?)\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(\>\<]*"|'(?!\+)[^\,\s\'\(\>\<]*'|[\d\s]+)/ig}
     ],
 
     // 关键词黑名单
     KEY_BLACKLIST: new Set([
       'size', 'row', 'dict', 'up', 'highlight', 'cabin', 'cross'
     ])
+  },
+
+  // 添加构建工具配置
+  FINGER: {
+    PATTERNS: [
+      {name: 'Webpack页面特征', pattern: /(?:webpackJsonp|__webpack_require__|webpack-dev-server)/},
+    ]
   }
 };
 

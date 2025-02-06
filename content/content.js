@@ -15,7 +15,7 @@ const waitForDependencies = () => {
   ];
   return new Promise(resolve => {
     (function check() {
-      deps.every(dep => window[dep]) ? resolve() : setTimeout(check, 50);
+      deps.every(dep => window[dep]) ? resolve() : setTimeout(check, 20);
     })();
   });
 };
@@ -41,7 +41,9 @@ const latestResults = {
   credentials: new Set(),  // 用户名密码结果集
   cookies: new Set(),      // Cookie结果集
   idKeys: new Set(),       // ID密钥结果集
+  fingers: new Set(),       // 指纹结果集
 };
+
 
 // 优化扫描函数
 async function scanSources(sources, isHtmlContent = false) {
@@ -112,6 +114,17 @@ async function scanSources(sources, isHtmlContent = false) {
         
         try {
           // 根据内容类型选择合适的模式
+          if (key === 'FINGER') {
+            // 对每个模式进行匹配
+            for (const {pattern: fingerPattern, name: fingerName} of pattern.patterns) {
+              if (latestResults.fingers.has(fingerName)) continue;
+              const matches = chunk.match(fingerPattern);
+              if (matches) {
+                filter(fingerName, latestResults);
+              }
+            }
+            continue;
+          }
           if (key === 'IP') {
             // 使用不同的IP匹配模式
             const ipPattern = isHtmlContent ? pattern : SCANNER_CONFIG.PATTERNS.IP_RESOURCE;
@@ -537,4 +550,4 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initScan);
 } else {
   initScan();
-} 
+}

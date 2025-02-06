@@ -275,16 +275,8 @@ function parseServerHeader(serverHeader) {
 
 // 在 parseServerHeader 函数后添加 webpack 检测函数
 function detectWebpack(pageContent) {
-  // 检查页面内容中的特征
-  if (/(webpackJsonp|__webpack_require__|webpack-dev-server)/.test(pageContent)) {
-    return {
-      name: 'Webpack',
-      description: '通过页面特征识别到Webpack构建工具，用于前端资源打包',
-      version: 'Webpack'
-    };
-  }
   // 检查 chunk 文件命名特征
-  if (/(?:chunk|main|app|vendor|common)s?(?:[-.][a-f0-9]{8,20})*.(?:css|js)/.test(pageContent)) {
+  if (/(?:chunk|main|app|vendor|common)s?(?:[-.][a-f0-9]{8,20})+.(?:css|js)/.test(pageContent)) {
     return {
       name: 'Webpack',
       description: '通过文件命名特征识别到Webpack构建工具，用于前端资源打包',
@@ -500,8 +492,32 @@ chrome.webRequest.onHeadersReceived.addListener(
   ['responseHeaders']
 );
 
-// 添加消息监听器处理 popup 的请求
+// 添加构建工具更新消息处理
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'UPDATE_BUILDER') {
+    const fingerprints = serverFingerprints.get(sender.tab.id);
+    if (fingerprints && fingerprints.builder.name!=request.builder.name) {
+      fingerprints.builder = request.builder;
+      // 更新存储
+      serverFingerprints.set(sender.tab.id, fingerprints);
+      // 通知更新
+      try {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          type: 'UPDATE_FINGERPRINTS',
+          fingerprints: {
+            server: fingerprints.server,
+            serverComponents: fingerprints.serverComponents,
+            headers: Object.fromEntries(fingerprints.headers),
+            technology: fingerprints.technology,
+            security: fingerprints.security,
+            analytics: fingerprints.analytics,
+            builder: fingerprints.builder
+          }
+        }).catch(() => {});
+      } catch (e) {}
+    }
+    return true;
+  }
   if (request.type === 'GET_FINGERPRINTS') {
     // 获取当前标签页的指纹信息
     const fingerprints = serverFingerprints.get(request.tabId);
