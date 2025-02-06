@@ -1,6 +1,5 @@
 // 正则表达式缓存
 const regexCache = {
-  // 预编译常用的正则表达式
   coordPattern: /^coord/,
   valuePattern: /^\/|true|false|register|signUp|name|http/i,
   chinesePattern: /^[\u4e00-\u9fa5]+$/,
@@ -14,7 +13,6 @@ const SCANNER_FILTER = {
   // API 过滤器
   api: (function() {
     return function(match, resultsSet) {
-      // 去除首尾的引号
       match = match.slice(1, -1);
 
       //如果是css字体文件则丢弃
@@ -184,7 +182,6 @@ const SCANNER_FILTER = {
         resultsSet?.githubUrls?.add(match);
         return true;
       }
-
       resultsSet?.urls?.add(match);
       // 解析URL
       const url = new URL(match);

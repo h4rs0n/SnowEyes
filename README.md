@@ -76,8 +76,10 @@
 
 ### 指纹嗅探页面
 <div style="text-align:center">
-    <img src="icons/xiutan.png" alt="指纹嗅探" width="80%">
+    <img src="icons/xiutan1.png" alt="指纹嗅探" width="80%">
+    <img src="icons/xiutan2.png" alt="指纹嗅探" width="80%">
 </div>
+
 
 ---
 

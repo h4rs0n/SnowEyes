@@ -412,16 +412,19 @@ function updateServerFingerprints(fingerprints) {
       type: 'Technology',
       name: fingerprints.technology.name,
       description: fingerprints.technology.description || `通过页面特征识别到${fingerprints.technology.name}`,
-      value: fingerprints.technology.description.match(/版本号为([^，]+)/)?.[1] || '版本未知'
+      value: fingerprints.technology.description.match(/版本号为([^，]+)/)?.[1] || fingerprints.technology.version || '版本未知'
     });
   }
 
   // 处理其他响应头
   for (const [headerName, headerValue] of Object.entries(fingerprints.headers)) {
-    // 如果这个头的信息已经在 technology 中显示过，就跳过
-    if (fingerprints.technology && 
-        headerName.toLowerCase() === 'x-powered-by' && 
-        headerValue.toLowerCase().includes(fingerprints.technology.name.toLowerCase())) {
+    // 如果这个头的信息已经在 technology 或 security 中显示过，就跳过
+    if ((fingerprints.technology && 
+         headerName.toLowerCase() === 'x-powered-by' && 
+         headerValue.toLowerCase().includes(fingerprints.technology.name.toLowerCase())) ||
+        (fingerprints.security &&
+         headerName.toLowerCase() === 'x-powered-by' &&
+         headerValue.toLowerCase().includes(fingerprints.security.name.toLowerCase()))) {
       continue;
     }
 
@@ -476,7 +479,27 @@ function updateServerFingerprints(fingerprints) {
       type: 'Security',
       name: security.name,
       description: security.description,  // 直接使用组件提供的描述
-      value: security.version
+      value: security.version || '版本未知'
+    });
+  }
+
+  // 在 updateServerFingerprints 函数中添加对 analytics 的处理
+  if (fingerprints.analytics) {
+    addFingerprint(fingerprintSection, {
+      type: 'Analytics',
+      name: fingerprints.analytics.name,
+      description: fingerprints.analytics.description,
+      value: fingerprints.analytics.version || '版本未知'
+    });
+  }
+
+  // 在 updateServerFingerprints 函数中添加对 builder 的处理
+  if (fingerprints.builder) {
+    addFingerprint(fingerprintSection, {
+      type: 'Builder',
+      name: fingerprints.builder.name,
+      description: fingerprints.builder.description,
+      value: fingerprints.builder.version || '版本未知'
     });
   }
 }

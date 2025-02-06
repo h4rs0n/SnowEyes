@@ -41,6 +41,106 @@ function updateBadge(results) {
 // 存储服务器指纹信息
 let serverFingerprints = new Map();  // 使用 Map 存储每个标签页的指纹信息
 
+// 在文件开头添加统计服务检测标记
+const analyticsDetected = {
+  baidu: new Map(),    // 百度统计检测状态
+  yahoo: new Map(),    // 雅虎统计检测状态
+  google: new Map(),   // 谷歌统计检测状态
+  // 后续可以轻松添加其他统计服务
+};
+
+// 统计服务配置
+const ANALYTICS_CONFIG = {
+  baidu: {
+    pattern: '*://hm.baidu.com/hm.js*',
+    name: '百度统计',
+    description: '通过网络请求识别到百度统计服务，网站的用户访问数据会被百度记录',
+    version: 'Baidu Analytics'
+  },
+  yahoo: {
+    pattern: '*://analytics.yahoo.com/*',
+    name: '雅虎统计',
+    description: '通过网络请求识别到雅虎统计服务，网站的用户访问数据会被雅虎记录',
+    version: 'Yahoo Analytics'
+  },
+  google: {
+    pattern: '*://www.google-analytics.com/*',
+    name: '谷歌统计',
+    description: '通过网络请求识别到谷歌统计服务，网站的用户访问数据会被谷歌记录',
+    version: 'Google Analytics'
+  }
+  // 后续可以轻松添加其他统计服务配置
+};
+
+// 统一的统计服务检测处理函数
+function handleAnalyticsDetection(details, type) {
+  let fingerprints = serverFingerprints.get(details.tabId);
+  if (!fingerprints) {
+    // 如果还没有指纹信息，创建一个新的
+    fingerprints = {
+      server: null,
+      serverComponents: null,
+      headers: new Map(),
+      technology: null,
+      security: null,
+      analytics: null,
+      builder: null    // 添加构建工具字段
+    };
+    serverFingerprints.set(details.tabId, fingerprints);
+  }
+
+  // 更新或设置 analytics 信息
+  if (!analyticsDetected[type].get(details.tabId)) {
+    analyticsDetected[type].set(details.tabId, true);
+    fingerprints.analytics = {
+      name: ANALYTICS_CONFIG[type].name,
+      description: ANALYTICS_CONFIG[type].description,
+      version: ANALYTICS_CONFIG[type].version
+    };
+
+    // 更新存储
+    serverFingerprints.set(details.tabId, fingerprints);
+
+    // 通知更新
+    try {
+      chrome.tabs.sendMessage(details.tabId, {
+        type: 'UPDATE_FINGERPRINTS',
+        fingerprints: {
+          server: fingerprints.server,
+          serverComponents: fingerprints.serverComponents,
+          headers: Object.fromEntries(fingerprints.headers),
+          technology: fingerprints.technology,
+          security: fingerprints.security,
+          analytics: fingerprints.analytics,
+          builder: fingerprints.builder
+        }
+      }).catch(() => {});
+    } catch (e) {}
+  }
+}
+
+// 为每个统计服务添加监听器
+Object.entries(ANALYTICS_CONFIG).forEach(([type, config]) => {
+  chrome.webRequest.onBeforeRequest.addListener(
+    (details) => handleAnalyticsDetection(details, type),
+    { urls: [config.pattern] },
+    []
+  );
+});
+
+// 在标签页关闭时清理检测状态
+chrome.tabs.onRemoved.addListener((tabId) => {
+  Object.values(analyticsDetected).forEach(map => map.delete(tabId));
+  serverFingerprints.delete(tabId);
+});
+
+// 在标签页更新时重置检测状态
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === 'loading') {
+    Object.values(analyticsDetected).forEach(map => map.delete(tabId));
+  }
+});
+
 // 识别技术栈
 function parseServerHeader(serverHeader) {
   const components = {
@@ -179,23 +279,16 @@ function detectWebpack(pageContent) {
   if (/(webpackJsonp|__webpack_require__|webpack-dev-server)/.test(pageContent)) {
     return {
       name: 'Webpack',
-      description: '通过页面特征识别到Webpack构建工具'
+      description: '通过页面特征识别到Webpack构建工具，用于前端资源打包',
+      version: 'Webpack'
     };
   }
-
   // 检查 chunk 文件命名特征
   if (/(?:chunk|main|app|vendor|common)s?(?:[-.][a-f0-9]{8,20})*.(?:css|js)/.test(pageContent)) {
     return {
       name: 'Webpack',
-      description: '通过文件命名特征识别到Webpack构建工具'
-    };
-  }
-
-  // 检查 sourcemap 特征
-  if (/\/\/# sourceMappingURL=.*\.[a-f0-9]{8,20}\.js\.map/.test(pageContent)) {
-    return {
-      name: 'Webpack',
-      description: '通过Source Map特征识别到Webpack构建工具'
+      description: '通过文件命名特征识别到Webpack构建工具，用于前端资源打包',
+      version: 'Webpack'
     };
   }
 
@@ -214,7 +307,9 @@ chrome.webRequest.onHeadersReceived.addListener(
           serverComponents: null,  // 新增服务器组件信息
           headers: new Map(),
           technology: null,
-          security: null  // 添加安全组件信息
+          security: null,  // 添加安全组件信息
+          analytics: null,  // 添加 analytics 字段
+          builder: null    // 添加构建工具字段
         };
 
         // 遍历所有响应头
@@ -239,7 +334,18 @@ chrome.webRequest.onHeadersReceived.addListener(
             // 从 X-Powered-By 识别技术栈
             const tech = identifyTechnologyFromHeader(header.value);
             if (tech) {
-              fingerprints.technology = tech;
+              if (tech.isSecurityComponent) {
+                // 如果是安全组件，更新 security 字段
+                fingerprints.security = {
+                  name: tech.name,
+                  description: tech.description,
+                  version: tech.version,
+                  provider: 'X-Powered-By'
+                };
+              } else {
+                // 否则更新 technology 字段
+                fingerprints.technology = tech;
+              }
             }
             fingerprints.headers.set(name, header.value);
           }
@@ -280,54 +386,26 @@ chrome.webRequest.onHeadersReceived.addListener(
                 `版本号为${fingerprints.technology.version || '未知'}，运行在.NET Framework ${runtimeVersion}`;
             }
           }
-          else if (name === 'set-cookie' && !fingerprints.technology) {
+          else if (name === 'set-cookie') {
             // 只有在没有从其他头识别出技术栈时，才尝试从 cookie 识别
-            const tech = identifyTechnology(header.value);
+            const tech = identifyTechnologyFromCookie(header.value);
             if (tech) {
               fingerprints.technology = tech;
             }
           }
+
           // 添加对安全防火墙头的处理
           else if (name === 'x-safe-firewall') {
             fingerprints.security = parseSecurityHeader(header.value);
           }
         });
-
-        // 如果没有从响应头识别出技术，再尝试从现有 cookies 识别
-        if (!fingerprints.technology) {
-          chrome.cookies.getAll({url: details.url}, (cookies) => {
-            if (cookies && cookies.length > 0) {
-              const cookieNames = cookies.map(cookie => cookie.name).join(';');
-              const tech = identifyTechnology(cookieNames);
-              if (tech) {
-                fingerprints.technology = tech;
-                // 更新存储
-                serverFingerprints.set(details.tabId, fingerprints);
-                // 通知更新
-                try {
-                  chrome.tabs.sendMessage(details.tabId, {
-                    type: 'UPDATE_FINGERPRINTS',
-                    fingerprints: {
-                      server: fingerprints.server,
-                      serverComponents: fingerprints.serverComponents,
-                      headers: Object.fromEntries(fingerprints.headers),
-                      technology: fingerprints.technology,
-                      security: fingerprints.security
-                    }
-                  }).catch(() => {});
-                } catch (e) {}
-              }
-            }
-          });
-        }
-
-        // 在处理完响应头后,尝试检测 webpack
-        fetch(details.url)
-          .then(response => response.text())
-          .then(body => {
-            const webpackTech = detectWebpack(body);
-            if (webpackTech && !fingerprints.technology) {
-              fingerprints.technology = webpackTech;
+        chrome.cookies.getAll({url: details.url}, (cookies) => {
+          if (cookies && cookies.length > 0) {
+            console.log(cookies);
+            const cookieNames = cookies.map(cookie => cookie.name).join(';');
+            const tech = identifyTechnologyFromCookie(cookieNames);
+            if (tech) {
+              fingerprints.technology = tech;
               // 更新存储
               serverFingerprints.set(details.tabId, fingerprints);
               // 通知更新
@@ -339,7 +417,37 @@ chrome.webRequest.onHeadersReceived.addListener(
                     serverComponents: fingerprints.serverComponents,
                     headers: Object.fromEntries(fingerprints.headers),
                     technology: fingerprints.technology,
-                    security: fingerprints.security
+                    security: fingerprints.security,
+                    analytics: fingerprints.analytics,
+                    builder: fingerprints.builder    // 添加 builder 字段
+                  }
+                }).catch(() => {});
+              } catch (e) {}
+            }
+          }
+        });
+
+        // 在处理完响应头后,尝试检测 webpack
+        fetch(details.url)
+          .then(response => response.text())
+          .then(body => {
+            const webpackTech = detectWebpack(body);
+            if (webpackTech && !fingerprints.builder) {  // 改为检查 builder
+              fingerprints.builder = webpackTech;  // 存储到 builder 字段
+              // 更新存储
+              serverFingerprints.set(details.tabId, fingerprints);
+              // 通知更新
+              try {
+                chrome.tabs.sendMessage(details.tabId, {
+                  type: 'UPDATE_FINGERPRINTS',
+                  fingerprints: {
+                    server: fingerprints.server,
+                    serverComponents: fingerprints.serverComponents,
+                    headers: Object.fromEntries(fingerprints.headers),
+                    technology: fingerprints.technology,
+                    security: fingerprints.security,
+                    analytics: fingerprints.analytics,
+                    builder: fingerprints.builder    // 添加 builder 字段
                   }
                 }).catch(() => {});
               } catch (e) {}
@@ -360,7 +468,9 @@ chrome.webRequest.onHeadersReceived.addListener(
                 serverComponents: fingerprints.serverComponents,
                 headers: Object.fromEntries(fingerprints.headers),
                 technology: fingerprints.technology,
-                security: fingerprints.security
+                security: fingerprints.security,
+                analytics: fingerprints.analytics,
+                builder: fingerprints.builder    // 添加 builder 字段
               }
             }).catch(() => {
               // 忽略发送失败的错误
@@ -376,11 +486,6 @@ chrome.webRequest.onHeadersReceived.addListener(
   ['responseHeaders']
 );
 
-// 监听标签页关闭事件，清理数据
-chrome.tabs.onRemoved.addListener((tabId) => {
-  serverFingerprints.delete(tabId);
-});
-
 // 添加消息监听器处理 popup 的请求
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'GET_FINGERPRINTS') {
@@ -392,7 +497,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         serverComponents: fingerprints.serverComponents,
         headers: Object.fromEntries(fingerprints.headers),
         technology: fingerprints.technology,
-        security: fingerprints.security
+        security: fingerprints.security,
+        analytics: fingerprints.analytics,
+        builder: fingerprints.builder    // 添加 builder 字段
       });
     } else {
       sendResponse(null);
@@ -452,40 +559,50 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // 识别技术栈
-function identifyTechnology(cookieHeader) {
+function identifyTechnologyFromCookie(cookieHeader) {
   const patterns = {
     'PHP': {
       pattern: /PHPSESSID/i,
-      description: '通过Cookie识别，网站使用PHP作为服务端语言'
+      description: '通过Cookie识别，网站使用PHP作为服务端语言',
+      version: 'PHP'
     },
     'ASP.NET': {
-      pattern: /ASP\.NET_SessionId/i,
-      description: '通过Cookie识别，网站使用ASP.NET作为服务端语言'
+      pattern: /ASP\.NET_SessionId|ASPSESSIONID/i,
+      description: '通过Cookie识别，网站使用ASP.NET作为服务端语言',
+      version: 'ASP.NET'
     },
     'Java': {
       pattern: /JSESSIONID|SESSIONID|jeesite/i,
-      description: '通过Cookie识别，网站使用Java作为服务端语言'
+      description: '通过Cookie识别，网站使用Java作为服务端语言',
+      version: 'Java'
     },
+
     'Django': {
       pattern: /sessionid.*django/i,
-      description: '通过Cookie识别，网站使用Django(Python)作为服务端框架'
+      description: '通过Cookie识别，网站使用Django(Python)作为服务端框架',
+      version: 'Django'
     },
     'Rails': {
       pattern: /_session_id=.*rack/i,
-      description: '通过Cookie识别，网站使用Ruby on Rails作为服务端框架'
+      description: '通过Cookie识别，网站使用Ruby on Rails作为服务端框架',
+      version: 'Rails'
     },
+
     'Laravel': {
       pattern: /laravel_session/i,
-      description: '通过Cookie识别，网站使用Laravel(PHP)作为服务端框架'
+      description: '通过Cookie识别，网站使用Laravel(PHP)作为服务端框架',
+      version: 'Laravel'
     }
   };
 
 
-  for (const [tech, {pattern, description}] of Object.entries(patterns)) {
+
+  for (const [tech, {pattern, description, version}] of Object.entries(patterns)) {
     if (pattern.test(cookieHeader)) {
-      return {name: tech, description};
+      return {name: tech, description, version};
     }
   }
+
 
   return null;
 }
@@ -510,12 +627,27 @@ function identifyTechnologyFromHeader(headerValue) {
     'Java': {
       pattern: /Java/i,
       getVersion: (value) => value.split('/')[1] || null
+    },
+    'Janusec': {
+      pattern: /Janusec/i,
+      getVersion: (value) => value.split('/')[1] || null,
+      isSecurity: true,
+      description: '通过X-Powered-By响应头识别到Janusec应用网关，为网站提供安全防护'
     }
   };
 
-  for (const [tech, {pattern, getVersion}] of Object.entries(patterns)) {
+  for (const [tech, {pattern, getVersion, isSecurity, description}] of Object.entries(patterns)) {
     if (pattern.test(headerValue)) {
-      const version = getVersion(headerValue);
+      const version = getVersion ? getVersion(headerValue) : null;
+      // 如果是安全组件，返回特殊格式
+      if (isSecurity) {
+        return {
+          isSecurityComponent: true,
+          name: tech,
+          description: description,
+          version: version
+        };
+      }
       return {
         name: tech,
         description: `通过X-Powered-By响应头识别，网站使用${tech}作为服务端语言${version ? '，版本号为' + version : ''}`
