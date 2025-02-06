@@ -192,7 +192,8 @@ const SCANNER_CONFIG = {
       {name: 'GitHub Token2', pattern: /(?:ghp|gho|ghu|ghs|ghr|github_pat)_[a-zA-Z0-9_]{36,255}/g},
       {name: 'Apple开发者密钥', pattern: /APID[a-zA-Z0-9]{32,42}/g},
       {name: '企业微信密钥', pattern: /ww[a-z0-9]{15,18}/g},
-      {name: 'key', pattern: /(?:['"]?(?:\w*(?:key|secret|oss|bucket)\w*)|ak["']?)\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(\>\<]*"|'(?!\+)[^\,\s\'\(\>\<]*'|[\d\s]+)/ig}
+      {name: 'key1', pattern: /(?:['"]?(?:\w*(?:key|secret|oss|bucket)\w*)|ak["']?)\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(\>\<]*"|'(?!\+)[^\,\s\'\(\>\<]*'|[\d\s]+)/ig},
+      {name: 'key2', pattern: /["'][a-zA-Z0-9]{32}["']/g}
     ],
 
     // 关键词黑名单
