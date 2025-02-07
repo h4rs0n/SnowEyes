@@ -284,43 +284,56 @@ const SCANNER_FILTER = {
   },
 
   id_key: (match, resultsSet) => {
-    if (match.match(/[:=]/)) {
-      const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
-      var key = valueMatch[0].replace(/['"<>]/g,'');
-      var value = valueMatch[1].replace(/['"><]/g,'');
-      const keyLower = key.toLowerCase();
-      const valueLower = value.toLowerCase();
-      
-      if (!value.length || keyLower === valueLower) {
-        return false;
-      }
-
-      // 检查key是否在黑名单中
-      for (const blackWord of SCANNER_CONFIG.ID_KEY.KEY_BLACKLIST) {
-        if (keyLower.includes(blackWord)) {
-          return false;
-        }
-      }
-
-      // 检查value是否在统一黑名单中
-      for (const blackWord of SCANNER_CONFIG.BLACKLIST.VALUES) {
-        if (valueLower.includes(blackWord)) {
-          return false;
-        }
-      }
-
-      // 其他检查
-      if (key === "key" && (value.length <= 8 || regexCache.camelCasePattern.test(value))) {
-        return false;
-      }
-
-      if (value.length <= 3) {
-        return false;
-      }
-    }
+    // 先检查是否包含分隔符
+    const hasDelimiter = match.match(/[:=]/);
     
-    resultsSet?.idKeys?.add(match);
-    return true;
+    if (hasDelimiter || match.length >= 32) {
+      // 只有在有分隔符的情况下才进行分割
+      if (hasDelimiter) {
+        const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
+        var key = valueMatch[0].replace(/['"<>]/g,'');
+        var value = valueMatch[1].replace(/['"><]/g,'');
+        const keyLower = key.toLowerCase();
+        const valueLower = value.toLowerCase();
+        
+        if (!value.length || keyLower === valueLower) {
+          return false;
+        }
+        // 检查key是否在黑名单中
+        for (const blackWord of SCANNER_CONFIG.ID_KEY.KEY_BLACKLIST) {
+          if (keyLower.includes(blackWord)) {
+            return false;
+          }
+        }
+        // 检查value是否在统一黑名单中
+        for (const blackWord of SCANNER_CONFIG.BLACKLIST.VALUES) {
+          if (valueLower.includes(blackWord)) {
+            return false;
+          }
+        }
+        // 其他检查
+        if (key === "key" && (value.length <= 8 || regexCache.camelCasePattern.test(value))) {
+          return false;
+        }
+        if (value.length <= 3) {
+          return false;
+        }
+      } else {
+        // 处理长度大于等于32的情况
+        if (/^[a-zA-Z]+$/.test(match)) {
+          return false;
+        }
+        // 检查value是否在统一黑名单中
+        for (const blackWord of SCANNER_CONFIG.BLACKLIST.VALUES) {
+          if (match.includes(blackWord)) {
+            return false;
+          }
+        }
+      }
+      resultsSet?.idKeys?.add(match);
+      return true;
+    }
+    return false;
   },
 
   // 构建工具检测过滤器

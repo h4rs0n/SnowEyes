@@ -163,8 +163,8 @@ const SCANNER_CONFIG = {
       'statis','card','extract','full','white','refer','wrap','emp','this',
       'crypt','normal','single','double','triple','more','age','clude','pect',
       'tool','tance','popper','radio','area','tip','color','hid','trans',
-      'old','place','parm','axis','high','true','simple','bool','pick', 
-      'date','cancel','croll','late','note','length','class','light','info',
+      'old','place','parm','axis','high','true','simple','bool','pick','found',
+      'date','cancel','croll','late','note','leng','class','light','info',
       'param','tend','title','work','lang','func','able','dark','term','click',
       'data','object','brac','beare','str','self','void','apply','pace',
       'opts','token','sult','text','con','stor','sup','pun','back','cret',
@@ -198,7 +198,7 @@ const SCANNER_CONFIG = {
 
     // 关键词黑名单
     KEY_BLACKLIST: new Set([
-      'size', 'row', 'dict', 'up', 'highlight', 'cabin', 'cross'
+      'size', 'row', 'dict', 'up', 'highlight', 'cabin', 'cross','time'
     ])
   },
 
