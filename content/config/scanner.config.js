@@ -25,7 +25,7 @@ const SCANNER_CONFIG = {
       // 图表相关
       /^(echarts|chart|highcharts)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,     
       // 工具库相关
-      /^(lodash|moment|tableexport|axios|plupload|pqgrid)[.-]?\d*\.?\d*\.?\d*(?:\.full)?(?:\.min)?\.js$/i,     
+      /^(lodash|moment|tableexport|axios|plupload|pqgrid|md5)[.-]?\d*\.?\d*\.?\d*(?:\.full)?(?:\.min)?\.js$/i,     
       // 其他常用库
       /^(polyfill|modernizr|device|less|isotope.pkgd|lhgdialog|kendo.web|dataTables|editor|seajs-style|seajs-text|tinymce|jsencrypt|backbone|select2|underscore|ext-all|ext-unigui-min|exporter|buttons|v5_float_4)[.-]?\d*\.?\d*\.?\d*(?:[\.-]dev)?(?:[\.-]html5|bootstrap|print|full)?(?:[\.-]min)?\.js$/i,      
       // 日期选择器
@@ -151,28 +151,28 @@ const SCANNER_CONFIG = {
   BLACKLIST: {
     // 值黑名单 - 从 ID_KEY 配置中移出
     VALUES: new Set([
-      'input', 'about', 'video', 'null', 'top', 'gener', 'node', 'met', 'when', 'face',
-      'login', 'read', 'black', 'hand', 'next', 'nect', 'system', 'panel', 'body',
-      'load', 'red', 'green', 'shift', 'item', 'init', 'print','button','left',
-      'finger', 'mark', 'down', 'up', 'ctrl', 'play', 'row', 'ntal', 'head', 'low',
-      'has', 'range', 'new', 'json', 'url', 'uri', 'long', 'big','right', 'slid',
-      'html', 'tion', 'default', 'set', 'serve','select', 'view', 'false', 'less',
-      'broad', 'status', 'dom', 'use', 'rect', 'guard', 'index', 'link', 'close',
-      'opera', 'main', 'tech','insert', 'char', 'core', 'turn',  'num', 'atom',
-      'visual','get', 'type','write','error','array','parse','inter', 'size',
-      'statis','card','extract','full','white','refer', 'wrap', 'emp', 'this',
-      'crypt','normal','single','double','triple','more', 'age', 'clude', 'pect',
-      'tool','tance','popper', 'radio', 'area', 'tip', 'color', 'hid', 'trans',
-      'old', 'place', 'parm', 'axis', 'high', 'true', 'simple', 'bool', 'pick', 
-      'date', 'cancel', 'croll', 'late', 'note', 'length', 'class', 'light', 'info',
-      'param','tend', 'title', 'work','lang', 'func', 'able', 'dark', 'term',
-      'data', 'object', 'brac', 'beare', 'str', 'self', 'void', 'apply', 'pace',
-      'opts', 'token', 'sult', 'text', 'con', 'stor', 'sup', 'pun', 'back', 'cret',
-      'key', 'com', 'ent', 'case', 'pare', 'dent', 'reg', 'valid', 'blot', 'share',
-      'pro', 'port', 'begin', 'fine','reif','cord', 'module', 'else', 'alias', 'verify',
-      'fail', 'clear', 'rend', 'sub', 'leav', 'hint', 'fetch', 'coll', 'phony', 'move',
-      'create', 'search', 'create', 'break','switch','with','final', 'base', 'bug', 'rate',
-      'catch','hile','lete','post','name','pre'
+      'input','about','video','null','top','gener','node','met','when','face',
+      'login','read','black','hand','next','nect','system','panel','body',
+      'load','red','green','shift','item','init','print','button','left',
+      'finger','mark','down','up','ctrl','play','row','ntal','head','low',
+      'has','range','new','json','url','uri','long','big','right','slid',
+      'html','tion','default','set','serve','select','view','false','less',
+      'broad','status','dom','use','rect','guard','index','link','close',
+      'opera','main','tech','insert','char','core','turn','num','atom',
+      'visual','get','type','write','error','array','parse','inter','size','time',
+      'statis','card','extract','full','white','refer','wrap','emp','this',
+      'crypt','normal','single','double','triple','more','age','clude','pect',
+      'tool','tance','popper','radio','area','tip','color','hid','trans',
+      'old','place','parm','axis','high','true','simple','bool','pick', 
+      'date','cancel','croll','late','note','length','class','light','info',
+      'param','tend','title','work','lang','func','able','dark','term','click',
+      'data','object','brac','beare','str','self','void','apply','pace',
+      'opts','token','sult','text','con','stor','sup','pun','back','cret',
+      'key','com','ent','case','pare','dent','reg','valid','blot','share',
+      'pro','port','begin','fine','reif','cord','module','else','alias','verify',
+      'fail','clear','rend','sub','leav', 'hint','fetch','coll','phony','move',
+      'create','search','create','break','switch','with','final','base','bug','rate',
+      'catch','hile','lete','post','name','pre','style','ref','global','tive','inner'
     ])
   },
 

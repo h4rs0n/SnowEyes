@@ -1,6 +1,5 @@
 // 更新扩展图标的badge
 function updateBadge(results) {
-  // 计算有内容的类别数量
   const categories = [
     results.domains,
     results.absoluteApis,
@@ -20,7 +19,7 @@ function updateBadge(results) {
     results.companies,
     results.credentials,
     results.cookies,
-    results.idKeys,     // 添加ID密钥结果集
+    results.idKeys,
   ];
 
   const nonEmptyCategories = categories.filter(category => 
@@ -39,15 +38,15 @@ function updateBadge(results) {
 }
 
 // 存储服务器指纹信息
-let serverFingerprints = new Map();  // 使用 Map 存储每个标签页的指纹信息
+let serverFingerprints = new Map();
 
-// 在文件开头添加统计服务检测标记
 const analyticsDetected = {
-  baidu: new Map(),    // 百度统计检测状态
-  yahoo: new Map(),    // 雅虎统计检测状态
-  google: new Map(),   // 谷歌统计检测状态
-  // 后续可以轻松添加其他统计服务
+  baidu: new Map(),    
+  yahoo: new Map(),    
+  google: new Map(),   
 };
+
+
 
 // 统计服务配置
 const ANALYTICS_CONFIG = {
@@ -69,14 +68,12 @@ const ANALYTICS_CONFIG = {
     description: '通过网络请求识别到谷歌统计服务，网站的用户访问数据会被谷歌记录',
     version: 'Google Analytics'
   }
-  // 后续可以轻松添加其他统计服务配置
 };
 
 // 统一的统计服务检测处理函数
 function handleAnalyticsDetection(details, type) {
   let fingerprints = serverFingerprints.get(details.tabId);
   if (!fingerprints) {
-    // 如果还没有指纹信息，创建一个新的
     fingerprints = {
       server: null,
       serverComponents: null,
@@ -84,7 +81,7 @@ function handleAnalyticsDetection(details, type) {
       technology: null,
       security: null,
       analytics: null,
-      builder: null    // 添加构建工具字段
+      builder: null
     };
     serverFingerprints.set(details.tabId, fingerprints);
   }
@@ -141,20 +138,17 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   }
 });
 
-// 识别技术栈
+// 处理server头
 function parseServerHeader(serverHeader) {
   const components = {
-    webServer: null,    // Web服务器信息
-    os: null,          // 操作系统信息
-    extensions: [],    // 扩展信息(如OpenSSL)
-    modules: []        // 服务器模块
-  };
+    webServer: null,    
 
-  // 通过空格分割不同组件
+    os: null,          
+    extensions: [],    
+    modules: []        
+  };
   const parts = serverHeader.split(' ').filter(part => part.length > 0);
-  
   parts.forEach(part => {
-    // 处理括号中的操作系统信息
     if (part.startsWith('(') && part.endsWith(')')) {
       const osInfo = part.slice(1, -1);
       if (osInfo.toLowerCase().includes('win')) {
@@ -177,7 +171,6 @@ function parseServerHeader(serverHeader) {
       return;
     }
 
-    // 先检查是否是已知的Web服务器
     const serverName = part.split('/')[0].toLowerCase();
     if (/apache|nginx|iis|litespeed|resin|cloudflare/i.test(serverName)) {
       if(serverName.includes('cloudflare')){
@@ -217,14 +210,12 @@ function parseServerHeader(serverHeader) {
           };
         }
       } else {
-        // 对于其他服务器，首字母大写
         const name = serverName.charAt(0).toUpperCase() + serverName.slice(1);
         components.webServer = {
           name: name,
           version: part.includes('/') ? part.split('/')[1] : null
         };
         
-        // 如果是 IIS，直接判定为 Windows 系统
         if (serverName.includes('microsoft-iis') && !components.os) {
           components.os = {
             name: 'Windows',
@@ -236,38 +227,19 @@ function parseServerHeader(serverHeader) {
     // 处理其他组件
     else if (part.includes('/')) {
       const [name, version] = part.split('/');
-      
-      // 处理特殊的服务器名称
-      if (/WWW\s*Server|Server/i.test(part)) {
-        const fullName = name.replace('/', ' ');
-        components.webServer = {
-          name: fullName,
-          version: version
-        };
-      }
-      // 处理 OpenSSL
-      else if (name === 'OpenSSL') {
+      if (name === 'OpenSSL') {
         components.extensions.push({
           name: 'OpenSSL',
           version: version,
           type: 'ssl'
         });
       }
-      // 处理模块
       else if (name.startsWith('mod_')) {
         components.modules.push({
           name: name.replace('mod_', ''),
           version: version
         });
       }
-      // 处理其他未知的服务器类型
-      else if (/server|www/i.test(name)) {
-        components.webServer = {
-          name: name,
-          version: version
-        };
-      }
-      // 其他扩展
       else {
         components.extensions.push({
           name: name,
@@ -277,19 +249,17 @@ function parseServerHeader(serverHeader) {
       }
     }else{
       components.webServer = {
-        name: serverName,
+        name: part,
         version: null
       };
-
     }
   });
 
   return components;
 }
 
-// 在 parseServerHeader 函数后添加 webpack 检测函数
+// webpack 检测
 function detectWebpack(pageContent) {
-  // 检查 chunk 文件命名特征
   if (/(?:chunk|main|app|vendor|common)s?(?:[-.][a-f0-9]{8,20})+.(?:css|js)/.test(pageContent)) {
     return {
       name: 'Webpack',
@@ -304,21 +274,19 @@ function detectWebpack(pageContent) {
 // 监听网络请求
 chrome.webRequest.onHeadersReceived.addListener(
   (details) => {
-    // 只处理主文档请求
     if (details.type === 'main_frame') {
       const headers = details.responseHeaders;
       if (headers) {
         const fingerprints = {
           server: null,
-          serverComponents: null,  // 新增服务器组件信息
+          serverComponents: null,  
           headers: new Map(),
           technology: null,
-          security: null,  // 添加安全组件信息
-          analytics: null,  // 添加 analytics 字段
-          builder: null    // 添加构建工具字段
+          security: null,  
+          analytics: null,  
+          builder: null    
         };
 
-        // 遍历所有响应头
         headers.forEach(header => {
           const name = header.name.toLowerCase();
           
@@ -327,21 +295,18 @@ chrome.webRequest.onHeadersReceived.addListener(
             fingerprints.serverComponents = parseServerHeader(header.value);
           }
           else if (name === 'strict-transport-security') {
-            // 解析 HSTS 头
             const maxAge = header.value.match(/max-age=(\d+)/)?.[1] || 'unknown';
             fingerprints.security = {
               name: 'HSTS',
               description: `通过Strict-Transport-Security响应头识别，网站启用了HSTS安全策略，max-age=${maxAge}秒`,
-              version: maxAge,  // 使用 maxAge 作为版本号显示
+              version: maxAge, 
               provider: 'Strict-Transport-Security'  // 添加 provider 字段以符合显示逻辑
             };
           }
           else if (name === 'x-powered-by') {
-            // 从 X-Powered-By 识别技术栈
             const tech = identifyTechnologyFromHeader(header.value);
             if (tech) {
               if (tech.isSecurityComponent) {
-                // 如果是安全组件，更新 security 字段
                 fingerprints.security = {
                   name: tech.name,
                   description: tech.description,
@@ -349,16 +314,14 @@ chrome.webRequest.onHeadersReceived.addListener(
                   provider: 'X-Powered-By'
                 };
               } else {
-                // 否则更新 technology 字段
                 fingerprints.technology = tech;
               }
             }
             fingerprints.headers.set(name, header.value);
           }
-          // 处理 ASP.NET 相关头
           else if (name === 'x-aspnetmvc-version') {
             const mvcVersion = header.value;
-            fingerprints.headers.set(name, header.value);  // 添加到 headers 集合
+            fingerprints.headers.set(name, header.value); 
             if (!fingerprints.technology) {
               fingerprints.technology = {
                 name: 'ASP.NET MVC',
@@ -367,7 +330,6 @@ chrome.webRequest.onHeadersReceived.addListener(
                 version: mvcVersion
               };
             } else if (fingerprints.technology.name === 'ASP.NET') {
-              // 更新已有的 ASP.NET 信息
               fingerprints.technology.name = 'ASP.NET MVC';
               fingerprints.technology.framework = 'MVC';
               fingerprints.technology.version = mvcVersion;
@@ -377,7 +339,7 @@ chrome.webRequest.onHeadersReceived.addListener(
           }
           else if (name === 'x-aspnet-version') {
             const runtimeVersion = header.value;
-            fingerprints.headers.set(name, header.value);  // 添加到 headers 集合
+            fingerprints.headers.set(name, header.value);
             if (!fingerprints.technology) {
               fingerprints.technology = {
                 name: 'ASP.NET',
@@ -385,7 +347,6 @@ chrome.webRequest.onHeadersReceived.addListener(
                 runtime: runtimeVersion
               };
             } else if (fingerprints.technology.name.includes('ASP.NET')) {
-              // 更新运行时信息
               fingerprints.technology.runtime = runtimeVersion;
               fingerprints.technology.description = 
                 `通过响应头识别，网站使用${fingerprints.technology.name}${fingerprints.technology.framework ? ' ' + fingerprints.technology.framework : ''}框架，` +
@@ -393,21 +354,15 @@ chrome.webRequest.onHeadersReceived.addListener(
             }
           }
           else if (name === 'set-cookie') {
-            // 只有在没有从其他头识别出技术栈时，才尝试从 cookie 识别
             const tech = identifyTechnologyFromCookie(header.value);
             if (tech) {
               fingerprints.technology = tech;
             }
           }
-
-          // 添加对安全防火墙头的处理
           else if (name === 'x-safe-firewall') {
             fingerprints.security = parseSecurityHeader(header.value);
           }
-
-          // 添加对 X-XSS-Protection 头的处理
           else if (name === 'x-xss-protection') {
-            // 解析 XSS Protection 头
             const mode = header.value.includes('mode=block') ? '，启用了阻止模式' : '';
             const enabled = header.value.startsWith('1') ? '启用' : '禁用';
             
@@ -426,9 +381,7 @@ chrome.webRequest.onHeadersReceived.addListener(
             const tech = identifyTechnologyFromCookie(cookieNames);
             if (tech) {
               fingerprints.technology = tech;
-              // 更新存储
               serverFingerprints.set(details.tabId, fingerprints);
-              // 通知更新
               try {
                 chrome.tabs.sendMessage(details.tabId, {
                   type: 'UPDATE_FINGERPRINTS',
@@ -439,7 +392,7 @@ chrome.webRequest.onHeadersReceived.addListener(
                     technology: fingerprints.technology,
                     security: fingerprints.security,
                     analytics: fingerprints.analytics,
-                    builder: fingerprints.builder    // 添加 builder 字段
+                    builder: fingerprints.builder 
                   }
                 }).catch(() => {});
               } catch (e) {}
@@ -452,11 +405,9 @@ chrome.webRequest.onHeadersReceived.addListener(
           .then(response => response.text())
           .then(body => {
             const webpackTech = detectWebpack(body);
-            if (webpackTech && !fingerprints.builder) {  // 改为检查 builder
-              fingerprints.builder = webpackTech;  // 存储到 builder 字段
-              // 更新存储
+            if (webpackTech && !fingerprints.builder) {
+              fingerprints.builder = webpackTech;
               serverFingerprints.set(details.tabId, fingerprints);
-              // 通知更新
               try {
                 chrome.tabs.sendMessage(details.tabId, {
                   type: 'UPDATE_FINGERPRINTS',
@@ -467,7 +418,7 @@ chrome.webRequest.onHeadersReceived.addListener(
                     technology: fingerprints.technology,
                     security: fingerprints.security,
                     analytics: fingerprints.analytics,
-                    builder: fingerprints.builder    // 添加 builder 字段
+                    builder: fingerprints.builder 
                   }
                 }).catch(() => {});
               } catch (e) {}
@@ -490,15 +441,13 @@ chrome.webRequest.onHeadersReceived.addListener(
                 technology: fingerprints.technology,
                 security: fingerprints.security,
                 analytics: fingerprints.analytics,
-                builder: fingerprints.builder    // 添加 builder 字段
+                builder: fingerprints.builder
               }
             }).catch(() => {
-              // 忽略发送失败的错误
             });
           } catch (e) {
-            // 忽略错误
           }
-        }, 1000);  // 延迟1秒
+        }, 500);
       }
     }
   },
@@ -510,11 +459,9 @@ chrome.webRequest.onHeadersReceived.addListener(
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'UPDATE_BUILDER') {
     const fingerprints = serverFingerprints.get(sender.tab.id);
-    if (fingerprints && fingerprints.builder.name!=request.builder.name) {
+    if (fingerprints && fingerprints.builder && fingerprints.builder.name!=request.builder.name) {
       fingerprints.builder = request.builder;
-      // 更新存储
       serverFingerprints.set(sender.tab.id, fingerprints);
-      // 通知更新
       try {
         chrome.tabs.sendMessage(sender.tab.id, {
           type: 'UPDATE_FINGERPRINTS',
@@ -543,7 +490,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         technology: fingerprints.technology,
         security: fingerprints.security,
         analytics: fingerprints.analytics,
-        builder: fingerprints.builder    // 添加 builder 字段
+        builder: fingerprints.builder    
       });
     } else {
       sendResponse(null);
@@ -551,7 +498,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
   if (request.type === 'FETCH_JS') {
-    // 使用 fetch API 获取文件内容
     fetch(request.url, {
       headers: {
         'Accept': '*/*',
@@ -594,15 +540,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ content: null });
       }
     });
-
-    return true; // 保持消息通道打开
+    return true; 
   } else if (request.type === 'UPDATE_BADGE') {
-    // 处理badge更新请求
     updateBadge(request.results);
   }
 });
 
-// 识别技术栈
+// 识别Cookie
 function identifyTechnologyFromCookie(cookieHeader) {
   const patterns = {
     'PHP': {
@@ -638,9 +582,6 @@ function identifyTechnologyFromCookie(cookieHeader) {
       version: 'Laravel'
     }
   };
-
-
-
   for (const [tech, {pattern, description, version}] of Object.entries(patterns)) {
     if (pattern.test(cookieHeader)) {
       return {name: tech, description, version};
@@ -653,17 +594,11 @@ function identifyTechnologyFromCookie(cookieHeader) {
 
 // 从响应头识别技术栈
 function identifyTechnologyFromHeader(headerValue) {
-  // 处理 PHP/7.3.4 这样的格式
-  if (headerValue.toLowerCase().startsWith('php/')) {
-    const version = headerValue.split('/')[1];
-    return {
-      name: 'PHP',
-      description: `通过X-Powered-By响应头识别，网站使用PHP作为服务端语言，版本号为${version}`
-    };
-  }
-  
-  // 可以添加其他技术的识别
   const patterns = {
+    'PHP': {
+      pattern: /PHP/i,
+      getVersion: (value) => value.split('/')[1] || null
+    },
     'ASP.NET': {
       pattern: /ASP\.NET/i,
       getVersion: (value) => value.split('/')[1] || null
@@ -677,13 +612,18 @@ function identifyTechnologyFromHeader(headerValue) {
       getVersion: (value) => value.split('/')[1] || null,
       isSecurity: true,
       description: '通过X-Powered-By响应头识别到Janusec应用网关，为网站提供安全防护'
+    },
+    'WAF': {
+      pattern: /WAF/i,
+      getVersion: (value) => value.split('/')[1] || null,
+      isSecurity: true,
+      description: `通过X-Powered-By响应头识别到WAF防火墙，版本为${headerValue.split('/')[1] || '未知'}`
     }
   };
 
   for (const [tech, {pattern, getVersion, isSecurity, description}] of Object.entries(patterns)) {
     if (pattern.test(headerValue)) {
       const version = getVersion ? getVersion(headerValue) : null;
-      // 如果是安全组件，返回特殊格式
       if (isSecurity) {
         return {
           isSecurityComponent: true,

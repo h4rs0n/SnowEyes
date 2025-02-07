@@ -354,11 +354,11 @@ function updateServerFingerprints(fingerprints) {
     // 显示Web服务器信息
     if (components.webServer) {
       const server = components.webServer;
-      let description = `通过Server响应头识别Web服务器为${server.name}`;
+      let description = `通过Server响应头识别Web服务器名${server.name}`;
       
       if (server.subType=='Proxy') {
         description = `通过Server响应头识别Web服务器使用了${server.name}作为反向代理/CDN`;
-      }else{
+      }else if(server.subType){
         description += `(${server.subType})`;
       }
       
@@ -470,7 +470,7 @@ function updateServerFingerprints(fingerprints) {
     addFingerprint(fingerprintSection, {
       type: headerTypes[headerName.toLowerCase()] || headerName,
       name: name,
-      description: `通过${headerName}响应头识别${name}，${version ? '版本号为' + version : '版本号未知'}`,
+      description: `通过${headerName}响应头识别出信息${name}，可能是自定义的服务或应用框架，${version ? '版本为' + version : '版本未知'}`,
       value: version || '版本未知'
     });
   }
