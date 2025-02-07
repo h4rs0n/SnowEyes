@@ -274,7 +274,12 @@ const SCANNER_FILTER = {
       return false; 
     }
 
-    for (const blackWord of SCANNER_CONFIG.BLACKLIST.VALUES) {
+    for (const blackWord of SCANNER_CONFIG.BLACKLIST.SHORT_VALUES) {
+      if (value.includes(blackWord)) {
+        return false;
+      }
+    }
+    for (const blackWord of SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES) {
       if (value.includes(blackWord)) {
         return false;
       }
@@ -306,9 +311,27 @@ const SCANNER_FILTER = {
           }
         }
         // 检查value是否在统一黑名单中
-        for (const blackWord of SCANNER_CONFIG.BLACKLIST.VALUES) {
-          if (valueLower.includes(blackWord)) {
-            return false;
+        if(value.length<16){
+          for (const blackWord of SCANNER_CONFIG.BLACKLIST.SHORT_VALUES) {
+            if (valueLower.includes(blackWord)) {
+              return false;
+            }
+          }
+          for (const blackWord of SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES) {
+            if (valueLower.includes(blackWord)) {
+              return false;
+            }
+          }
+        }else{
+          for (const blackWord of SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES) {
+            if (valueLower.includes(blackWord)) {
+              return false;
+            }
+          }
+          for (const blackWord of SCANNER_CONFIG.BLACKLIST.LONG_VALUES) {
+            if (valueLower.includes(blackWord)) {
+              return false;
+            }
           }
         }
         // 其他检查
@@ -320,11 +343,16 @@ const SCANNER_FILTER = {
         }
       } else {
         // 处理长度大于等于32的情况
-        if (/^[a-zA-Z]+$/.test(match)) {
+        if (/^[a-zA-Z]+$/.test(match.slice(1,-1))) {
           return false;
         }
         // 检查value是否在统一黑名单中
-        for (const blackWord of SCANNER_CONFIG.BLACKLIST.VALUES) {
+        for (const blackWord of SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES) {
+          if (match.includes(blackWord)) {
+            return false;
+          }
+        }
+        for (const blackWord of SCANNER_CONFIG.BLACKLIST.LONG_VALUES) {
           if (match.includes(blackWord)) {
             return false;
           }

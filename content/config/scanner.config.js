@@ -150,29 +150,42 @@ const SCANNER_CONFIG = {
   // 统一的黑名单配置
   BLACKLIST: {
     // 值黑名单 - 从 ID_KEY 配置中移出
-    VALUES: new Set([
-      'input','about','video','null','top','gener','node','met','when','face',
-      'login','read','black','hand','next','nect','system','panel','body',
-      'load','red','green','shift','item','init','print','button','left',
-      'finger','mark','down','up','ctrl','play','row','ntal','head','low',
-      'has','range','new','json','url','uri','long','big','right','slid',
-      'html','tion','default','set','serve','select','view','false','less',
-      'broad','status','dom','use','rect','guard','index','link','close',
-      'opera','main','tech','insert','char','core','turn','num','atom',
-      'visual','get','type','write','error','array','parse','inter','size','time',
-      'statis','card','extract','full','white','refer','wrap','emp','this',
-      'crypt','normal','single','double','triple','more','age','clude','pect',
-      'tool','tance','popper','radio','area','tip','color','hid','trans',
-      'old','place','parm','axis','high','true','simple','bool','pick','found',
-      'date','cancel','croll','late','note','leng','class','light','info',
-      'param','tend','title','work','lang','func','able','dark','term','click',
-      'data','object','brac','beare','str','self','void','apply','pace',
-      'opts','token','sult','text','con','stor','sup','pun','back','cret',
-      'key','com','ent','case','pare','dent','reg','valid','blot','share',
-      'pro','port','begin','fine','reif','cord','module','else','alias','verify',
-      'fail','clear','rend','sub','leav', 'hint','fetch','coll','phony','move',
-      'create','search','create','break','switch','with','final','base','bug','rate',
-      'catch','hile','lete','post','name','pre','style','ref','global','tive','inner'
+    SHORT_VALUES: new Set([
+      'up','in','by','of','is','on','to',
+      'age','all','app','ang','bar','bea','big','bug','com','con','cry','dom','dow',
+      'emp','ent','eta','eye','for','get','gen','has','hei','hid','ing','int','ken',
+      'key','lea','log','low','met','mod','new','nor','not','num','red','obj','old',
+      'out','pic','pre','pro','pop','pun','put','rad','ran','ref','red','reg','ren',
+      'rig','row','sea','set','seq','shi','str','sub','sup','sun','tab','tan','tip',
+      'top','uri','url','use','ver','via'
+    ]),
+    MEDIUM_VALUES: new Set([
+      'null','node','when','face','read','load','body','left','mark','down',
+      'ctrl','play','ntal','head','item','init','hand','next','nect','json',
+      'long','slid','less','view','html','tion','rect','link','char','core',
+      'turn','atom','tech','type','main','size','time','full','card','more',
+      'wrap','this','tool','late','note','leng','area','bool','pick','parm',
+      'axis','high','true','date','tend','work','lang','func','able','dark',
+      'term','info','data','opts','self','void','pace','list','brac','cret',
+      'tive','sult','text','stor','back','port','case','pare','dent','blot',
+      'fine','reif','cord','else','fail','rend','leav','hint','coll','move',
+      'with','base','rate','name','hile','lete','post','pect','icon','auth',
+      'jump','wave','land','wood','lize','room','chat','user','vice','ress',
+      'line','send','mess','calc','http','rame'
+    ]),
+    LONG_VALUES: new Set([
+      'about','alias','apply','array','beare','begin','black','break','broad',
+      'catch','class','close','clear','click','clude','color','count','cover',
+      'croll','crypt','error','false','fault','fetch','final','found','gener',
+      'green','group','guard','index','inner','input','inter','light','login',
+      'opera','param','parse','panel','place','print','phony','radio','range',
+      'right','refer','serve','share','shift','style','tance','title','token',
+      'tract','trans','trave','valid','video','white','write',
+
+      'button','cancel','create','double','finger','global','insert','module',
+      'normal','object','popper','triple','search','select','simple','single',
+      'status','statis','switch','system','visual','verify','detail','screen',
+      'member','change'
     ])
   },
 
