@@ -365,16 +365,16 @@ const SCANNER_FILTER = {
   },
 
   // 构建工具检测过滤器
-  finger: (match, resultsSet) => {
+  finger: (match, fingerClass, resultsSet) => {
     chrome.runtime.sendMessage({
       type: 'UPDATE_BUILDER',
       builder: {
         name: 'Webpack',
-        description: '通过页面特征识别到Webpack构建工具，用于前端资源打包',
+        description: `通过${match}识别到Webpack构建工具，用于前端资源打包`,
         version: 'Webpack'
       }
     });
-    resultsSet?.fingers?.add(match);
+    resultsSet?.fingers?.add(fingerClass);
     return true;
   }
 };

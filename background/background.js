@@ -257,213 +257,118 @@ function parseServerHeader(serverHeader) {
 
   return components;
 }
-
-// webpack 检测
-function detectWebpack(pageContent) {
-  if (/(?:chunk|main|app|vendor|common)s?(?:[-.][a-f0-9]{8,20})+.(?:css|js)/.test(pageContent)) {
-    return {
-      name: 'Webpack',
-      description: '通过文件命名特征识别到Webpack构建工具，用于前端资源打包',
-      version: 'Webpack'
-    };
-  }
-
-  return null;
-}
-
 // 修改 onHeadersReceived 监听器
 chrome.webRequest.onHeadersReceived.addListener(
-  (details) => {
-    // 获取响应体的函数
-    const getResponseBody = async () => {
-      // 仅对 HTML 和 JS 响应进行检测
-      const contentType = details.responseHeaders
-        .find(h => h.name.toLowerCase() === 'content-type')?.value.toLowerCase() || '';
-        
-      if (!contentType.includes('text/html') && 
-          !contentType.includes('javascript') && 
-          !contentType.includes('application/json')) {
-        return null;
-      }
+  async (details) => {
+    if (details.type !== 'main_frame' || !details.responseHeaders) return;
 
-      return new Promise(resolve => {
-        chrome.tabs.sendMessage(details.tabId, {
-          type: 'SCAN_CONTENT'
-        }, response => {
-          resolve(response?.content || null);
-        });
-      });
+    const headers = details.responseHeaders;
+    const fingerprints = {
+      server: null,
+      serverComponents: null,
+      headers: new Map(),
+      technology: null,
+      security: null,
+      analytics: null,
+      builder: null
     };
 
-    if (details.type === 'main_frame') {
-      const headers = details.responseHeaders;
-      if (headers) {
-        const fingerprints = {
-          server: null,
-          serverComponents: null,  
-          headers: new Map(),
-          technology: null,
-          security: null,  
-          analytics: null,  
-          builder: null    
-        };
+    // 遍历响应头
+    for (const header of headers) {
+      const name = header.name.toLowerCase();
+      const value = header.value;
 
-        headers.forEach(header => {
-          const name = header.name.toLowerCase();
-          
-          if (name === 'server') {
-            fingerprints.server = header.value;
-            fingerprints.serverComponents = parseServerHeader(header.value);
-          }
-          else if (name === 'strict-transport-security') {
-            const maxAge = header.value.match(/max-age=(\d+)/)?.[1] || 'unknown';
-            fingerprints.security = {
-              name: 'HSTS',
-              description: `通过Strict-Transport-Security响应头识别，网站启用了HSTS安全策略，max-age=${maxAge}秒`,
-              version: maxAge, 
-              provider: 'Strict-Transport-Security'  // 添加 provider 字段以符合显示逻辑
-            };
-          }
-          else if (name === 'x-powered-by') {
-            const tech = identifyTechnologyFromHeader(header.value);
-            if (tech) {
-              if (tech.isSecurityComponent) {
-                fingerprints.security = {
-                  name: tech.name,
-                  description: tech.description,
-                  version: tech.version,
-                  provider: 'X-Powered-By'
-                };
-              } else {
-                fingerprints.technology = tech;
-              }
-            }
-            fingerprints.headers.set(name, header.value);
-          }
-          else if (name === 'x-aspnetmvc-version') {
-            const mvcVersion = header.value;
-            fingerprints.headers.set(name, header.value); 
-            if (!fingerprints.technology) {
-              fingerprints.technology = {
-                name: 'ASP.NET MVC',
-                description: `通过X-AspNetMvc-Version响应头识别，网站使用ASP.NET MVC框架，版本号为${mvcVersion}`,
-                framework: 'MVC',
-                version: mvcVersion
+      switch (name) {
+        case 'server':
+          fingerprints.server = value;
+          fingerprints.serverComponents = parseServerHeader(value);
+          break;
+
+        case 'strict-transport-security':
+          const maxAge = value.match(/max-age=(\d+)/)?.[1] || 'unknown';
+          fingerprints.security = {
+            name: 'HSTS',
+            description: `通过Strict-Transport-Security响应头识别，网站启用了HSTS安全策略，max-age=${maxAge}秒`,
+            version: maxAge,
+            provider: 'Strict-Transport-Security'
+          };
+          break;
+
+        case 'x-powered-by':
+          const tech = identifyTechnologyFromHeader(value);
+          if (tech) {
+            if (tech.isSecurityComponent) {
+              fingerprints.security = {
+                name: tech.name,
+                description: tech.description,
+                version: tech.version,
+                provider: 'X-Powered-By'
               };
-            } else if (fingerprints.technology.name === 'ASP.NET') {
-              fingerprints.technology.name = 'ASP.NET MVC';
-              fingerprints.technology.framework = 'MVC';
-              fingerprints.technology.version = mvcVersion;
-              fingerprints.technology.description = 
-                `通过响应头识别，网站使用ASP.NET MVC框架，版本号为${mvcVersion}，运行在.NET Framework ${fingerprints.technology.runtime || '未知版本'}`;
-            }
-          }
-          else if (name === 'x-aspnet-version') {
-            const runtimeVersion = header.value;
-            fingerprints.headers.set(name, header.value);
-            if (!fingerprints.technology) {
-              fingerprints.technology = {
-                name: 'ASP.NET',
-                description: `通过X-AspNet-Version响应头识别，网站运行在.NET Framework ${runtimeVersion}环境`,
-                runtime: runtimeVersion
-              };
-            } else if (fingerprints.technology.name.includes('ASP.NET')) {
-              fingerprints.technology.runtime = runtimeVersion;
-              fingerprints.technology.description = 
-                `通过响应头识别，网站使用${fingerprints.technology.name}${fingerprints.technology.framework ? ' ' + fingerprints.technology.framework : ''}框架，` +
-                `版本号为${fingerprints.technology.version || '未知'}，运行在.NET Framework ${runtimeVersion}`;
-            }
-          }
-          else if (name === 'set-cookie') {
-            const tech = identifyTechnologyFromCookie(header.value);
-            if (tech) {
+            } else {
               fingerprints.technology = tech;
             }
           }
-          else if (name === 'x-safe-firewall') {
-            fingerprints.security = parseSecurityHeader(header.value);
-          }
-          else if (name === 'x-xss-protection') {
-            const mode = header.value.includes('mode=block') ? '，启用了阻止模式' : '';
-            const enabled = header.value.startsWith('1') ? '启用' : '禁用';
-            
-            fingerprints.security = {
-              name: 'XSS Protection',
-              description: `通过X-XSS-Protection响应头识别，网站${enabled}了XSS防护${mode}`,
-              version: enabled === '启用' ? '1' : '0',
-              provider: 'X-XSS-Protection'
-            };
-          }
-        });
-        chrome.cookies.getAll({url: details.url}, (cookies) => {
-          if (cookies && cookies.length > 0) {
-            const cookieNames = cookies.map(cookie => cookie.name).join(';');
-            const tech = identifyTechnologyFromCookie(cookieNames);
-            if (tech) {
-              fingerprints.technology = tech;
-              serverFingerprints.set(details.tabId, fingerprints);
-              try {
-                chrome.tabs.sendMessage(details.tabId, {
-                  type: 'UPDATE_FINGERPRINTS',
-                  fingerprints: {
-                    server: fingerprints.server,
-                    serverComponents: fingerprints.serverComponents,
-                    headers: Object.fromEntries(fingerprints.headers),
-                    technology: fingerprints.technology,
-                    security: fingerprints.security,
-                    analytics: fingerprints.analytics,
-                    builder: fingerprints.builder 
-                  }
-                }).catch(() => {});
-              } catch (e) {}
-            }
-          }
-        });
+          fingerprints.headers.set(name, value);
+          break;
 
-        console.log(details.url);
-        // 异步检测 webpack
-        getResponseBody().then(content => {
-          if (content) {
-            const webpackTech = detectWebpack(content);
-            if (webpackTech && !fingerprints.builder) {
-              fingerprints.builder = webpackTech;
-              serverFingerprints.set(details.tabId, fingerprints);
-              try {
-                chrome.tabs.sendMessage(details.tabId, {
-                  type: 'UPDATE_FINGERPRINTS',
-                  fingerprints: {
-                    server: fingerprints.server,
-                    serverComponents: fingerprints.serverComponents,
-                    headers: Object.fromEntries(fingerprints.headers),
-                    technology: fingerprints.technology,
-                    security: fingerprints.security,
-                    analytics: fingerprints.analytics,
-                    builder: fingerprints.builder
-                  }
-                }).catch(() => {});
-              } catch (e) {}
-            }
-          }
-        });
+        case 'x-aspnetmvc-version':
+          fingerprints.headers.set(name, value);
+          fingerprints.technology = fingerprints.technology || {
+            name: 'ASP.NET MVC',
+            description: `通过X-AspNetMvc-Version响应头识别，网站使用ASP.NET MVC框架，版本号为${value}`,
+            framework: 'MVC',
+            version: value
+          };
+          break;
 
-        // 返回响应头
-        return { responseHeaders: details.responseHeaders };
+        case 'x-aspnet-version':
+          fingerprints.headers.set(name, value);
+          fingerprints.technology = fingerprints.technology || {
+            name: 'ASP.NET',
+            description: `通过X-AspNet-Version响应头识别，网站运行在.NET Framework ${value}环境`,
+            runtime: value
+          };
+          break;
+
+        case 'set-cookie':
+          const cookieTech = identifyTechnologyFromCookie(value);
+          if (cookieTech) fingerprints.technology = cookieTech;
+          break;
+
+        case 'x-safe-firewall':
+          fingerprints.security = parseSecurityHeader(value);
+          break;
+
+        case 'x-xss-protection':
+          const enabled = value.startsWith('1') ? '启用' : '禁用';
+          const mode = value.includes('mode=block') ? '，启用了阻止模式' : '';
+          fingerprints.security = {
+            name: 'XSS Protection',
+            description: `通过X-XSS-Protection响应头识别，网站${enabled}了XSS防护${mode}`,
+            version: enabled === '启用' ? '1' : '0',
+            provider: 'X-XSS-Protection'
+          };
+          break;
+
+        default:
+          break;
       }
     }
-  },
-  { urls: ['<all_urls>'] },
-  ['responseHeaders']
-);
 
-// 添加构建工具更新消息处理
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'UPDATE_BUILDER') {
-    const fingerprints = serverFingerprints.get(sender.tab.id);
-    if (fingerprints && fingerprints.builder && fingerprints.builder.name!=request.builder.name) {
-      fingerprints.builder = request.builder;
-      serverFingerprints.set(sender.tab.id, fingerprints);
+    // 存储该标签页的指纹信息
+    serverFingerprints.set(details.tabId, fingerprints);
+
+    // 获取 cookies 并检查是否可以识别出技术栈
+    chrome.cookies.getAll({ url: details.url }, (cookies) => {
+      if (cookies.length > 0) {
+        const cookieNames = cookies.map(cookie => cookie.name).join(';');
+        const techFromCookies = identifyTechnologyFromCookie(cookieNames);
+        if (techFromCookies) fingerprints.technology = techFromCookies;
+      }
+
+      // 发送指纹数据到内容脚本
       try {
-        chrome.tabs.sendMessage(sender.tab.id, {
+        chrome.tabs.sendMessage(details.tabId, {
           type: 'UPDATE_FINGERPRINTS',
           fingerprints: {
             server: fingerprints.server,
@@ -476,7 +381,34 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           }
         }).catch(() => {});
       } catch (e) {}
-    }
+    });
+
+    return { responseHeaders: details.responseHeaders };
+  },
+  { urls: ['<all_urls>'] },
+  ['responseHeaders']
+);
+
+// 添加构建工具更新消息处理
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'UPDATE_BUILDER') {
+    const fingerprints = serverFingerprints.get(sender.tab.id);
+    fingerprints.builder = request.builder;
+    serverFingerprints.set(sender.tab.id, fingerprints);
+    try {
+      chrome.tabs.sendMessage(sender.tab.id, {
+        type: 'UPDATE_FINGERPRINTS',
+        fingerprints: {
+          server: fingerprints.server,
+          serverComponents: fingerprints.serverComponents,
+          headers: Object.fromEntries(fingerprints.headers),
+          technology: fingerprints.technology,
+          security: fingerprints.security,
+          analytics: fingerprints.analytics,
+          builder: fingerprints.builder
+        }
+      }).catch(() => {});
+    } catch (e) {}
     return true;
   }
   if (request.type === 'GET_FINGERPRINTS') {

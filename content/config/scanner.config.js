@@ -215,8 +215,10 @@ const SCANNER_CONFIG = {
   // 添加构建工具配置
   FINGER: {
     PATTERNS: [
-      {name: 'Webpack页面特征', pattern: /(?:webpackJsonp|__webpack_require__|webpack-dev-server)/},
+      {class: 'Webpack', name: 'Webpack页面特征', pattern: /(?:webpackJsonp|__webpack_require__|webpack-dev-server)/},
+      {class: 'Webpack', name: 'Webpack文件特征', pattern: /(?:chunk|main|app|vendor|common)s?(?:[-.][a-f0-9]{8,20})+.(?:css|js)/},
     ]
+
   }
 };
 
