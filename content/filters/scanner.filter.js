@@ -1,7 +1,7 @@
 // 正则表达式缓存
 const regexCache = {
   coordPattern: /^coord/,
-  valuePattern: /^\/|true|false|register|signUp|name|http/i,
+  valuePattern: /^\/|true|false|register|signUp|name|basic|http/i,
   chinesePattern: /^[\u4e00-\u9fa5]+$/,
   keywordPattern: /^func|variable|input|true|false|newline|null|http|unexpected|error|data|object|brac|beare|str|self|void|num|atom|opts|token|params|result|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|return|case|pare|ident|reg|invalid/i,
   camelCasePattern: /\b[_a-z]+(?:[A-Z][a-z]+)+\b/,

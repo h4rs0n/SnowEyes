@@ -140,24 +140,21 @@ const SCANNER_CONFIG = {
     get FINGER() {
       return {
         type: 'FINGER',
-
         patterns: SCANNER_CONFIG.FINGER.PATTERNS
       };
     }
   },
-
-
   // 统一的黑名单配置
   BLACKLIST: {
     // 值黑名单 - 从 ID_KEY 配置中移出
     SHORT_VALUES: new Set([
       'up','in','by','of','is','on','to',
-      'age','all','app','ang','bar','bea','big','bug','com','con','cry','dom','dow',
-      'emp','ent','eta','eye','for','get','gen','has','hei','hid','ing','int','ken',
-      'key','lea','log','low','met','mod','new','nor','not','num','red','obj','old',
-      'out','pic','pre','pro','pop','pun','put','rad','ran','ref','red','reg','ren',
-      'rig','row','sea','set','seq','shi','str','sub','sup','sun','tab','tan','tip',
-      'top','uri','url','use','ver','via'
+      'age','all','app','ang','bar','bea','big','bug','can','com','con','cry','dom',
+      'dow','emp','ent','eta','eye','for','get','gen','has','hei','hid','ing','int',
+      'ken','key','lea','log','low','met','mod','new','nor','not','num','red','obj',
+      'old','out','pic','pre','pro','pop','pun','put','rad','ran','ref','red','reg',
+      'ren','rig','row','sea','set','seq','shi','str','sub','sup','sun','tab','tan',
+      'tip','top','uri','url','use','ver','via'
     ]),
     MEDIUM_VALUES: new Set([
       'null','node','when','face','read','load','body','left','mark','down',
@@ -174,13 +171,13 @@ const SCANNER_CONFIG = {
       'line','send','mess','calc','http','rame'
     ]),
     LONG_VALUES: new Set([
-      'about','alias','apply','array','beare','begin','black','break','broad',
-      'catch','class','close','clear','click','clude','color','count','cover',
-      'croll','crypt','error','false','fault','fetch','final','found','gener',
-      'green','group','guard','index','inner','input','inter','light','login',
-      'opera','param','parse','panel','place','print','phony','radio','range',
-      'right','refer','serve','share','shift','style','tance','title','token',
-      'tract','trans','trave','valid','video','white','write',
+      'about','alias','apply','array','basic','beare','begin','black','break',
+      'broad','catch','class','close','clear','click','clude','color','count',
+      'cover','croll','crypt','error','false','fault','fetch','final','found',
+      'gener','green','group','guard','index','inner','input','inter','light',
+      'login','opera','param','parse','panel','place','print','phony','radio',
+      'range','right','refer','serve','share','shift','style','tance','title',
+      'token','tract','trans','trave','valid','video','white','write',
 
       'button','cancel','create','double','finger','global','insert','module',
       'normal','object','popper','triple','search','select','simple','single',

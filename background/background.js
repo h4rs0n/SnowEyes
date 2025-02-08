@@ -271,9 +271,30 @@ function detectWebpack(pageContent) {
   return null;
 }
 
-// 监听网络请求
+// 修改 onHeadersReceived 监听器
 chrome.webRequest.onHeadersReceived.addListener(
   (details) => {
+    // 获取响应体的函数
+    const getResponseBody = async () => {
+      // 仅对 HTML 和 JS 响应进行检测
+      const contentType = details.responseHeaders
+        .find(h => h.name.toLowerCase() === 'content-type')?.value.toLowerCase() || '';
+        
+      if (!contentType.includes('text/html') && 
+          !contentType.includes('javascript') && 
+          !contentType.includes('application/json')) {
+        return null;
+      }
+
+      return new Promise(resolve => {
+        chrome.tabs.sendMessage(details.tabId, {
+          type: 'SCAN_CONTENT'
+        }, response => {
+          resolve(response?.content || null);
+        });
+      });
+    };
+
     if (details.type === 'main_frame') {
       const headers = details.responseHeaders;
       if (headers) {
@@ -376,7 +397,6 @@ chrome.webRequest.onHeadersReceived.addListener(
         });
         chrome.cookies.getAll({url: details.url}, (cookies) => {
           if (cookies && cookies.length > 0) {
-            console.log(cookies);
             const cookieNames = cookies.map(cookie => cookie.name).join(';');
             const tech = identifyTechnologyFromCookie(cookieNames);
             if (tech) {
@@ -400,11 +420,11 @@ chrome.webRequest.onHeadersReceived.addListener(
           }
         });
 
-        // 在处理完响应头后,尝试检测 webpack
-        fetch(details.url)
-          .then(response => response.text())
-          .then(body => {
-            const webpackTech = detectWebpack(body);
+        console.log(details.url);
+        // 异步检测 webpack
+        getResponseBody().then(content => {
+          if (content) {
+            const webpackTech = detectWebpack(content);
             if (webpackTech && !fingerprints.builder) {
               fingerprints.builder = webpackTech;
               serverFingerprints.set(details.tabId, fingerprints);
@@ -418,36 +438,16 @@ chrome.webRequest.onHeadersReceived.addListener(
                     technology: fingerprints.technology,
                     security: fingerprints.security,
                     analytics: fingerprints.analytics,
-                    builder: fingerprints.builder 
+                    builder: fingerprints.builder
                   }
                 }).catch(() => {});
               } catch (e) {}
             }
-          })
-          .catch(() => {/* 忽略错误 */});
-
-        // 存储该标签页的指纹信息
-        serverFingerprints.set(details.tabId, fingerprints);
-
-        // 延迟发送消息，等待内容脚本加载
-        setTimeout(() => {
-          try {
-            chrome.tabs.sendMessage(details.tabId, {
-              type: 'UPDATE_FINGERPRINTS',
-              fingerprints: {
-                server: fingerprints.server,
-                serverComponents: fingerprints.serverComponents,
-                headers: Object.fromEntries(fingerprints.headers),
-                technology: fingerprints.technology,
-                security: fingerprints.security,
-                analytics: fingerprints.analytics,
-                builder: fingerprints.builder
-              }
-            }).catch(() => {
-            });
-          } catch (e) {
           }
-        }, 500);
+        });
+
+        // 返回响应头
+        return { responseHeaders: details.responseHeaders };
       }
     }
   },
