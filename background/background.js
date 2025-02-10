@@ -389,12 +389,31 @@ chrome.webRequest.onHeadersReceived.addListener(
   ['responseHeaders']
 );
 
-// 添加构建工具更新消息处理
+// 修改构建工具更新消息处理
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'UPDATE_BUILDER') {
-    const fingerprints = serverFingerprints.get(sender.tab.id);
+    // 获取或创建 fingerprints 对象
+    let fingerprints = serverFingerprints.get(sender.tab.id);
+    if (!fingerprints) {
+      fingerprints = {
+        server: null,
+        serverComponents: null,
+        headers: new Map(),
+        technology: null,
+        security: null,
+        analytics: null,
+        builder: null
+      };
+      serverFingerprints.set(sender.tab.id, fingerprints);
+    }
+
+    // 更新 builder 信息
     fingerprints.builder = request.builder;
+    
+    // 更新存储
     serverFingerprints.set(sender.tab.id, fingerprints);
+
+    // 通知更新
     try {
       chrome.tabs.sendMessage(sender.tab.id, {
         type: 'UPDATE_FINGERPRINTS',
