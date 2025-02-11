@@ -53,5 +53,10 @@
     },
     "default_badge_text": "0",
     "default_badge_background_color": "#666666"
-  }
+  },
+
+  "web_accessible_resources": [{
+    "resources": ["background/config/*.js"],
+    "matches": ["<all_urls>"]
+  }]
 } 

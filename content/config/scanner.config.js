@@ -182,7 +182,7 @@ const SCANNER_CONFIG = {
       'button','cancel','create','double','finger','global','insert','module',
       'normal','object','popper','triple','search','select','simple','single',
       'status','statis','switch','system','visual','verify','detail','screen',
-      'member','change'
+      'member','change','buffer'
     ])
   },
 
@@ -219,7 +219,7 @@ const SCANNER_CONFIG = {
       {class: 'Webpack', name: 'Webpack文件特征', pattern: /(?:chunk|main|app|vendor|common)s?(?:[-.][a-f0-9]{8,20})+.(?:css|js)/},
     ]
 
-  }
+  },
 };
 
 // 导出配置
