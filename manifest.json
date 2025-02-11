@@ -2,7 +2,7 @@
   "manifest_version": 3,
 
   "name": "雪瞳",
-  "version": "0.2.4.0",
+  "version": "0.2.5.0",
   "description": "洞悉无形，守护无界",
 
   "icons": {
@@ -20,7 +20,8 @@
   ],
 
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "https://api.mir6.com/*"
   ],
 
   "background": {

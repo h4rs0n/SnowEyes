@@ -248,26 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 添加刷新按钮点击事件
-  document.querySelector('.refresh-btn').addEventListener('click', () => {
-    const container = document.querySelector('.scanner-page .container');
-    container.innerHTML = '<div class="loading">正在扫描...</div>';
-
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, {type: 'REFRESH_SCAN'}, response => {
-          if (chrome.runtime.lastError) {
-            container.innerHTML = '<div class="error">无法连接到页面，尝试刷新页面后再试吧</div>';
-          } else if (response === 'WHITELISTED') {
-            container.innerHTML = '<div class="whitelisted">当前域名在白名单中，已跳过扫描</div>';
-          } else if (response) {
-            displayResults(response);
-          }
-        });
-      }
-    });
-  });
-
   // 初始化扫描页面
   const container = document.querySelector('.scanner-page .container');
   container.innerHTML = '<div class="loading">正在扫描...</div>';
@@ -413,4 +393,185 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
   // ... 其他代码
+});
+
+// 修改初始化网站解析页面函数
+function initAnalysisPage() {
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    if (tabs[0]) {
+      const url = new URL(tabs[0].url);
+      const domain = url.hostname;
+      
+      // 显示加载状态
+      const container = document.querySelector('.analysis-section');
+      container.innerHTML = '<div class="loading">正在获取网站信息...</div>';
+
+      // 请求数据
+      chrome.runtime.sendMessage({
+        type: 'GET_SITE_ANALYSIS',
+        domain: domain
+      }, response => {
+        if (response) {
+          if (response.isPrivateIP) {
+            container.innerHTML = '<div class="notice">内网IP地址，已跳过解析</div>';
+            return;
+          }
+          // 即使数据不完整也显示已有的数据
+          updateAnalysisPage(response, domain);
+          
+          // 如果数据不完整，显示部分加载中的状态
+          if (!response.weight) {
+            document.querySelector('.weight-grid').innerHTML = '<div class="loading">正在获取权重信息...</div>';
+          }
+          if (!response.ip) {
+            document.querySelector('.ip-info').innerHTML = '<div class="loading">正在获取IP信息...</div>';
+          }
+        } else {
+          container.innerHTML = '<div class="error">获取网站信息失败</div>';
+        }
+      });
+    }
+  });
+}
+
+// 更新网站解析页面内容
+function updateAnalysisPage(data, domain) {
+  const container = document.querySelector('.analysis-section');
+  container.innerHTML = `
+    <!-- 基本信息 -->
+    <div class="analysis-group basic-group">
+      <h3>基本信息</h3>
+      <div class="basic-info">
+        <div class="info-item">
+          <span class="info-label">域名</span>
+          <span class="info-value">${domain}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">备案号</span>
+          <span class="info-value">粤B2-20090059</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">注册商</span>
+          <span class="info-value">腾讯云</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">到期时间</span>
+          <span class="info-value">2024-03-17</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 域名权重信息 -->
+    <div class="analysis-group weight-group">
+      <h3>搜索引擎权重</h3>
+      <div class="weight-grid"></div>
+    </div>
+
+    <!-- IP地址信息 -->
+    <div class="analysis-group ip-group">
+      <h3>IP信息</h3>
+      <div class="ip-info"></div>
+    </div>
+
+    <!-- Whois信息 -->
+    <div class="analysis-group whois-group">
+      <h3>Whois信息</h3>
+      <div class="whois-info">
+        <div class="info-item">
+          <span class="info-label">注册时间</span>
+          <span class="info-value">1995-05-04</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">更新时间</span>
+          <span class="info-value">2023-03-17</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">DNS服务器</span>
+          <span class="info-value">ns1.qq.com</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">状态</span>
+          <span class="info-value">clientDeleteProhibited</span>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // 更新权重信息
+  if (data.weight) {
+    const weightData = data.weight.data;
+    updateWeightInfo(weightData);
+  }
+
+  // 更新IP信息
+  if (data.ip) {
+    const ipData = data.ip.data;
+    updateIpInfo(ipData);
+  }
+}
+
+// 更新权重信息
+function updateWeightInfo(weightData) {
+  const weightItems = {
+    'baidupc': ['百度PC', weightData?.baidupc || '无', weightData?.baidupc_img],
+    'baidum': ['百度移动', weightData?.baidum || '无', weightData?.baidum_img],
+    'so360': ['360', weightData?.so360 || '无', weightData?.so360_img],
+    'shenma': ['神马', weightData?.shenma || '无', weightData?.shenma_img],
+    'sougou': ['搜狗', weightData?.sougou || '无', weightData?.sougou_img],
+    'google': ['Google', weightData?.google || '无', weightData?.google_img]
+  };
+
+  const weightGrid = document.querySelector('.weight-grid');
+  weightGrid.innerHTML = '';
+
+  for (const [key, [label, value, imgSrc]] of Object.entries(weightItems)) {
+    weightGrid.innerHTML += `
+      <div class="weight-item">
+        <img src="${imgSrc || ''}" alt="${label}" onerror="this.style.display='none'">
+        <span class="weight-label">${label}</span>
+        <span class="weight-value">${value}</span>
+      </div>
+    `;
+  }
+}
+
+// 更新IP信息
+function updateIpInfo(ipData) {
+  const ipInfo = document.querySelector('.ip-info');
+  ipInfo.innerHTML = `
+    <div class="info-item">
+      <span class="info-label">IPv6</span>
+      <span class="info-value">${ipData?.ip || '无'}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">IPv4</span>
+      <span class="info-value">${ipData?.myip || '无'}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">地理位置</span>
+      <span class="info-value">${ipData?.location || '无'}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">运营商</span>
+      <span class="info-value">${ipData?.isp || '无'}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">协议</span>
+      <span class="info-value">${ipData?.protocol || '无'}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">网络类型</span>
+      <span class="info-value">${ipData?.net || '无'}</span>
+    </div>
+  `;
+}
+
+// 在页面切换时初始化网站解析页面
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    if (tab.dataset.page === 'analysis') {
+      initAnalysisPage();
+    }
+    switchPage(tab.dataset.page);
+  });
 }); 

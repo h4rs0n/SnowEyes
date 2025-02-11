@@ -25,10 +25,6 @@ body {
   display: flex;
 }
 
-.nav-right {
-  padding-right: 10px;
-}
-
 .nav-tab {
   padding: 10px 20px;
   border: none;
@@ -52,22 +48,6 @@ body {
   right: 0;
   height: 2px;
   background: #228be6;
-}
-
-/* 刷新按钮样式 */
-.refresh-btn {
-  padding: 6px 12px;
-  color: #5c7cfa;
-  background: #edf2ff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s;
-}
-
-.refresh-btn:hover {
-  background: #dbe4ff;
 }
 
 /* 页面容器样式 */
@@ -768,5 +748,143 @@ body {
 
 .server-group {
   border-left-color: #12b886;
+}
+
+/* 网站解析页面样式 */
+.analysis-section {
+  padding: 10px;
+}
+
+.analysis-group {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 12px;
+  margin-bottom: 15px;
+  border-left: 3px solid transparent;
+}
+
+.analysis-group h3 {
+  margin: 0 0 10px 0;
+  color: #343a40;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 域名权重网格布局 */
+.weight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.weight-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.weight-item img {
+  width: 48px;
+  height: 24px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+.weight-label {
+  font-size: 12px;
+  color: #495057;
+  margin-bottom: 2px;
+}
+
+.weight-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #228be6;
+}
+
+/* IP信息样式 */
+.ip-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #868e96;
+  margin-bottom: 4px;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #495057;
+  word-break: break-all;
+}
+
+/* 基本信息和Whois信息网格布局 */
+.basic-info,
+.whois-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+/* 基本信息组样式 */
+.basic-group {
+  border-left-color: #339af0;  /* 蓝色 */
+}
+
+.basic-group h3 {
+  color: #339af0;
+}
+
+/* 权重信息组样式 */
+.weight-group {
+  border-left-color: #20c997;  /* 青绿色 */
+}
+
+.weight-group h3 {
+  color: #20c997;
+}
+
+/* IP信息组样式 */
+.ip-group {
+  border-left-color: #845ef7;  /* 紫色 */
+}
+
+.ip-group h3 {
+  color: #845ef7;
+}
+
+/* Whois信息组样式 */
+.whois-group {
+  border-left-color: #ff922b;  /* 橙色 */
+}
+
+.whois-group h3 {
+  color: #ff922b;
+}
+
+/* 添加提示信息样式 */
+.notice {
+  padding: 12px;
+  background: #e9ecef;
+  border-radius: 6px;
+  color: #495057;
+  text-align: center;
+  margin: 10px;
+  font-size: 14px;
 }
  

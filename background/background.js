@@ -91,6 +91,18 @@ Object.entries(FINGERPRINT_CONFIG.ANALYTICS).forEach(([type, config]) => {
 chrome.tabs.onRemoved.addListener((tabId) => {
   Object.values(analyticsDetected).forEach(map => map.delete(tabId));
   serverFingerprints.delete(tabId);
+  
+  // 只清理与该标签页相关的缓存
+  const domains = new Set();
+  for (const [domain, data] of analysisCache.weight) {
+    if (data.tabId === tabId) {
+      domains.add(domain);
+    }
+  }
+  for (const domain of domains) {
+    analysisCache.weight.delete(domain);
+    analysisCache.ip.delete(domain);
+  }
 });
 
 // 在标签页更新时重置检测状态
@@ -120,13 +132,12 @@ function processHeaders(headers) {
     serverComponents: [],
     technology: [],
     security: [],
-    analytics: [],  // 保持为对象
-    builder: [],    // 保持为对象
+    analytics: [], 
+    builder: [],  
     framework: [],
     os: []
   };
 
-  // 将headers转换为Map以便快速查找
   const headerMap = new Map(
     headers.map(h => [h.name.toLowerCase(), h.value])
   );
@@ -152,7 +163,7 @@ function processHeaders(headers) {
             fingerprint['description'] += `，${FINGERPRINT_CONFIG.DESCRIPTIONS.find(item=>item.name===config.value)?.description}为${fingerprint[config.value]||'未知'}`;
           }
         }
-        fingerprints[config.type].push(fingerprint);  // 使用 push 而不是 add
+        fingerprints[config.type].push(fingerprint);
       }
     }
   }
@@ -167,7 +178,7 @@ chrome.webRequest.onHeadersReceived.addListener(
     const fingerprints = processHeaders(details.responseHeaders);
     serverFingerprints.set(details.tabId, fingerprints);
     
-    // 获取 cookies 并检查是否可以识别出技术栈
+    // 获取 cookies
     chrome.cookies.getAll({ url: details.url }, (cookies) => {
       if (cookies.length > 0) {
         const cookieNames = cookies.map(cookie => cookie.name).join(';');
@@ -267,5 +278,177 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; 
   } else if (request.type === 'UPDATE_BADGE') {
     updateBadge(request.results);
+  }
+});
+
+// 添加缓存对象
+const analysisCache = {
+  weight: new Map(),  
+  ip: new Map(), 
+  expireTime: 30 * 60 * 1000  // 缓存过期时间：30分钟
+};
+
+// 添加网站解析相关函数
+async function fetchDomainWeight(domain, tabId) {
+  try {
+    const cachedData = analysisCache.weight.get(domain);
+    if (cachedData && (Date.now() - cachedData.timestamp < analysisCache.expireTime)) {
+      console.log('从缓存获取权重信息');
+      return cachedData.data;
+    }
+
+    const response = await fetch(`https://api.mir6.com/api/bdqz?domain=${domain}&type=json`);
+    const data = await response.json();
+    if (data.code === '200') {
+      analysisCache.weight.set(domain, {
+        data: data,
+        timestamp: Date.now(),
+        tabId: tabId  // 使用传入的tabId
+      });
+      console.log(data);
+      return data;
+    }
+    return null;
+  } catch (error) {
+    console.error('获取域名权重失败:', error);
+    return null;
+  }
+}
+
+async function fetchIpInfo(domain, tabId) {
+  try {
+    const cachedData = analysisCache.ip.get(domain);
+    if (cachedData && (Date.now() - cachedData.timestamp < analysisCache.expireTime)) {
+      console.log('从缓存获取IP信息');
+      return cachedData.data;
+    }
+
+    const response = await fetch(`https://api.mir6.com/api/ip_json?ip=${domain}`);
+    const data = await response.json();
+    if (data.code === 200) {
+      analysisCache.ip.set(domain, {
+        data: data,
+        timestamp: Date.now(),
+        tabId: tabId  // 使用传入的tabId
+      });
+      console.log(data);
+      return data;
+    }
+    return null;
+  } catch (error) {
+    console.error('获取IP信息失败:', error);
+    return null;
+  }
+}
+
+// 清理过期缓存的函数
+function cleanExpiredCache() {
+  const now = Date.now();
+  for (const [domain, data] of analysisCache.weight) {
+    if (now - data.timestamp >= analysisCache.expireTime) {
+      analysisCache.weight.delete(domain);
+    }
+  }
+  for (const [domain, data] of analysisCache.ip) {
+    if (now - data.timestamp >= analysisCache.expireTime) {
+      analysisCache.ip.delete(domain);
+    }
+  }
+}
+
+// 定期清理缓存（每小时）
+setInterval(cleanExpiredCache, 60 * 60 * 1000);
+
+// 添加检查缓存的函数
+function getAnalysisFromCache(domain) {
+  const weightData = analysisCache.weight.get(domain);
+  const ipData = analysisCache.ip.get(domain);
+  
+  const now = Date.now();
+  const weightValid = weightData && (now - weightData.timestamp < analysisCache.expireTime);
+  const ipValid = ipData && (now - ipData.timestamp < analysisCache.expireTime);
+  
+  return {
+    weight: weightValid ? weightData.data : null,
+    ip: ipValid ? ipData.data : null,
+    isComplete: weightValid && ipValid
+  };
+}
+
+// 添加IP地址检查函数
+function isPrivateIP(domain) {
+  // 检查是否是IP地址
+  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+  const ipv6Pattern = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+  
+  if (!ipv4Pattern.test(domain) && !ipv6Pattern.test(domain)) {
+    return false;  // 不是IP地址
+  }
+
+  // 检查是否是内网IP
+  if (ipv4Pattern.test(domain)) {
+    const parts = domain.split('.');
+    const firstOctet = parseInt(parts[0]);
+    return (
+      firstOctet === 10 || // 10.0.0.0 - 10.255.255.255
+      (firstOctet === 172 && parseInt(parts[1]) >= 16 && parseInt(parts[1]) <= 31) || // 172.16.0.0 - 172.31.255.255
+      (firstOctet === 192 && parseInt(parts[1]) === 168) || // 192.168.0.0 - 192.168.255.255
+      domain === '127.0.0.1' // localhost
+    );
+  }
+
+  // IPv6 内网地址检查
+  if (ipv6Pattern.test(domain)) {
+    return (
+      domain.startsWith('fc00:') || // Unique Local Address
+      domain.startsWith('fd00:') || // Unique Local Address
+      domain.startsWith('fe80:') || // Link Local Address
+      domain === '::1'             // localhost
+    );
+  }
+
+  return false;
+}
+
+// 修改监听器
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'GET_SITE_ANALYSIS') {
+    const domain = request.domain;
+    
+    // 检查是否是内网IP
+    if (isPrivateIP(domain)) {
+      sendResponse({
+        weight: null,
+        ip: null,
+        isComplete: true,
+        isPrivateIP: true
+      });
+      return true;
+    }
+    
+    // 首先检查缓存
+    const cachedData = getAnalysisFromCache(domain);
+    if (cachedData.isComplete) {
+      sendResponse(cachedData);
+      return true;
+    }
+    
+    // 如果请求来自popup，则获取完整数据
+    if (sender.url && sender.url.startsWith('chrome-extension://')) {
+      const tabId = sender.tab?.id;  // 获取标签页ID
+      Promise.all([
+        cachedData.weight || fetchDomainWeight(domain, tabId),
+        cachedData.ip || fetchIpInfo(domain, tabId)
+      ]).then(([weightData, ipData]) => {
+        sendResponse({
+          weight: weightData,
+          ip: ipData
+        });
+      });
+      return true;
+    }
+    
+    sendResponse(cachedData);
+    return true;
   }
 });
