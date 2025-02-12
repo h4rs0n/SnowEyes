@@ -2,8 +2,9 @@
 export const FINGERPRINT_CONFIG = {
   HEADERS: [
     {type: 'server',name: 'Apache',pattern: /^apache\/?([\d\.]+)?$/i,header: 'server',value:'version'},
+    {type: 'server',name: 'Apache Tomcat',pattern: /^apache-(coyote)\/?([\d\.]+)?$/i,header: 'server',value:'component,version',extType: 'technology', extName: 'Java'},
     {type: 'server',name: 'Nginx',pattern: /^nginx\/?([\d\.]+)?$/i,header: 'server',value:'version'},
-    {type: 'server',name: 'IIS',pattern: /^microsoft-iis\/?([\d\.]+)?$/i,header: 'server',value:'version'},
+    {type: 'server',name: 'IIS',pattern: /^microsoft-iis\/?([\d\.]+)?$/i,header: 'server',value:'version',extType: 'os', extName: 'Windows'},
     {type: 'server',name: 'LiteSpeed',pattern: /^litespeed\/?([\d\.]+)?$/i,header: 'server',value:'version'},
     {type: 'server',name: 'Resin',pattern: /^resin\/?([\d\.]+)?$/i,header: 'server',value:'version'},
     {type: 'server',name: 'Cloudflare',pattern: /^cloudflare\/?([\d\.]+)?$/i,header: 'server',value:'version'},
@@ -14,9 +15,8 @@ export const FINGERPRINT_CONFIG = {
     {type: 'server',name: 'Zeus',pattern: /^zeus\/?([\d\.]+)?$/i,header: 'server',value:'version'},
     {type: 'server',name: 'Server',pattern: /^waf|server\/?([\d\.]+)?$/i,header: 'server',value:'version'},
     {type: 'os',name: 'Windows',pattern: /win64|win32|win10|win7|win8|win11/i,header: 'server'},  
-    {type: 'os',name: 'Windows',pattern: /microsoft-iis/i,header: 'server'},
     {type: 'os',name: 'Ubuntu',pattern: /ubuntu/i,header: 'server'},
-    {type: 'framework',name: 'Spring',pattern: /^([a-zA-Z0-9\.\-]+):([a-zA-Z0-9\-]+):(\d+)$/i,header: 'x-application-context',value:'app,env,port'},
+    {type: 'framework',name: 'Spring',pattern: /^([a-zA-Z0-9\.\-]+):([a-zA-Z0-9\-]+):(\d+)$/i,header: 'x-application-context',value:'app,env,port',extType: 'technology', extName: 'Java'},
     {type: 'framework',name: 'ASP.NET',pattern: /[0-9.]+/i,header: 'x-aspnet-version',value:'version'},
     {type: 'framework',name: 'ASP.NET MVC',pattern: /[0-9.]+/i,header: 'x-aspnetmvc-version',value:'version'},
     {type: 'framework',name: 'ASP.NET',pattern: /asp.net/i,header: 'x-powered-by'},
@@ -31,7 +31,7 @@ export const FINGERPRINT_CONFIG = {
   COOKIES: [
     {type: 'technology',name: 'PHP',match: /PHPSESSID/i},
     {type: 'framework',name: 'ASP.NET',match: /ASP\.NET_SessionId|ASPSESSIONID/i},
-    {type: 'technology',name: 'Java',match: /JSESSIONID|SESSIONID|jeesite/i},
+    {type: 'technology',name: 'Java',match: /JSESSIONID|jeesite/i},
   ],
   ANALYTICS: {
       baidu: {
@@ -67,5 +67,6 @@ export const FINGERPRINT_CONFIG = {
     {name: 'framework',description: '框架'},
     {name: 'appType',description: '应用类型'},
     {name: 'time',description: '时间'},
+    {name: 'component',description: '组件'},
   ]
 }; 

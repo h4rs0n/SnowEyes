@@ -365,14 +365,15 @@ const SCANNER_FILTER = {
   },
 
   // 构建工具检测过滤器
-  finger: (match, fingerClass, resultsSet) => {
+  finger: (fingerName, fingerClass, fingerType, fingerDescription, resultsSet) => {
+    var fingerprint = {};
+    fingerprint.type = fingerType;
+    fingerprint.name = fingerClass;
+    fingerprint.description = `通过${fingerName}识别到${fingerClass}${fingerDescription}`;
+    fingerprint.version = fingerClass;
     chrome.runtime.sendMessage({
       type: 'UPDATE_BUILDER',
-      builder: {
-        name: 'Webpack',
-        description: `通过${match}识别到Webpack构建工具，用于前端资源打包`,
-        version: 'Webpack'
-      }
+      finger: fingerprint
     });
     resultsSet?.fingers?.add(fingerClass);
     return true;

@@ -1,5 +1,8 @@
 import { FINGERPRINT_CONFIG } from './config/fingerprint.config.js';
 
+// 添加全局指纹名称Map
+let fingerprintNameMap = new Map();
+
 // 更新扩展图标的badge
 function updateBadge(results) {
   const categories = [
@@ -87,10 +90,11 @@ Object.entries(FINGERPRINT_CONFIG.ANALYTICS).forEach(([type, config]) => {
   );
 });
 
-// 在标签页关闭时清理检测状态
+// 在标签页关闭或更新时重置指纹Map
 chrome.tabs.onRemoved.addListener((tabId) => {
   Object.values(analyticsDetected).forEach(map => map.delete(tabId));
   serverFingerprints.delete(tabId);
+  fingerprintNameMap.clear();  // 清空指纹名称Map
   
   // 只清理与该标签页相关的缓存
   const domains = new Set();
@@ -105,17 +109,18 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   }
 });
 
-// 在标签页更新时重置检测状态
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === 'loading') {
     Object.values(analyticsDetected).forEach(map => map.delete(tabId));
+    fingerprintNameMap.clear();  // 清空指纹名称Map
   }
 });
 
 // 识别Cookie
 function identifyTechnologyFromCookie(cookieHeader) {
   for (const cookie of FINGERPRINT_CONFIG.COOKIES) {
-    if (cookie.match.test(cookieHeader)) {
+    if (cookie.match.test(cookieHeader) && !fingerprintNameMap.has(cookie.name)) {
+      fingerprintNameMap.set(cookie.name, true);  // 记录指纹名称
       return {
         type: cookie.type,
         name: cookie.name,
@@ -147,9 +152,18 @@ function processHeaders(headers) {
     const headerValue = headerMap.get(config.header);
     if (headerValue) {
       const result = headerValue.match(config.pattern);
-      if (result&&!fingerprints[config.type].find(item=>item.name===config.name)) {
+      if (result&&!fingerprintNameMap.has(config.name)) {
         var fingerprint = config;
         fingerprint['description'] = `通过${fingerprint.header}识别到网站使用${fingerprint.name}${FINGERPRINT_CONFIG.DESCRIPTIONS.find(item=>item.name===config.type)?.description}`;
+        if(config.extType&&!fingerprintNameMap.has(config.extName)){
+          var extfingerprint = {};
+          extfingerprint['type'] = config.extType;
+          extfingerprint['name'] = config.extName;
+          extfingerprint['header'] = config.header;
+          extfingerprint['description'] = `通过${extfingerprint.header}识别到网站使用${extfingerprint.name}${FINGERPRINT_CONFIG.DESCRIPTIONS.find(item=>item.name===config.extType)?.description}`;
+          fingerprints[extfingerprint.type].push(extfingerprint);
+          fingerprintNameMap.set(config.extName, true);
+        }
         var i = 1;
         if(config.value){
           if(result.length>1){
@@ -164,6 +178,7 @@ function processHeaders(headers) {
           }
         }
         fingerprints[config.type].push(fingerprint);
+        fingerprintNameMap.set(config.name, true);
       }
     }
   }
@@ -210,8 +225,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       };
       serverFingerprints.set(sender.tab.id, fingerprints);
     }
-    if(!fingerprints.builder.find(item=>item.name===request.builder.name)) fingerprints.builder.push(request.builder);
-    serverFingerprints.set(sender.tab.id, fingerprints);
+    if(!fingerprintNameMap.has(request.finger.name)) {
+      fingerprintNameMap.set(request.finger.name, true);  // 记录指纹名称
+      fingerprints.builder.push(request.finger);
+      serverFingerprints.set(sender.tab.id, fingerprints);
+    }
     return true;
   }
   if (request.type === 'GET_FINGERPRINTS') {
