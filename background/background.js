@@ -131,18 +131,20 @@ function identifyTechnologyFromCookie(cookieHeader) {
   return null;
 }
 // 识别Header
-function processHeaders(headers) {
-  const fingerprints = {
-    server: [],
-    serverComponents: [],
-    technology: [],
-    security: [],
-    analytics: [], 
-    builder: [],  
-    framework: [],
-    os: []
-  };
-
+function processHeaders(headers, tabId) {
+  let fingerprints = serverFingerprints.get(tabId);
+  if (!fingerprints) {
+    fingerprints = {
+      server: [],
+      serverComponents: [],
+      technology: [],
+      security: [],
+      analytics: [],
+      builder: [],
+      framework: [],
+      os: []
+    };
+  }
   const headerMap = new Map(
     headers.map(h => [h.name.toLowerCase(), h.value])
   );
@@ -190,7 +192,7 @@ chrome.webRequest.onHeadersReceived.addListener(
   async (details) => {
     if (details.type !== 'main_frame' || !details.responseHeaders) return;
     
-    const fingerprints = processHeaders(details.responseHeaders);
+    const fingerprints = processHeaders(details.responseHeaders, details.tabId);
     serverFingerprints.set(details.tabId, fingerprints);
     
     // 获取 cookies
