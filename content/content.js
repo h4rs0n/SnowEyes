@@ -116,11 +116,11 @@ async function scanSources(sources, isHtmlContent = false) {
           // 根据内容类型选择合适的模式
           if (key === 'FINGER') {
             // 对每个模式进行匹配
-            for (const {pattern: fingerPattern, name: fingerName, class: fingerClass, type: fingerType, description: fingerDescription} of pattern.patterns) {
+            for (const {pattern: fingerPattern, name: fingerName, class: fingerClass, type: fingerType, description: fingerDescription, extType: fingerExtType, extName: fingerExtName} of pattern.patterns) {
               if (latestResults.fingers.has(fingerClass)) continue;
               const matches = chunk.match(fingerPattern);
               if (matches) {
-                filter(fingerName, fingerClass, fingerType, fingerDescription, latestResults);
+                filter(fingerName, fingerClass, fingerType, fingerDescription, latestResults,fingerExtType,fingerExtName);
               }
             }
             continue;

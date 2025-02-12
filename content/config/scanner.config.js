@@ -220,6 +220,7 @@ const SCANNER_CONFIG = {
       {class: 'VisualStudio', name: 'Visual Studio页面特征', pattern: /visual\sstudio/i, description: '开发工具，用于网页开发', type: 'builder'},
       {class: 'Cloudflare CDN', name: '页面特征', pattern: /cdnjs.cloudflare.com/i, description: '服务，用于网页加速', type: 'cdn'},
       {class: 'jsDelivr CDN', name: '页面特征', pattern: /cdn.jsdelivr.net/i, description: '服务，用于网页加速', type: 'cdn'},
+      {class: 'Django', name: '页面特征', pattern: /csrfmiddlewaretoken/i, description: '框架', type: 'framework',extType: 'technology',extName: 'Python'},
     ]
   },
 };

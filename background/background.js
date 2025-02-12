@@ -216,6 +216,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       serverFingerprints.set(sender.tab.id, fingerprints);
     }
     if(!fingerprints.nameMap.has(request.finger.name)) {
+      if(request.finger.extType && !fingerprints.nameMap.has(request.finger.extName)){
+        var extfingerprint = {};
+        extfingerprint['type'] = request.finger.extType;
+        extfingerprint['name'] = request.finger.extName;
+        extfingerprint['header'] = request.finger.name;
+        extfingerprint['description'] = `通过${extfingerprint.header}识别到网站使用${extfingerprint.name}${FINGERPRINT_CONFIG.DESCRIPTIONS.find(item=>item.name===request.finger.extType)?.description}`;
+        fingerprints[extfingerprint.type].push(extfingerprint);
+        fingerprints.nameMap.set(request.finger.extName, true);
+      }
       fingerprints.nameMap.set(request.finger.name, true);  // 记录指纹名称
       fingerprints[request.finger.type].push(request.finger);
       serverFingerprints.set(sender.tab.id, fingerprints);

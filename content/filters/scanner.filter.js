@@ -365,12 +365,16 @@ const SCANNER_FILTER = {
   },
 
   // 构建工具检测过滤器
-  finger: (fingerName, fingerClass, fingerType, fingerDescription, resultsSet) => {
+  finger: (fingerName, fingerClass, fingerType, fingerDescription, resultsSet, fingerExtType, fingerExtName) => {
     var fingerprint = {};
     fingerprint.type = fingerType;
     fingerprint.name = fingerClass;
     fingerprint.description = `通过${fingerName}识别到${fingerClass}${fingerDescription}`;
     fingerprint.version = fingerClass;
+    if(fingerExtType){
+      fingerprint.extType = fingerExtType;
+      fingerprint.extName = fingerExtName;
+    }
     chrome.runtime.sendMessage({
       type: 'UPDATE_BUILDER',
       finger: fingerprint
