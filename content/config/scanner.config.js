@@ -217,7 +217,9 @@ const SCANNER_CONFIG = {
     PATTERNS: [
       {class: 'Webpack', name: 'Webpack页面特征', pattern: /(?:webpackJsonp|__webpack_require__|webpack-dev-server)/i, description: '构建工具，用于前端资源打包', type: 'builder'},
       {class: 'Webpack', name: 'Webpack文件特征', pattern: /(?:chunk|main|app|vendor|common)s?(?:[-.][a-f0-9]{8,20})+.(?:css|js)/i, description: '构建工具，用于前端资源打包', type: 'builder'},
-      {class: 'VisualStudio', name: 'Visual Studio页面特征', pattern: /visual\sstudio/i, description: '开发工具，用于网页开发', type: 'builder'}
+      {class: 'VisualStudio', name: 'Visual Studio页面特征', pattern: /visual\sstudio/i, description: '开发工具，用于网页开发', type: 'builder'},
+      {class: 'Cloudflare CDN', name: '页面特征', pattern: /cdnjs.cloudflare.com/i, description: '服务，用于网页加速', type: 'cdn'},
+      {class: 'jsDelivr CDN', name: '页面特征', pattern: /cdn.jsdelivr.net/i, description: '服务，用于网页加速', type: 'cdn'},
     ]
   },
 };

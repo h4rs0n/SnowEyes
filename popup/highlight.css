@@ -640,6 +640,69 @@ body {
   border-left-color: #e64980;
 }
 
+/* 添加统计分析组件样式 */
+.analytics-tag {
+  background: #ff6b6b;  /* 红色 */
+}
+
+.analytics-group {
+  border-left-color: #ff6b6b;
+}
+
+/* 添加构建工具样式 */
+.builder-tag {
+  background: #7950f2;  /* 紫色 */
+}
+
+.builder-group {
+  border-left-color: #7950f2;
+}
+
+/* 添加框架样式 */
+.framework-tag {
+  background: #339af0;  /* 蓝色 */
+}
+
+.framework-group {
+  border-left-color: #339af0;
+}
+
+/* 服务器指纹样式 */
+.server-tag {
+  background: #12b886;  /* 青绿色 */
+}
+
+.server-group {
+  border-left-color: #12b886;
+}
+
+/* 面板指纹样式 */
+.panel-tag {
+  background: #126db8;  /* 青绿色 */
+}
+
+.panel-group {
+  border-left-color: #126db8;
+}
+
+/* 组件指纹样式 */
+.component-tag {
+  background: #9112b8;  /* 青绿色 */
+}
+
+.component-group {
+  border-left-color: #9112b8;
+}
+
+/* CDN指纹样式 */
+.cdn-tag {
+  background: #8cb812;  /* 青绿色 */
+}
+
+.cdn-group {
+  border-left-color: #8cb812;
+}
+
 .fingerprint-value {
   font-size: 12px;
   padding: 4px 8px;
@@ -712,42 +775,6 @@ body {
   color: #868e96;
   margin-top: 4px;
   margin-left: 48px;
-}
-
-/* 添加统计分析组件样式 */
-.analytics-tag {
-  background: #ff6b6b;  /* 红色 */
-}
-
-.analytics-group {
-  border-left-color: #ff6b6b;
-}
-
-/* 添加构建工具样式 */
-.builder-tag {
-  background: #7950f2;  /* 紫色 */
-}
-
-.builder-group {
-  border-left-color: #7950f2;
-}
-
-/* 添加框架样式 */
-.framework-tag {
-  background: #339af0;  /* 蓝色 */
-}
-
-.framework-group {
-  border-left-color: #339af0;
-}
-
-/* 服务器指纹样式 */
-.server-tag {
-  background: #12b886;  /* 青绿色 */
-}
-
-.server-group {
-  border-left-color: #12b886;
 }
 
 /* 网站解析页面样式 */

@@ -1,8 +1,4 @@
 import { FINGERPRINT_CONFIG } from './config/fingerprint.config.js';
-
-// 添加全局指纹名称Map
-let fingerprintNameMap = new Map();
-
 // 更新扩展图标的badge
 function updateBadge(results) {
   const categories = [
@@ -56,13 +52,16 @@ function handleAnalyticsDetection(details, type) {
   if (!fingerprints) {
     fingerprints = {
       server: [],
-      serverComponents: [],
+      component: [],
       technology: [],
       security: [],
       analytics: [],
       builder: [],
       framework: [],
-      os: []
+      os: [],
+      panel: [],
+      cdn: [],
+      nameMap: new Map()
     };
     serverFingerprints.set(details.tabId, fingerprints);
   }
@@ -94,33 +93,13 @@ Object.entries(FINGERPRINT_CONFIG.ANALYTICS).forEach(([type, config]) => {
 chrome.tabs.onRemoved.addListener((tabId) => {
   Object.values(analyticsDetected).forEach(map => map.delete(tabId));
   serverFingerprints.delete(tabId);
-  fingerprintNameMap.clear();  // 清空指纹名称Map
-  
-  // 只清理与该标签页相关的缓存
-  const domains = new Set();
-  for (const [domain, data] of analysisCache.weight) {
-    if (data.tabId === tabId) {
-      domains.add(domain);
-    }
-  }
-  for (const domain of domains) {
-    analysisCache.weight.delete(domain);
-    analysisCache.ip.delete(domain);
-  }
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status === 'loading') {
-    Object.values(analyticsDetected).forEach(map => map.delete(tabId));
-    fingerprintNameMap.clear();  // 清空指纹名称Map
-  }
-});
 
 // 识别Cookie
 function identifyTechnologyFromCookie(cookieHeader) {
   for (const cookie of FINGERPRINT_CONFIG.COOKIES) {
-    if (cookie.match.test(cookieHeader) && !fingerprintNameMap.has(cookie.name)) {
-      fingerprintNameMap.set(cookie.name, true);  // 记录指纹名称
+    if (cookie.match.test(cookieHeader)) {
       return {
         type: cookie.type,
         name: cookie.name,
@@ -136,13 +115,16 @@ function processHeaders(headers, tabId) {
   if (!fingerprints) {
     fingerprints = {
       server: [],
-      serverComponents: [],
+      component: [],
       technology: [],
       security: [],
       analytics: [],
       builder: [],
       framework: [],
-      os: []
+      os: [],
+      panel: [],
+      cdn: [],
+      nameMap: new Map()
     };
   }
   const headerMap = new Map(
@@ -154,17 +136,17 @@ function processHeaders(headers, tabId) {
     const headerValue = headerMap.get(config.header);
     if (headerValue) {
       const result = headerValue.match(config.pattern);
-      if (result&&!fingerprintNameMap.has(config.name)) {
+      if (result && !fingerprints.nameMap.has(config.name)) {
         var fingerprint = config;
         fingerprint['description'] = `通过${fingerprint.header}识别到网站使用${fingerprint.name}${FINGERPRINT_CONFIG.DESCRIPTIONS.find(item=>item.name===config.type)?.description}`;
-        if(config.extType&&!fingerprintNameMap.has(config.extName)){
+        if(config.extType && !serverFingerprints.get(tabId)?.nameMap.has(config.extName)){
           var extfingerprint = {};
           extfingerprint['type'] = config.extType;
           extfingerprint['name'] = config.extName;
           extfingerprint['header'] = config.header;
           extfingerprint['description'] = `通过${extfingerprint.header}识别到网站使用${extfingerprint.name}${FINGERPRINT_CONFIG.DESCRIPTIONS.find(item=>item.name===config.extType)?.description}`;
           fingerprints[extfingerprint.type].push(extfingerprint);
-          fingerprintNameMap.set(config.extName, true);
+          fingerprints.nameMap.set(config.extName, true);
         }
         var i = 1;
         if(config.value){
@@ -180,7 +162,7 @@ function processHeaders(headers, tabId) {
           }
         }
         fingerprints[config.type].push(fingerprint);
-        fingerprintNameMap.set(config.name, true);
+        fingerprints.nameMap.set(config.name, true);
       }
     }
   }
@@ -200,7 +182,10 @@ chrome.webRequest.onHeadersReceived.addListener(
       if (cookies.length > 0) {
         const cookieNames = cookies.map(cookie => cookie.name).join(';');
         const techFromCookies = identifyTechnologyFromCookie(cookieNames);
-        if (techFromCookies&&!fingerprints[techFromCookies.type].find(item=>item.name===techFromCookies.name)) fingerprints[techFromCookies.type].push(techFromCookies);
+        if (techFromCookies&&!fingerprints.nameMap.has(techFromCookies.name)){
+          fingerprints[techFromCookies.type].push(techFromCookies);
+          fingerprints.nameMap.set(techFromCookies.name, true);
+        }
       }
     });
 
@@ -223,13 +208,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         analytics: [],
         builder: [],
         framework: [],
-        os: []
+        os: [],
+        panel: [],
+        cdn: [],
+        nameMap: new Map()
       };
       serverFingerprints.set(sender.tab.id, fingerprints);
     }
-    if(!fingerprintNameMap.has(request.finger.name)) {
-      fingerprintNameMap.set(request.finger.name, true);  // 记录指纹名称
-      fingerprints.builder.push(request.finger);
+    if(!fingerprints.nameMap.has(request.finger.name)) {
+      fingerprints.nameMap.set(request.finger.name, true);  // 记录指纹名称
+      fingerprints[request.finger.type].push(request.finger);
       serverFingerprints.set(sender.tab.id, fingerprints);
     }
     return true;
@@ -239,13 +227,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (fingerprints) {
       sendResponse({
         server: fingerprints.server,
-        serverComponents: fingerprints.serverComponents,
+        component: fingerprints.component,
         technology: fingerprints.technology,
         security: fingerprints.security,
         analytics: fingerprints.analytics,
         builder: fingerprints.builder,
         framework: fingerprints.framework,
-        os: fingerprints.os
+        os: fingerprints.os,
+        panel: fingerprints.panel,
+        cdn: fingerprints.cdn
       });
     } else {
       sendResponse(null);
