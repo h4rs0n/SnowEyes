@@ -1,9 +1,11 @@
 // 在文件开头添加动态扫描状态变量
 let dynamicScanEnabled = true;
+let deepScanEnabled = false;
 
 // 在初始化时获取设置
-chrome.storage.local.get(['dynamicScan'], (result) => {
+chrome.storage.local.get(['dynamicScan', 'deepScan'], (result) => {
   dynamicScanEnabled = result.dynamicScan !== false;
+  deepScanEnabled = result.deepScan === true;
 });
 
 // 等待依赖加载 - 简化检查
@@ -44,6 +46,8 @@ const latestResults = {
   fingers: new Set(),       // 指纹结果集
 };
 
+// 添加一个Set用于记录已扫描过的JS URL，避免重复扫描
+const scannedJsUrls = new Set();
 
 // 优化扫描函数
 async function scanSources(sources, isHtmlContent = false) {
@@ -362,135 +366,110 @@ async function initScan() {
   }
 }
 
-// 增量收集和扫描资源
-async function collectAndScanResources() {
+// 修改收集和扫描资源的函数
+async function collectAndScanResources(depth = 0, maxDepth = 3) {
   try {
+    // 如果未启用深度扫描，则只扫描第一层
+    if (!deepScanEnabled) {
+      maxDepth = 1;  // 未启用深度扫描时，将最大深度设为1
+    }
+
+    // 如果超过最大深度，则停止递归
+    if (depth >= maxDepth) {
+      return;
+    }
+
     // 检查是否是第三方库
     const isThirdPartyLib = (url) => {
       const fileName = url.split('/').pop()?.split('?')[0]?.toLowerCase() || '';
       return SCANNER_CONFIG.API.SKIP_JS_PATTERNS.some(pattern => pattern.test(fileName));
     };
 
-    // 1. 收集并扫描关键资源的URL
-    const criticalSelectors = [
-      ['a[href^="http"]', 'href'],
-      ['script[src]', 'src'],
-      ['link[href]', 'href']
-    ];
-
-    for (const [selector, attr] of criticalSelectors) {
-      try {
-        const elements = document.querySelectorAll(selector);
-        const urls = [];
-        for (const el of elements) {
-          const value = el[attr];
-          if (value) urls.push(value);
-        }
-        if (urls.length > 0) {
-          scanSources(urls);
-        }
-      } catch (e) {
-        console.error('Error collecting resources:', e);
-      }
-    }
-
-    // 2. 收集并扫描meta标签内容
-    try {
-      const metas = document.querySelectorAll('meta[content]');
-      const contents = [];
-      for (const meta of metas) {
-        const content = meta.content;
-        if (content) contents.push(content);
-      }
-      if (contents.length > 0) {
-        scanSources(contents);
-      }
-    } catch (e) {
-      console.error('Error collecting meta content:', e);
-    }
-
-    // 3. 收集并扫描数据属性
-    try {
-      const sensitiveDataAttrs = ['api', 'url', 'endpoint', 'server', 'config'];
-      for (const attr of sensitiveDataAttrs) {
-        const elements = document.querySelectorAll(`[data-${attr}]`);
-        const values = [];
-        for (const el of elements) {
-          const value = el.dataset[attr];
-          if (value) values.push(value);
-        }
-        if (values.length > 0) {
-          scanSources(values);
-        }
-      }
-    } catch (e) {
-      console.error('Error collecting data attributes:', e);
-    }
-
-    // 4. 异步获取并扫描脚本内容
-    const baseUrl = window.location.origin;
-    
-    // 从document.scripts获取
-    const scripts = Array.from(document.scripts)
-      .filter(script => script?.src && typeof script.src === 'string' && script.src.trim());
-    
-    // 从页面内容匹配获取
-    const pageContent = document.documentElement.outerHTML;
-    const jsPattern = /['"](?:[^'"]+\.(?:js)(?:\?[^\s'"]*)?)['"]/g;
-    const jsMatches = Array.from(pageContent.matchAll(jsPattern))
-      .map(match => {
-        const path = match[0].slice(1, -1);
-        try {
-          if (path.startsWith('http')) {
-            return path;
-          } else if (path.startsWith('//')) {
-            return window.location.protocol + path;
-          } else if (path.startsWith('/')) {
-            return baseUrl + path;
-          } else {
-            return new URL(path, baseUrl).href;
-          }
-        } catch (e) {
-          console.error('Error processing JS path:', e);
-          return null;
-        }
-      })
-      .filter(url => url !== null);
-
-    // 合并所有JS文件URL并去重
-    const allJsUrls = new Set([
-      ...scripts.map(script => script.src),
-      ...jsMatches
-    ]);
-
-    // 并行获取脚本内容，但每个脚本获取后立即扫描
-    const jsContents = new Set();
-    const fetchPromises = Array.from(allJsUrls).map(async url => {
-      if (jsContents.has(url)) return;
-      jsContents.add(url);
+    // 收集当前页面的所有JS URL
+    const collectJsUrls = (content) => {
+      const jsUrls = new Set();
+      const baseUrl = window.location.origin;
       
-      // 检查是否是第三方库，如果是则跳过
-      if (isThirdPartyLib(url)) {
-        logger.info('跳过第三方库:', url);
+      // 从script标签收集
+      if (typeof document !== 'undefined') {
+        Array.from(document.scripts)
+          .filter(script => script?.src && typeof script.src === 'string' && script.src.trim())
+          .forEach(script => jsUrls.add(script.src));
+      }
+
+      // 从内容中匹配JS URL
+      const jsPattern = /['"](?:[^'"]+\.(?:js)(?:\?[^\s'"]*)?)['"]/g;
+      const matches = Array.from(content.matchAll(jsPattern))
+        .map(match => {
+          const path = match[0].slice(1, -1);
+          try {
+            if (path.startsWith('http')) {
+              return path;
+            } else if (path.startsWith('//')) {
+              return window.location.protocol + path;
+            } else if (path.startsWith('/')) {
+              return baseUrl + path;
+            } else {
+              return new URL(path, baseUrl).href;
+            }
+          } catch (e) {
+            console.error('Error processing JS path:', e);
+            return null;
+          }
+        })
+        .filter(url => url !== null);
+
+      matches.forEach(url => jsUrls.add(url));
+      return jsUrls;
+    };
+
+    // 扫描单个JS文件
+    const scanJsFile = async (url, currentDepth) => {
+      // 如果已经扫描过或是第三方库，则跳过
+      if (scannedJsUrls.has(url) || isThirdPartyLib(url)) {
         return;
       }
-      
+
+      // 如果超过最大深度，则停止递归
+      if (currentDepth >= maxDepth) {
+        return;
+      }
+
       try {
         const response = await new Promise(resolve => {
           chrome.runtime.sendMessage({type: 'FETCH_JS', url: url}, resolve);
         });
-        
+
         if (response?.content) {
-          // 立即扫描获取到的脚本内容
+          // 记录已扫描
+          scannedJsUrls.add(url);
+          
+          // 扫描当前JS内容
           scanSources([response.content]);
+
+          // 只在启用深度扫描时进行递归
+          if (deepScanEnabled) {
+            // 收集并递归扫描该JS中引用的其他JS
+            const newJsUrls = collectJsUrls(response.content);
+            for (const newUrl of newJsUrls) {
+              if (!scannedJsUrls.has(newUrl)) {
+                await scanJsFile(newUrl, currentDepth + 1);
+              }
+            }
+          }
         }
       } catch (e) {
-        console.error('Error fetching script:', url, e);
+        console.error('Error scanning JS:', url, e);
       }
-    });
+    };
 
-    // 等待所有脚本获取完成
-    await Promise.all(fetchPromises);
+    // 收集当前页面的JS URL
+    const currentJsUrls = collectJsUrls(document.documentElement.outerHTML);
+
+    // 并行扫描所有JS文件
+    const scanPromises = Array.from(currentJsUrls).map(url => scanJsFile(url, depth));
+    await Promise.all(scanPromises);
+
   } catch (e) {
     console.error('Error in collectAndScanResources:', e);
   }
@@ -533,6 +512,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
     } else if (request.type === 'UPDATE_DYNAMIC_SCAN') {
       dynamicScanEnabled = request.enabled;
+      sendResponse({ success: true });
+    } else if (request.type === 'UPDATE_DEEP_SCAN') {
+      deepScanEnabled = request.enabled;
+      // 清空已扫描的JS URL集合，这样切换设置后可以重新扫描
+      scannedJsUrls.clear();
       sendResponse({ success: true });
     }
   } catch (e) {

@@ -265,6 +265,44 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   });
+
+  // 获取动态扫描开关状态
+  chrome.storage.local.get(['dynamicScan', 'deepScan'], (result) => {
+    document.getElementById('dynamicScan').checked = result.dynamicScan !== false;
+    document.getElementById('deepScan').checked = result.deepScan === true;
+  });
+
+  // 监听动态扫描开关变化
+  document.getElementById('dynamicScan').addEventListener('change', (e) => {
+    const enabled = e.target.checked;
+    chrome.storage.local.set({ dynamicScan: enabled });
+    
+    // 通知content script更新设置
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'UPDATE_DYNAMIC_SCAN',
+          enabled: enabled
+        });
+      }
+    });
+  });
+
+  // 监听深度扫描开关变化
+  document.getElementById('deepScan').addEventListener('change', (e) => {
+    const enabled = e.target.checked;
+    chrome.storage.local.set({ deepScan: enabled });
+    
+    // 通知content script更新设置
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'UPDATE_DEEP_SCAN',
+          enabled: enabled
+        });
+      }
+    });
+  });
 });
 
 // 监听来自 content script 的消息
