@@ -142,7 +142,7 @@ const SCANNER_CONFIG = {
   BLACKLIST: {
     // 值黑名单 - 从 ID_KEY 配置中移出
     SHORT_VALUES: new Set([
-      'up','in','by','of','is','on','to',
+      'up','in','by','of','is','on','to','no',
       'age','all','app','ang','bar','bea','big','bug','can','com','con','cry','dom',
       'dow','emp','ent','eta','eye','for','get','gen','has','hei','hid','ing','int',
       'ken','key','lea','log','low','met','mod','new','nor','not','num','red','obj',
@@ -164,7 +164,7 @@ const SCANNER_CONFIG = {
       'jump','wave','land','wood','lize','room','chat','user','vice','ress',
       'line','send','mess','calc','http','rame','rest','last','guar','iate',
       'ment','task','stat','fill','coun','faul','rece','arse','exam','good',
-      'gest'
+      'gest','word','cast','lock'
     ]),
     LONG_VALUES: new Set([
       'about','alias','apply','array','basic','beare','begin','black','break',
@@ -186,7 +186,8 @@ const SCANNER_CONFIG = {
       '您','用户','一家','项目','等','造价','判断','通过','为了','可以','掌握',
       '传统','杀毒','允许','分析','包括','接','未经','方式','些','的','第三方',
       '因此','形式','任何','提交','多数','其他','执行','操作','维护','或','其它',
-      '分享','导致','一概','所有'
+      '分享','导致','一概','所有','及其','以及','应当','条件','除非','否则','违反',
+      '将被','提供','无法','建立','打造','帮助','依法','鉴于','快速','构建'
     ])
   },
 
