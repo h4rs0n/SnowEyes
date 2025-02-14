@@ -36,22 +36,17 @@ const SCANNER_CONFIG = {
     // 需要过滤的内容类型
     FILTERED_CONTENT_TYPES: [  
       'multipart/form-data',
-
       'node_modules/',
-
       'pause/break',
       'partial/ajax',
-
       'chrome/',
       'firefox/',
       'edge/',
-
       'examples/element-ui',
       'static/js/',
       'static/css/',
       'stylesheet/less',
       'jpg/jpeg/png/pdf',
-
       //日期类型
       'yyyy/mm/dd',
       'dd/mm/yyyy',
@@ -60,14 +55,13 @@ const SCANNER_CONFIG = {
       'm/d/Y',
       'm/d/y',
       'xx/xx',
-
       'zrender/vml/vml'
     ]
   },
 
   // 域名相关配置
   DOMAIN: {
-    // 域名白名单
+    // 域名白名单: 不会扫描以下域名
     WHITELIST: [
       'github.com',
       '360.net',
@@ -86,7 +80,7 @@ const SCANNER_CONFIG = {
       'qq.com',
       // 'baidu.com'
     ],
-    // 域名黑名单
+    // 域名黑名单：不会展示以下域名
     BLACKLIST: [
       'el.datepicker.today',
       'obj.style.top',
@@ -154,7 +148,7 @@ const SCANNER_CONFIG = {
       'ken','key','lea','log','low','met','mod','new','nor','not','num','red','obj',
       'old','out','pic','pre','pro','pop','pun','put','rad','ran','ref','red','reg',
       'ren','rig','row','sea','set','seq','shi','str','sub','sup','sun','tab','tan',
-      'tip','top','uri','url','use','ver','via'
+      'tip','top','uri','url','use','ver','via','rce'
     ]),
     MEDIUM_VALUES: new Set([
       'null','node','when','face','read','load','body','left','mark','down',
@@ -168,7 +162,9 @@ const SCANNER_CONFIG = {
       'fine','reif','cord','else','fail','rend','leav','hint','coll','move',
       'with','base','rate','name','hile','lete','post','pect','icon','auth',
       'jump','wave','land','wood','lize','room','chat','user','vice','ress',
-      'line','send','mess','calc','http','rame'
+      'line','send','mess','calc','http','rame','rest','last','guar','iate',
+      'ment','task','stat','fill','coun','faul','rece','arse','exam','good',
+      'gest'
     ]),
     LONG_VALUES: new Set([
       'about','alias','apply','array','basic','beare','begin','black','break',
@@ -183,6 +179,14 @@ const SCANNER_CONFIG = {
       'normal','object','popper','triple','search','select','simple','single',
       'status','statis','switch','system','visual','verify','detail','screen',
       'member','change','buffer'
+    ]),
+    CHINESE_BLACKLIST: new Set([
+      '请','输入','前往','整个','常用','咨询','为中心','是否','以上','目前','任务',
+      '或者','推动','需要','直接','识别','获取','用于','清除','遍历','使用','是由',
+      '您','用户','一家','项目','等','造价','判断','通过','为了','可以','掌握',
+      '传统','杀毒','允许','分析','包括','接','未经','方式','些','的','第三方',
+      '因此','形式','任何','提交','多数','其他','执行','操作','维护','或','其它',
+      '分享','导致','一概','所有'
     ])
   },
 

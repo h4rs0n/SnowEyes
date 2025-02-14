@@ -3,9 +3,7 @@ const regexCache = {
   coordPattern: /^coord/,
   valuePattern: /^\/|true|false|register|signUp|name|basic|http/i,
   chinesePattern: /^[\u4e00-\u9fa5]+$/,
-  keywordPattern: /^func|variable|input|true|false|newline|null|http|unexpected|error|data|object|brac|beare|str|self|void|num|atom|opts|token|params|result|con|text|stor|sup|pun|emp|this|key|com|ent|met|opera|return|case|pare|ident|reg|invalid/i,
   camelCasePattern: /\b[_a-z]+(?:[A-Z][a-z]+)+\b/,
-  filterPattern: /请|输入|前往|整个|常用|咨询|为中心|是否|以上|目前|任务|推动|需要|直接|识别|获取|用于|清除|遍历|一家|项目|等|造价|判断|通过|为了|可以|掌握|传统|杀毒|为了|允许|分析/
 };
 
 // 统一的扫描过滤器
@@ -242,7 +240,7 @@ const SCANNER_FILTER = {
   },
 
   company: (match, resultsSet) => {
-    if (regexCache.filterPattern.test(match)) return false;
+    if (Array.from(SCANNER_CONFIG.BLACKLIST.CHINESE_BLACKLIST).some(blackWord=>match.includes(blackWord))) return false;
     resultsSet?.companies?.add(match);
     return true;
   },
@@ -273,16 +271,11 @@ const SCANNER_FILTER = {
     if (!value.length||key==value) {
       return false; 
     }
-
-    for (const blackWord of SCANNER_CONFIG.BLACKLIST.SHORT_VALUES) {
-      if (value.includes(blackWord)) {
-        return false;
-      }
+    if(Array.from(SCANNER_CONFIG.BLACKLIST.SHORT_VALUES).some(blackWord=>value.includes(blackWord))){
+      return false;
     }
-    for (const blackWord of SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES) {
-      if (value.includes(blackWord)) {
-        return false;
-      }
+    if(Array.from(SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES).some(blackWord=>value.includes(blackWord))){
+      return false;
     }
     resultsSet?.cookies?.add(match);
     return true;
@@ -305,33 +298,23 @@ const SCANNER_FILTER = {
           return false;
         }
         // 检查key是否在黑名单中
-        for (const blackWord of SCANNER_CONFIG.ID_KEY.KEY_BLACKLIST) {
-          if (keyLower.includes(blackWord)) {
-            return false;
-          }
+        if(Array.from(SCANNER_CONFIG.ID_KEY.KEY_BLACKLIST).some(blackWord=>keyLower.includes(blackWord))){
+          return false;
         }
         // 检查value是否在统一黑名单中
         if(value.length<16){
-          for (const blackWord of SCANNER_CONFIG.BLACKLIST.SHORT_VALUES) {
-            if (valueLower.includes(blackWord)) {
-              return false;
-            }
+          if(Array.from(SCANNER_CONFIG.BLACKLIST.SHORT_VALUES).some(blackWord=>valueLower.includes(blackWord))){
+            return false;
           }
-          for (const blackWord of SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES) {
-            if (valueLower.includes(blackWord)) {
-              return false;
-            }
+          if(Array.from(SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES).some(blackWord=>valueLower.includes(blackWord))){
+            return false;
           }
         }else{
-          for (const blackWord of SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES) {
-            if (valueLower.includes(blackWord)) {
-              return false;
-            }
+          if(Array.from(SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES).some(blackWord=>valueLower.includes(blackWord))){
+            return false;
           }
-          for (const blackWord of SCANNER_CONFIG.BLACKLIST.LONG_VALUES) {
-            if (valueLower.includes(blackWord)) {
-              return false;
-            }
+          if(Array.from(SCANNER_CONFIG.BLACKLIST.LONG_VALUES).some(blackWord=>valueLower.includes(blackWord))){
+            return false;
           }
         }
         // 其他检查
@@ -347,15 +330,11 @@ const SCANNER_FILTER = {
           return false;
         }
         // 检查value是否在统一黑名单中
-        for (const blackWord of SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES) {
-          if (match.includes(blackWord)) {
-            return false;
-          }
+        if(Array.from(SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES).some(blackWord=>match.includes(blackWord))){
+          return false;
         }
-        for (const blackWord of SCANNER_CONFIG.BLACKLIST.LONG_VALUES) {
-          if (match.includes(blackWord)) {
-            return false;
-          }
+        if(Array.from(SCANNER_CONFIG.BLACKLIST.LONG_VALUES).some(blackWord=>match.includes(blackWord))){
+          return false;
         }
       }
       resultsSet?.idKeys?.add(match);
