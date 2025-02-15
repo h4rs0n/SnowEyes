@@ -240,6 +240,7 @@ const SCANNER_FILTER = {
   },
 
   company: (match, resultsSet) => {
+    if(/[（）]/.test(match)&&!match.match(/（\S*）/)) return false;
     if (Array.from(SCANNER_CONFIG.BLACKLIST.CHINESE_BLACKLIST).some(blackWord=>match.includes(blackWord))) return false;
     resultsSet?.companies?.add(match);
     return true;
