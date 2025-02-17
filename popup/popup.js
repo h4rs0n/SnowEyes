@@ -365,6 +365,25 @@ function updateServerFingerprints(fingerprints) {
   const fingerprintSection = document.querySelector('.fingerprint-section');
   fingerprintSection.innerHTML = '';
   
+  // 检查是否有任何指纹
+  let hasFingerprints = false;
+  for (const type in fingerprints) {
+    if (fingerprints[type] && fingerprints[type].length > 0) {
+      hasFingerprints = true;
+      break;
+    }
+  }
+  
+  // 如果没有识别到任何指纹，显示提示信息
+  if (!hasFingerprints) {
+    fingerprintSection.innerHTML = `
+      <div class="notice">
+        暂未识别到指纹
+      </div>
+    `;
+    return;
+  }
+  
   // 遍历所有指纹类型
   for (const [type, fingerprintData] of Object.entries(fingerprints)) {
     // 如果是数组，遍历数组中的每个指纹
