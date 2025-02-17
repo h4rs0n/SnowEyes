@@ -123,7 +123,12 @@ const SCANNER_CONFIG = {
     URL: /(?:https?|wss?|ftp):\/\/(?:(?:[\w-]+\.)+[a-z]{2,}|(?:\d{1,3}\.){3}\d{1,3})(?::\d{2,5})?(?:\/[^\s\>\)\}\<'"]*)?/gi,
     JWT: /["'](?:ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{10,}|ey[A-Za-z0-9_\/+-]{10,}\.[A-Za-z0-9._\/+-]{10,})["']/g,
     COMPANY: /(?:[\u4e00-\u9fa5\（\）]{4,15}[^的](?:公司|中心)|[\u4e00-\u9fa5\（\）]{2,10}[^的](?:软件)|[\u4e00-\u9fa5]{2,15}(?:科技|集团))(?!法|点|与|查)/g,
-    CREDENTIALS: /(?:(['"])\b(?:\w*(?:pwd|pass|user|member|account|password|passwd|admin|root|system)[_-]?(?:id|name)?[0-9]*?)\1|\b(?:\w*(?:pwd|pass|user|account|password|passwd|admin|root|system)[_-]?(?:id|name)?[0-9]*?))\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(]*"|'(?!\+)[^\,\s\'\(]*'|[\d\s]+)/gi,
+    get CREDENTIALS() {
+      return {
+        type: 'CREDENTIALS',
+        patterns: SCANNER_CONFIG.CREDENTIALS.PATTERNS
+      };
+    },
     COOKIE: /\b\w*(?:token|PHPSESSID|JSESSIONID)\s*[:=]\s*["']?(?!localStorage)(?:[a-zA-Z0-9-]{4,})["']?/ig,
     get ID_KEY() {
       return {
@@ -148,7 +153,7 @@ const SCANNER_CONFIG = {
       'ken','key','lea','log','low','met','mod','new','nor','not','num','red','obj',
       'old','out','pic','pre','pro','pop','pun','put','rad','ran','ref','red','reg',
       'ren','rig','row','sea','set','seq','shi','str','sub','sup','sun','tab','tan',
-      'tip','top','uri','url','use','ver','via','rce'
+      'tip','top','uri','url','use','ver','via','rce','sum','bit','kit'
     ]),
     MEDIUM_VALUES: new Set([
       'null','node','when','face','read','load','body','left','mark','down',
@@ -164,7 +169,8 @@ const SCANNER_CONFIG = {
       'jump','wave','land','wood','lize','room','chat','user','vice','ress',
       'line','send','mess','calc','http','rame','rest','last','guar','iate',
       'ment','task','stat','fill','coun','faul','rece','arse','exam','good',
-      'gest','word','cast','lock'
+      'gest','word','cast','lock','slot','fund','plus','thre','sign','pack',
+      'reak','code','tent','math','lect','draw','lend'
     ]),
     LONG_VALUES: new Set([
       'about','alias','apply','array','basic','beare','begin','black','break',
@@ -178,7 +184,7 @@ const SCANNER_CONFIG = {
       'button','cancel','create','double','finger','global','insert','module',
       'normal','object','popper','triple','search','select','simple','single',
       'status','statis','switch','system','visual','verify','detail','screen',
-      'member','change','buffer'
+      'member','change','buffer','grade'
     ]),
     CHINESE_BLACKLIST: new Set([
       '请','输入','前往','整个','常用','咨询','为中心','是否','以上','目前','任务',
@@ -210,7 +216,7 @@ const SCANNER_CONFIG = {
       {name: 'GitHub Token2', pattern: /(?:ghp|gho|ghu|ghs|ghr|github_pat)_[a-zA-Z0-9_]{36,255}/g},
       {name: 'Apple开发者密钥', pattern: /APID[a-zA-Z0-9]{32,42}/g},
       {name: '企业微信密钥', pattern: /ww[a-z0-9]{15,18}/g},
-      {name: 'key1', pattern: /(?:['"]?(?:\w*(?:key|secret|oss|bucket)\w*)|ak["']?)\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(\>\<]*"|'(?!\+)[^\,\s\'\(\>\<]*'|[\d\s]+)/ig},
+      {name: 'key1', pattern: /(?:['"]?(?:[\w-]*(?:secret|oss|bucket|key)[\w-]*)|ak["']?)\s*[:=]\s*(?:"(?!\+)[^\,\s\"\(\>\<]{6,}"|'(?!\+)[^\,\s\'\(\>\<]{6,}'|[0-9a-zA-Z_-]{16,})/ig},
       {name: 'key2', pattern: /["'][a-zA-Z0-9]{32}["']/g}
     ],
 
@@ -218,6 +224,13 @@ const SCANNER_CONFIG = {
     KEY_BLACKLIST: new Set([
       'size', 'row', 'dict', 'up', 'highlight', 'cabin', 'cross','time'
     ])
+  },
+  CREDENTIALS: {
+    PATTERNS: [
+      {pattern: /['"]\w*(?:pwd|pass|user|member|account|password|passwd|admin|root|system)[_-]?(?:id|name)?[0-9]*["']\s*[:=]\s*(?:['"][^\,\s\"\(]*["'])/gi},
+      {pattern: /\w*(?:pwd|pass|user|member|account|password|passwd|admin|root|system)[_-]?(?:id|name)?[0-9]*\s*[:=]\s*(?:['"][^\,\s\"\(]*["'])/gi},
+      {pattern: /['"]\w*(?:pwd|pass|user|member|account|password|passwd|admin|root|system)[_-]?(?:id|name)?[0-9]*\s*[:=]\s*(?:[^\,\s\"\(]*)["']/gi},
+    ]
   },
 
   // 添加构建工具配置

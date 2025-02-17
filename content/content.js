@@ -1,5 +1,5 @@
 // 在文件开头添加动态扫描状态变量
-let dynamicScanEnabled = true;
+let dynamicScanEnabled = false;
 let deepScanEnabled = false;
 
 // 在初始化时获取设置
@@ -160,7 +160,7 @@ async function scanSources(sources, isHtmlContent = false) {
           }
 
           // API模式特殊处理
-          if (key === 'API' && pattern && typeof pattern === 'object') {
+          if (key === 'API') {
             const apiPattern = SCANNER_CONFIG.API.PATTERN;
             while ((match = apiPattern.exec(chunk)) !== null) {
               if (apiPattern.lastIndex <= lastIndex) {
@@ -178,9 +178,32 @@ async function scanSources(sources, isHtmlContent = false) {
             }
             continue;
           }
+          if (key === 'CREDENTIALS') {
+            // 对每个模式进行匹配
+            for (const {pattern: credentialsPattern} of pattern.patterns) {
+              let patternLastIndex = 0;  // 每个模式独立的 lastIndex
+              while ((match = credentialsPattern.exec(chunk)) !== null) {
+                if (credentialsPattern.lastIndex <= patternLastIndex) {
+                  window.logger.warn(`检测到可能的无限循环: CREDENTIALS Pattern`);
+                  break;
+                }
+                patternLastIndex = credentialsPattern.lastIndex;
+                
+                if (--maxIterations <= 0) {
+                  window.logger.warn(`达到最大迭代次数: CREDENTIALS`);
+                  break;
+                }
+                
+                filter(match[0], latestResults);
+              }
+              // 重置正则表达式的 lastIndex
+              credentialsPattern.lastIndex = 0;
+            }
+            continue;
+          }
 
           // ID_KEY模式特殊处理
-          if (pattern && pattern.type === 'ID_KEY') {
+          if (key === 'ID_KEY') {
             // 对每个模式进行匹配
             for (const {pattern: idKeyPattern} of pattern.patterns) {
               let patternLastIndex = 0;  // 每个模式独立的 lastIndex
@@ -227,7 +250,7 @@ async function scanSources(sources, isHtmlContent = false) {
     };
 
     // 处理单个源
-    const processSource = (source) => {
+    const processSource = async (source) => {
       if (!source || seen.has(source)) return;
       seen.add(source);
 
@@ -241,7 +264,7 @@ async function scanSources(sources, isHtmlContent = false) {
             sendUpdate();
             lastUpdateTime = Date.now();
             // 给主线程一个喘息的机会
-            return new Promise(resolve => setTimeout(resolve, 0));
+            await new Promise(resolve => setTimeout(resolve, 0));
           }
         }
       } catch (e) {
