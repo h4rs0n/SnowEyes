@@ -268,8 +268,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 获取动态扫描开关状态
   chrome.storage.local.get(['dynamicScan', 'deepScan'], (result) => {
-    document.getElementById('dynamicScan').checked = result.dynamicScan == true;
-    document.getElementById('deepScan').checked = result.deepScan == true;
+    document.getElementById('dynamicScan').checked = result.dynamicScan === true;
+    document.getElementById('deepScan').checked = result.deepScan === true;
   });
 
   // 监听动态扫描开关变化
@@ -337,10 +337,15 @@ function initConfigPage() {
         displayConfig(response.config);
         
         // 获取动态扫描设置
-        chrome.storage.local.get(['dynamicScan'], (result) => {
+        chrome.storage.local.get(['dynamicScan', 'deepScan'], (result) => {
           const dynamicScanCheckbox = document.getElementById('dynamicScan');
+          const deepScanCheckbox = document.getElementById('deepScan');
           if (dynamicScanCheckbox) {
-            dynamicScanCheckbox.checked = result.dynamicScan !== false; // 默认开启
+            dynamicScanCheckbox.checked = result.dynamicScan === true;
+          }
+          if (deepScanCheckbox) {
+            deepScanCheckbox.checked = result.deepScan === true;
+          }
             
             // 添加变更监听
             dynamicScanCheckbox.addEventListener('change', (e) => {
@@ -353,7 +358,6 @@ function initConfigPage() {
                 enabled: enabled
               });
             });
-          }
         });
       });
     }

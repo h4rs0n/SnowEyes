@@ -1,10 +1,9 @@
-// 在文件开头添加动态扫描状态变量
-let dynamicScanEnabled = false;
+let dynamicScanEnabled = false; 
 let deepScanEnabled = false;
 
 // 在初始化时获取设置
 chrome.storage.local.get(['dynamicScan', 'deepScan'], (result) => {
-  dynamicScanEnabled = result.dynamicScan !== false;
+  dynamicScanEnabled = result.dynamicScan === true;  // 修改判断逻辑，只有明确设置为true时才开启
   deepScanEnabled = result.deepScan === true;
 });
 
