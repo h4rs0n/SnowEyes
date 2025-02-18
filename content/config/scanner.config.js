@@ -153,7 +153,7 @@ const SCANNER_CONFIG = {
       'ken','key','lea','log','low','met','mod','new','nor','not','num','red','obj',
       'old','out','pic','pre','pro','pop','pun','put','rad','ran','ref','red','reg',
       'ren','rig','row','sea','set','seq','shi','str','sub','sup','sun','tab','tan',
-      'tip','top','uri','url','use','ver','via','rce','sum','bit','kit'
+      'tip','top','uri','url','use','ver','via','rce','sum','bit','kit','uid'
     ]),
     MEDIUM_VALUES: new Set([
       'null','node','when','face','read','load','body','left','mark','down',
@@ -170,7 +170,8 @@ const SCANNER_CONFIG = {
       'line','send','mess','calc','http','rame','rest','last','guar','iate',
       'ment','task','stat','fill','coun','faul','rece','arse','exam','good',
       'gest','word','cast','lock','slot','fund','plus','thre','sign','pack',
-      'reak','code','tent','math','lect','draw','lend'
+      'reak','code','tent','math','lect','draw','lend','glow','past','blue',
+      'dial','purp'
     ]),
     LONG_VALUES: new Set([
       'about','alias','apply','array','basic','beare','begin','black','break',

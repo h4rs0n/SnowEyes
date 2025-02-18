@@ -86,18 +86,36 @@ async function scanSources(sources, isHtmlContent = false) {
 
     // 分块处理大文本
     function* splitIntoChunks(text) {
-      const length = text.length;
-      let lastIndex = 0;
-      
-      // 使用换行符作为自然分割点
-      for (let i = 0; i < length; i++) {
-        if (i - lastIndex >= MAX_CHUNK_SIZE || text[i] === '\n') {
-          yield text.slice(lastIndex, i);
-          lastIndex = i;
+      const lines = text.split(/\r?\n/); // 兼容不同换行符
+      let currentChunk = '';
+      for (const line of lines) {
+        // 预估添加该行后的体积（考虑换行符）
+        const potentialSize = currentChunk.length + line.length + 1;
+        
+        if (potentialSize > MAX_CHUNK_SIZE) {
+          // 当前块已接近阈值，先yield现有内容
+          if (currentChunk) {
+            yield currentChunk;
+            currentChunk = '';
+          }
+          // 处理超长单行的情况
+          if (line.length > MAX_CHUNK_SIZE) {
+            for (let i = 0; i < line.length; i += MAX_CHUNK_SIZE) {
+              yield line.slice(i, i + MAX_CHUNK_SIZE);
+            }
+            continue;
+          }
+        }
+        currentChunk += line + '\n'; // 保留原始换行符
+        // 达到阈值时提交块
+        if (currentChunk.length >= MAX_CHUNK_SIZE) {
+          yield currentChunk;
+          currentChunk = '';
         }
       }
-      if (lastIndex < length) {
-        yield text.slice(lastIndex);
+      // 提交剩余内容
+      if (currentChunk) {
+        yield currentChunk;
       }
     }
 
@@ -507,7 +525,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse('WHITELISTED');
         return;
       }
-      // 返回当前的扫描结果
+      
       sendResponse(Object.fromEntries(
         Object.entries(latestResults).map(([key, value]) => [key, Array.from(value)])
       ));
