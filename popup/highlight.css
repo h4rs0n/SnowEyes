@@ -394,10 +394,6 @@ body {
   background: #ff922b;  /* 橙色 - JWT Token */
 }
 
-.aws-list .item::before {
-  background: #ff6b6b;  /* 红色 - AWS Key */
-}
-
 .company-list .item::before {
   background: #845ef7;  /* 紫色 - 机构公司 */
 }
@@ -459,7 +455,7 @@ body {
 
 /* 指纹嗅探页面样式 */
 .fingerprint-section {
-  padding: 10px;
+  padding: 8px;
 }
 
 .fingerprint-group {
@@ -779,7 +775,7 @@ body {
 
 /* 网站解析页面样式 */
 .analysis-section {
-  padding: 10px;
+  padding: 8px;
 }
 
 .analysis-group {

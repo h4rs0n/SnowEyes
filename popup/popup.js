@@ -1,5 +1,20 @@
+const searchEngines = [
+  { id: 'baidupc', name: '百度PC' },
+  { id: 'google', name: 'Google' },
+  { id: '360', name: '360搜索' },
+  { id: 'baidum', name: '百度移动' },
+  { id: 'sougou', name: '搜狗' },
+  { id: 'shenma', name: '神马' }
+];
+
+let currentActiveTabId = null;
+const imageCache = new WeakMap();
+
 // 页面切换功能
 function switchPage(pageName) {
+  // 清理旧页面的资源
+  if (currentPageCleanup) currentPageCleanup();
+  
   // 更新导航栏状态
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.classList.remove('active');
@@ -13,11 +28,24 @@ function switchPage(pageName) {
     page.style.display = 'none';
     if (page.classList.contains(`${pageName}-page`)) {
       page.style.display = 'block';
-      if (pageName === 'config') {
-        initConfigPage();
-      }
+      initializePage(pageName);
     }
   });
+}
+
+// 统一页面初始化逻辑
+function initializePage(pageName) {
+  switch(pageName) {
+    case 'config':
+      initConfigPage();
+      break;
+    case 'fingerprint':
+      initFingerprintPage();
+      break;
+    case 'analysis':
+      currentPageCleanup = initAnalysisPage();
+      break;
+  }
 }
 
 // 显示配置信息
@@ -147,114 +175,18 @@ async function copyToClipboard(text, x, y) {
   }
 }
 
-// 渲染结果到页面
-function renderResults(results) {
-  const container = document.querySelector('.scanner-page');
-  if (!container) return;
-
-  // 清空现有内容
-  container.innerHTML = '';
-
-  // 定义结果类型
-  const resultTypes = [
-    { id: 'domain-list', data: results.domains, title: '域名' },
-    { id: 'api-list', data: results.apis, title: 'API' },
-    { id: 'static-list', data: results.staticFiles, title: '静态文件' },
-    { id: 'ip-list', data: results.ips, title: 'IP' }
-  ];
-
-  // 渲染每种类型的结果
-  resultTypes.forEach(({ id, data, title }) => {
-    if (!data || data.size === 0) return;
-
-    const section = document.createElement('div');
-    section.className = 'section';
-
-    // 创建标题栏
-    const header = document.createElement('div');
-    header.className = 'section-header';
-
-    const titleWrapper = document.createElement('div');
-    titleWrapper.className = 'title-wrapper';
-
-    const titleText = document.createElement('span');
-    titleText.className = 'title';
-    titleText.textContent = title;
-
-    const count = document.createElement('span');
-    count.className = 'count';
-    count.textContent = `(${data.size})`;
-
-    titleWrapper.appendChild(titleText);
-    titleWrapper.appendChild(count);
-
-    // 创建复制按钮
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'copy-btn';
-    copyBtn.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>复制全部';
-    
-    copyBtn.addEventListener('click', (e) => {
-      const allText = Array.from(data).join('\\n');
-      copyToClipboard(allText, e.clientX, e.clientY);
-    });
-
-    header.appendChild(titleWrapper);
-    header.appendChild(copyBtn);
-
-    // 创建内容区域
-    const content = document.createElement('div');
-    content.className = 'section-content';
-
-    // 创建结果项
-    Array.from(data).forEach(item => {
-      const itemElement = document.createElement('div');
-      itemElement.className = 'item';
-      itemElement.textContent = item;
-      
-      itemElement.addEventListener('click', (e) => {
-        copyToClipboard(item, e.clientX, e.clientY);
-      });
-
-      content.appendChild(itemElement);
-    });
-
-    section.appendChild(header);
-    section.appendChild(content);
-    container.appendChild(section);
-  });
-}
-
 // 页面加载完成时的初始化
 document.addEventListener('DOMContentLoaded', () => {
-  // 获取当前激活的页面
   const activePage = document.querySelector('.nav-tab.active').dataset.page;
-  
-  // 初始化页面显示
-  document.querySelectorAll('.page').forEach(page => {
-    if (page.classList.contains(`${activePage}-page`)) {
-      page.classList.add('active');
-    } else {
-      page.classList.remove('active');
-    }
-  });
-
-  // 添加导航标签点击事件
-  document.querySelectorAll('.nav-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      if (tab.dataset.page === 'fingerprint') {
-        initFingerprintPage();
-      }
-      switchPage(tab.dataset.page);
-    });
-  });
+  switchPage(activePage);
 
   // 初始化扫描页面
   const container = document.querySelector('.scanner-page .container');
   container.innerHTML = '<div class="loading">正在扫描...</div>';
 
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    if (tabs[0]) {
-      chrome.tabs.sendMessage(tabs[0].id, {type: 'GET_RESULTS'}, response => {
+  getCurrentTab().then(tab => {
+    if (tab) {
+      chrome.tabs.sendMessage(tab.id, {type: 'GET_RESULTS', tabId: tab.id}, response => {
         if (chrome.runtime.lastError) {
           container.innerHTML = '<div class="error">无法连接到页面，尝试刷新页面后再试吧</div>';
         } else if (response === 'WHITELISTED') {
@@ -266,52 +198,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 获取动态扫描开关状态
-  chrome.storage.local.get(['dynamicScan', 'deepScan'], (result) => {
-    document.getElementById('dynamicScan').checked = result.dynamicScan === true;
-    document.getElementById('deepScan').checked = result.deepScan === true;
-  });
-
-  // 监听动态扫描开关变化
-  document.getElementById('dynamicScan').addEventListener('change', (e) => {
-    const enabled = e.target.checked;
-    chrome.storage.local.set({ dynamicScan: enabled });
-    
-    // 通知content script更新设置
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-          type: 'UPDATE_DYNAMIC_SCAN',
-          enabled: enabled
-        });
-      }
-    });
-  });
-
-  // 监听深度扫描开关变化
-  document.getElementById('deepScan').addEventListener('change', (e) => {
-    const enabled = e.target.checked;
-    chrome.storage.local.set({ deepScan: enabled });
-    
-    // 通知content script更新设置
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-          type: 'UPDATE_DEEP_SCAN',
-          enabled: enabled
-        });
-      }
-    });
-  });
+  initConfigPage();
+  initEventListeners();
 });
 
 // 监听来自 content script 的消息
 chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === 'SCAN_UPDATE' && message.results) {
+  if (message.type === 'SCAN_UPDATE' && message.results && message.tabId===currentActiveTabId) {
     displayResults(message.results);
   }
 });
-
+// 监听标签页切换事件
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  // 更新当前活动标签页ID
+   currentActiveTabId = activeInfo.tabId;
+});
 // 处理长文本的显示
 function handleLongText() {
   const items = document.querySelectorAll('.item');
@@ -325,10 +226,10 @@ function handleLongText() {
 
 // 初始化配置页面
 function initConfigPage() {
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    if (tabs[0]) {
+  getCurrentTab().then(tab => {
+    if (tab) {
       // 获取配置信息
-      chrome.tabs.sendMessage(tabs[0].id, {type: 'GET_CONFIG'}, response => {
+      chrome.tabs.sendMessage(tab.id, {type: 'GET_CONFIG'}, response => {
         if (chrome.runtime.lastError || !response || !response.config) {
           const container = document.querySelector('.config-page .container');
           container.innerHTML = '<div class="error">请刷新页面后重试</div>';
@@ -346,18 +247,6 @@ function initConfigPage() {
           if (deepScanCheckbox) {
             deepScanCheckbox.checked = result.deepScan === true;
           }
-            
-            // 添加变更监听
-            dynamicScanCheckbox.addEventListener('change', (e) => {
-              const enabled = e.target.checked;
-              chrome.storage.local.set({ dynamicScan: enabled });
-              
-              // 通知 content script 更新设置
-              chrome.tabs.sendMessage(tabs[0].id, {
-                type: 'UPDATE_DYNAMIC_SCAN',
-                enabled: enabled
-              });
-            });
         });
       });
     }
@@ -423,14 +312,14 @@ function addFingerprint(container, info) {
 
 // 初始化指纹页面
 function initFingerprintPage() {
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    if (tabs[0]) {
-      console.log('Requesting fingerprints for tab:', tabs[0].id); // 添加调试日志
+  getCurrentTab().then(tab => {
+    if (tab) {
+      console.log('Requesting fingerprints for tab:', tab.id);
       chrome.runtime.sendMessage({
         type: 'GET_FINGERPRINTS',
-        tabId: tabs[0].id
+        tabId: tab.id
       }, response => {
-        console.log('Received response:', response); // 添加调试日志
+        console.log('Received response:', response);
         if (response) {
           updateServerFingerprints(response);
         }
@@ -456,48 +345,58 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // ... 其他代码
 });
 
-// 修改初始化网站解析页面函数
+// 修改初始化分析页面的逻辑
 function initAnalysisPage() {
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    if (tabs[0]) {
-      const url = new URL(tabs[0].url);
-      const domain = url.hostname;
+  const container = document.querySelector('.analysis-section');
+  container.innerHTML = '<div class="loading">正在获取网站信息...</div>';
+  
+  let timeoutId = null;
+  
+  getCurrentTab().then(tab => {
+    if (tab) {
+      const domain = new URL(tab.url).hostname;
       
-      // 显示加载状态
-      const container = document.querySelector('.analysis-section');
-      container.innerHTML = '<div class="loading">正在获取网站信息...</div>';
+      let isFetching = false;
+      if (isFetching) return;
+      isFetching = true;
 
-      // 请求数据
+      timeoutId = setTimeout(() => {
+        isFetching = false;
+        container.innerHTML = '<div class="error">请求超时，请重试</div>';
+      }, 10000);
+
       chrome.runtime.sendMessage({
         type: 'GET_SITE_ANALYSIS',
         domain: domain
-      }, response => {
-        if (response) {
-          if (response.isPrivateIP) {
-            container.innerHTML = '<div class="notice">内网IP地址，已跳过解析</div>';
-            return;
-          }
-          // 即使数据不完整也显示已有的数据
-          updateAnalysisPage(response, domain);
-          
-          // 如果数据不完整，显示部分加载中的状态
-          if (!response.weight) {
-            document.querySelector('.weight-grid').innerHTML = '<div class="loading">正在获取权重信息...</div>';
-          }
-          if (!response.ip) {
-            document.querySelector('.ip-info').innerHTML = '<div class="loading">正在获取IP信息...</div>';
-          }
-        } else {
+      }, (response) => {
+        clearTimeout(timeoutId);
+        isFetching = false;
+        if (!response) {
           container.innerHTML = '<div class="error">获取网站信息失败</div>';
+          return;
         }
+        
+        if (response.isPrivateIP) {
+          container.innerHTML = '<div class="notice">内网地址无需解析</div>';
+          return;
+        }
+        
+        updateAnalysisPage(response, domain);
       });
     }
   });
+  
+  // 添加页面切换时的清理逻辑
+  return () => {
+    if (timeoutId) clearTimeout(timeoutId);
+  };
 }
 
 // 更新网站解析页面内容
 function updateAnalysisPage(data, domain) {
   const container = document.querySelector('.analysis-section');
+  // 解构数据，确保正确访问
+  const icpData = data.icp?.data;
   container.innerHTML = `
     <!-- 基本信息 -->
     <div class="analysis-group basic-group">
@@ -505,19 +404,19 @@ function updateAnalysisPage(data, domain) {
       <div class="basic-info">
         <div class="info-item">
           <span class="info-label">域名</span>
-          <span class="info-value">${domain}</span>
+          <span class="info-value">${icpData?.domain || domain}</span>
         </div>
         <div class="info-item">
           <span class="info-label">备案号</span>
-          <span class="info-value">粤B2-20090059</span>
+          <span class="info-value">${icpData?.icp || '暂无备案信息'}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">注册商</span>
-          <span class="info-value">腾讯云</span>
+          <span class="info-label">主办单位</span>
+          <span class="info-value">${icpData?.unit || '未知'}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">到期时间</span>
-          <span class="info-value">2024-03-17</span>
+          <span class="info-label">备案时间</span>
+          <span class="info-value">${icpData?.time || '未知'}</span>
         </div>
       </div>
     </div>
@@ -532,29 +431,6 @@ function updateAnalysisPage(data, domain) {
     <div class="analysis-group ip-group">
       <h3>IP信息</h3>
       <div class="ip-info"></div>
-    </div>
-
-    <!-- Whois信息 -->
-    <div class="analysis-group whois-group">
-      <h3>Whois信息</h3>
-      <div class="whois-info">
-        <div class="info-item">
-          <span class="info-label">注册时间</span>
-          <span class="info-value">1995-05-04</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">更新时间</span>
-          <span class="info-value">2023-03-17</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">DNS服务器</span>
-          <span class="info-value">ns1.qq.com</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">状态</span>
-          <span class="info-value">clientDeleteProhibited</span>
-        </div>
-      </div>
     </div>
   `;
   
@@ -571,68 +447,186 @@ function updateAnalysisPage(data, domain) {
   }
 }
 
-// 更新权重信息
+// 创建文档碎片批量更新
+function updateElementsWithFragment(container, elements) {
+  const fragment = document.createDocumentFragment();
+  elements.forEach(element => fragment.appendChild(element));
+  container.innerHTML = '';
+  container.appendChild(fragment);
+}
+
+// 修改updateWeightInfo函数
 function updateWeightInfo(weightData) {
-  const weightItems = {
-    'baidupc': ['百度PC', weightData?.baidupc || '无', weightData?.baidupc_img],
-    'baidum': ['百度移动', weightData?.baidum || '无', weightData?.baidum_img],
-    'so360': ['360', weightData?.so360 || '无', weightData?.so360_img],
-    'shenma': ['神马', weightData?.shenma || '无', weightData?.shenma_img],
-    'sougou': ['搜狗', weightData?.sougou || '无', weightData?.sougou_img],
-    'google': ['Google', weightData?.google || '无', weightData?.google_img]
-  };
-
-  const weightGrid = document.querySelector('.weight-grid');
-  weightGrid.innerHTML = '';
-
-  for (const [key, [label, value, imgSrc]] of Object.entries(weightItems)) {
-    weightGrid.innerHTML += `
-      <div class="weight-item">
-        <img src="${imgSrc || ''}" alt="${label}" onerror="this.style.display='none'">
-        <span class="weight-label">${label}</span>
-        <span class="weight-value">${value}</span>
-      </div>
-    `;
+  const container = document.querySelector('.weight-grid');
+  
+  if (weightData?.error) {
+    container.textContent = weightData.error;
+    return;
   }
+
+  const elements = searchEngines.map(engine => {
+    const element = document.createElement('div');
+    element.className = 'weight-item';
+    
+    // 直接使用原始值
+    const rawValue = weightData.data?.[engine.id] || 'n';
+    
+    const displayValue = rawValue;
+    const imgValue = rawValue;
+
+    const img = document.createElement('img');
+    img.className = 'weight-img';
+    img.dataset.engine = engine.id;
+    img.dataset.src = `https://api.mir6.com/data/quanzhong_img/${engine.id}/${imgValue}.png`;
+    img.alt = engine.name;
+
+    const label = document.createElement('span');
+    label.className = 'weight-label';
+    label.textContent = engine.name;
+
+    const valueSpan = document.createElement('span');
+    valueSpan.className = 'weight-value';
+    valueSpan.textContent = displayValue;
+
+    element.append(img, label, valueSpan);
+    
+    // 立即加载图片
+    const tempImg = new Image();
+    tempImg.src = img.dataset.src;
+    
+    tempImg.onload = () => {
+      img.src = tempImg.src;
+      img.classList.add('loaded');
+    };
+    
+    tempImg.onerror = () => {
+      img.src = `https://api.mir6.com/data/quanzhong_img/${engine.id}/0.png`;
+      img.classList.add('loaded');
+    };
+
+    return element;
+  });
+
+  updateElementsWithFragment(container, elements);
 }
 
 // 更新IP信息
 function updateIpInfo(ipData) {
   const ipInfo = document.querySelector('.ip-info');
+  const data = ipData.data;
   ipInfo.innerHTML = `
     <div class="info-item">
-      <span class="info-label">IPv6</span>
-      <span class="info-value">${ipData?.ip || '无'}</span>
-    </div>
-    <div class="info-item">
-      <span class="info-label">IPv4</span>
-      <span class="info-value">${ipData?.myip || '无'}</span>
+      <span class="info-label">IPv4/6</span>
+      <span class="info-value">${data.ip || '无'}</span>
     </div>
     <div class="info-item">
       <span class="info-label">地理位置</span>
-      <span class="info-value">${ipData?.location || '无'}</span>
+      <span class="info-value">${data.location || '无'}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">邮政编码</span>
+      <span class="info-value">${data.zipcode || '无'}</span>
     </div>
     <div class="info-item">
       <span class="info-label">运营商</span>
-      <span class="info-value">${ipData?.isp || '无'}</span>
+      <span class="info-value">${data.isp || '无'}</span>
     </div>
     <div class="info-item">
       <span class="info-label">协议</span>
-      <span class="info-value">${ipData?.protocol || '无'}</span>
+      <span class="info-value">${data.protocol || '无'}</span>
     </div>
     <div class="info-item">
       <span class="info-label">网络类型</span>
-      <span class="info-value">${ipData?.net || '无'}</span>
+      <span class="info-value">${data.net || '无'}</span>
     </div>
   `;
 }
 
-// 在页面切换时初始化网站解析页面
-document.querySelectorAll('.nav-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    if (tab.dataset.page === 'analysis') {
-      initAnalysisPage();
-    }
-    switchPage(tab.dataset.page);
+// 统一事件管理
+const eventListeners = {
+  'click .nav-tab': handleNavClick,
+  'change #dynamicScan': handleDynamicScan,
+  'change #deepScan': handleDeepScan,
+  'error .weight-img': handleImageError
+};
+
+function initEventListeners() {
+  // 清除可能存在的旧事件监听器
+  document.body.removeEventListener('click', handleNavClick);
+  document.body.removeEventListener('change', handleDynamicScan);
+  document.body.removeEventListener('error', handleImageError);
+
+  Object.entries(eventListeners).forEach(([eventKey, handler]) => {
+    const [event, selector] = eventKey.split(' ');
+    document.body.addEventListener(event, e => {
+      if (!selector || e.target.matches(selector)) handler(e);
+    });
   });
-}); 
+}
+
+// 在图片卸载时自动清理
+function trackImageElement(img) {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // 触发图片加载
+        img.src = img.dataset.src; 
+        observer.unobserve(img);
+      }
+    });
+  });
+  observer.observe(img);
+}
+
+// 统一使用handleNavClick处理页面切换
+function handleNavClick(e) {
+  const tab = e.target.closest('.nav-tab');
+  if (tab) {
+    const pageName = tab.dataset.page;
+    switchPage(pageName);
+  }
+}
+
+// 添加通用的标签页查询函数
+async function getCurrentTab() {
+  const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+  return tabs[0] || null;
+}
+
+// 修改使用标签页查询的函数
+function handleDynamicScan(e) {
+  const enabled = e.target.checked;
+  chrome.storage.local.set({ dynamicScan: enabled });
+  
+  getCurrentTab().then(tab => {
+    if (tab) {
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'UPDATE_DYNAMIC_SCAN',
+        enabled: enabled
+      });
+    }
+  });
+}
+
+function handleDeepScan(e) {
+  const enabled = e.target.checked;
+  chrome.storage.local.set({ deepScan: enabled });
+  
+  getCurrentTab().then(tab => {
+    if (tab) {
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'UPDATE_DEEP_SCAN',
+        enabled: enabled
+      });
+    }
+  });
+}
+
+function handleImageError(e) {
+  if (e.target.classList.contains('weight-img')) {
+    const engine = e.target.dataset.engine;
+    e.target.src = `https://api.mir6.com/data/quanzhong_img/${engine}/0.png`;
+  }
+}
+
+let currentPageCleanup = null; // 添加页面清理函数存储 

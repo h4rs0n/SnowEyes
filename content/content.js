@@ -21,35 +21,25 @@ const waitForDependencies = () => {
   });
 };
 
-// 存储扫描结果的集合
-const latestResults = {
-  domains: new Set(),     // 域名结果集
-  absoluteApis: new Set(),// API 结果集（绝对路径）
-  apis: new Set(),        // API 结果集（相对路径）
-  moduleFiles: new Set(), // 模块路径结果集
-  docFiles: new Set(),    // 文档文件结果集
-  ips: new Set(),         // IP 地址结果集
-  phones: new Set(),      // 手机号结果集
-  emails: new Set(),      // 邮箱结果集
-  idcards: new Set(),     // 身份证号结果集
-  jwts: new Set(),        // JWT Token 结果集
-  imageFiles: new Set(),  // 音频图片结果集
-  jsFiles: new Set(),     // JS文件结果集
-  vueFiles: new Set(),    // Vue 文件结果集
-  urls: new Set(),        // URL 结果集
-  githubUrls: new Set(),  // GitHub URL 结果集
-  companies: new Set(),   // 公司机构结果集
-  credentials: new Set(),  // 用户名密码结果集
-  cookies: new Set(),      // Cookie结果集
-  idKeys: new Set(),       // ID密钥结果集
-  fingers: new Set(),       // 指纹结果集
+// 修改getTabId函数为同步获取
+let currentTabId = null;
+
+const getTabId = () => {
+  return new Promise(resolve => {
+    chrome.runtime.sendMessage({ type: 'GET_TAB_ID' }, response => {
+      currentTabId = response.tabId;
+      resolve(currentTabId);
+    });
+  });
 };
 
+// 修改tabResults的初始化和使用方式
+const tabResults = new Map();
 // 添加一个Set用于记录已扫描过的JS URL，避免重复扫描
 const scannedJsUrls = new Set();
 
 // 优化扫描函数
-async function scanSources(sources, isHtmlContent = false) {
+async function scanSources(sources, isHtmlContent = false, tabId) {
   try {
     const seen = new Set();
     let lastUpdateTime = Date.now();
@@ -60,24 +50,25 @@ async function scanSources(sources, isHtmlContent = false) {
     const sendUpdate = () => {
       try {
         const results = {};
-        for (const key in latestResults) {
-          results[key] = Array.from(latestResults[key]);
+        for (const key in tabResults.get(tabId)) {
+          results[key] = Array.from(tabResults.get(tabId)[key]);
         }
         chrome.runtime.sendMessage({
           type: 'SCAN_UPDATE',
-          results: results
+          results: results,
+          tabId: tabId
         }).catch(() => {
           // 忽略消息发送失败的错误
         });
         
         chrome.runtime.sendMessage({
           type: 'UPDATE_BADGE',
-          results: results
+          results: results,
+          tabId: tabId
         }).catch(() => {
           // 忽略消息发送失败的错误
         });
       } catch (e) {
-        // 扩展上下文失效时忽略错误
         if (e.message !== 'Extension context invalidated.') {
           window.logger.error('发送更新出错:', e);
         }
@@ -138,10 +129,10 @@ async function scanSources(sources, isHtmlContent = false) {
           if (key === 'FINGER') {
             // 对每个模式进行匹配
             for (const {pattern: fingerPattern, name: fingerName, class: fingerClass, type: fingerType, description: fingerDescription, extType: fingerExtType, extName: fingerExtName} of pattern.patterns) {
-              if (latestResults.fingers.has(fingerClass)) continue;
+              if (tabResults.get(tabId).fingers.has(fingerClass)) continue;
               const matches = chunk.match(fingerPattern);
               if (matches) {
-                filter(fingerName, fingerClass, fingerType, fingerDescription, latestResults,fingerExtType,fingerExtName);
+                filter(fingerName, fingerClass, fingerType, fingerDescription, tabResults.get(tabId),fingerExtType,fingerExtName);
               }
             }
             continue;
@@ -151,7 +142,7 @@ async function scanSources(sources, isHtmlContent = false) {
             const ipPattern = isHtmlContent ? pattern : SCANNER_CONFIG.PATTERNS.IP_RESOURCE;
             const matches = chunk.match(ipPattern);
             if (matches) {
-              matches.forEach(match => filter(match, latestResults));
+              matches.forEach(match => filter(match, tabResults.get(tabId)));
             }
             continue;
           }
@@ -171,7 +162,7 @@ async function scanSources(sources, isHtmlContent = false) {
                 break;
               }
               
-              filter(match[0], latestResults);
+              filter(match[0], tabResults.get(tabId));
             }
             continue;
           }
@@ -191,7 +182,7 @@ async function scanSources(sources, isHtmlContent = false) {
                 break;
               }
               
-              filter(match[0], latestResults);
+              filter(match[0], tabResults.get(tabId));
             }
             continue;
           }
@@ -211,7 +202,7 @@ async function scanSources(sources, isHtmlContent = false) {
                   break;
                 }
                 
-                filter(match[0], latestResults);
+                filter(match[0], tabResults.get(tabId));
               }
               // 重置正则表达式的 lastIndex
               credentialsPattern.lastIndex = 0;
@@ -236,7 +227,7 @@ async function scanSources(sources, isHtmlContent = false) {
                   break;
                 }
                 
-                filter(match[0], latestResults);
+                filter(match[0], tabResults.get(tabId));
               }
               // 重置正则表达式的 lastIndex
               idKeyPattern.lastIndex = 0;
@@ -257,7 +248,7 @@ async function scanSources(sources, isHtmlContent = false) {
               break;
             }
             
-            filter(match[0], latestResults);
+            filter(match[0], tabResults.get(tabId));
             if (!pattern.global) break;
           }
         } catch (e) {
@@ -319,6 +310,36 @@ function isInWhitelist(hostname) {
 async function initScan() {
   try {
     await waitForDependencies();
+    
+    // 确保获取到tabId
+    if (!currentTabId) {
+      await getTabId();
+    }
+
+    if(!tabResults.has(currentTabId)) {
+      tabResults.set(currentTabId, {
+        domains: new Set(),     
+        absoluteApis: new Set(),
+        apis: new Set(),        
+        moduleFiles: new Set(), 
+        docFiles: new Set(),    
+        ips: new Set(),         
+        phones: new Set(),      
+        emails: new Set(),      
+        idcards: new Set(),     
+        jwts: new Set(),        
+        imageFiles: new Set(),  
+        jsFiles: new Set(),     
+        vueFiles: new Set(),    
+        urls: new Set(),        
+        githubUrls: new Set(),  
+        companies: new Set(),   
+        credentials: new Set(),  
+        cookies: new Set(),      
+        idKeys: new Set(),       
+        fingers: new Set(),      
+      });
+    }
     window.logger.info('开始扫描...');
     
     // 检查当前域名是否在白名单中
@@ -338,7 +359,7 @@ async function initScan() {
         window.logger.info('DOM变化触发重新扫描...');
         const htmlContent = document.documentElement.innerHTML;
         if (htmlContent) {
-          scanSources([htmlContent], true);
+          scanSources([htmlContent], true, currentTabId);
         }
       }, 1000); // 2秒内的变化会被合并为一次扫描
     };
@@ -348,14 +369,7 @@ async function initScan() {
       // 如果动态扫描被禁用，直接返回
       if (!dynamicScanEnabled) return;
 
-      // 过滤掉不重要的变化
-      const significantChanges = mutations.filter(mutation => {
-        // 忽略文本内容的微小变化
-        if (mutation.type === 'characterData' && 
-            mutation.target.textContent?.length < 50) {
-          return false;
-        }
-        
+      const significantChanges = mutations.filter(mutation => {  
         // 忽略class和style属性的变化
         if (mutation.type === 'attributes' && 
             (mutation.attributeName === 'class' || 
@@ -382,24 +396,23 @@ async function initScan() {
     });
 
     // 清空之前的结果
-    Object.keys(latestResults).forEach(key => {
-      latestResults[key].clear();
+    Object.keys(tabResults.get(currentTabId)).forEach(key => {
+      tabResults.get(currentTabId)[key].clear();
     });
 
     window.logger.info('扫描当前页面...');
     const htmlContent = document.documentElement.innerHTML;
     if (htmlContent) {
-      scanSources([htmlContent], true);
+      scanSources([htmlContent], true, currentTabId);
     }
 
     // 延迟扫描其他资源
     setTimeout(() => {
       window.logger.info('扫描其他资源...');
-      collectAndScanResources();
+      collectAndScanResources(0, 3, currentTabId);
     }, 100);
 
   } catch (e) {
-    // 扩展上下文失效时忽略错误
     if (e.message !== 'Extension context invalidated.') {
       window.logger.error('初始化扫描出错:', e);
     }
@@ -407,7 +420,7 @@ async function initScan() {
 }
 
 // 修改收集和扫描资源的函数
-async function collectAndScanResources(depth = 0, maxDepth = 3) {
+async function collectAndScanResources(depth = 0, maxDepth = 3, tabId) {
   try {
     // 如果未启用深度扫描，则只扫描第一层
     if (!deepScanEnabled) {
@@ -485,7 +498,7 @@ async function collectAndScanResources(depth = 0, maxDepth = 3) {
           scannedJsUrls.add(url);
           
           // 扫描当前JS内容
-          scanSources([response.content]);
+          scanSources([response.content], false, tabId);
 
           // 只在启用深度扫描时进行递归
           if (deepScanEnabled) {
@@ -526,8 +539,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return;
       }
       
+      // 使用currentTabId而不是request.tabId
+      if(!tabResults.has(request.tabId)) {
+        sendResponse(null);
+        return;
+      }
+      
       sendResponse(Object.fromEntries(
-        Object.entries(latestResults).map(([key, value]) => [key, Array.from(value)])
+        Object.entries(tabResults.get(request.tabId)).map(([key, value]) => [key, Array.from(value)])
       ));
     } else if (request.type === 'REFRESH_SCAN') {
       // 检查是否在白名单中
@@ -539,7 +558,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // 重新执行扫描
       initScan().then(() => {
         sendResponse(Object.fromEntries(
-          Object.entries(latestResults).map(([key, value]) => [key, Array.from(value)])
+          Object.entries(tabResults.get(request.tabId)).map(([key, value]) => [key, Array.from(value)])
         ));
       });
       return true; // 保持消息通道打开
@@ -560,13 +579,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true });
     }
   } catch (e) {
-    // 扩展上下文失效时忽略错误
     if (e.message !== 'Extension context invalidated.') {
       window.logger.error('处理消息出错:', e);
     }
     sendResponse(null);
   }
-  return true; // 保持消息通道打开
+  return true;
 });
 
 // 在页面加载完成后开始扫描

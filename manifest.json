@@ -2,7 +2,7 @@
   "manifest_version": 3,
 
   "name": "雪瞳",
-  "version": "0.2.5.0",
+  "version": "0.2.6.0",
   "description": "洞悉无形，守护无界",
 
   "icons": {
@@ -16,12 +16,13 @@
     "scripting",    
     "storage",
     "webRequest",
-    "cookies"    
+    "cookies"
   ],
 
   "host_permissions": [
-    "<all_urls>",
-    "https://api.mir6.com/*"
+    "*://*/*",
+    "https://api.mir6.com/*",
+    "https://cn.apihz.cn/*"
   ],
 
   "background": {
@@ -58,6 +59,6 @@
 
   "web_accessible_resources": [{
     "resources": ["background/config/*.js"],
-    "matches": ["<all_urls>"]
+    "matches": ["*://*/*"]
   }]
 } 

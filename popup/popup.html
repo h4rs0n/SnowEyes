@@ -37,6 +37,26 @@
     .credentials-list .item::before {
       background: #e64980;  /* 粉红色 - 用户名密码 */
     }
+
+    /* 统一信息项样式 */
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+      padding: 8px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+
+    /* 添加图片加载过渡效果 */
+    .weight-img {
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+    }
+    
+    .weight-img.loaded {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -114,11 +134,11 @@
           <div class="basic-info">
             <div class="info-item">
               <span class="info-label">域名</span>
-              <span class="info-value">www.qq.com</span>
+              <span class="info-value domain-value"></span>
             </div>
             <div class="info-item">
               <span class="info-label">备案号</span>
-              <span class="info-value">粤B2-20090059</span>
+              <span class="info-value icp-value"></span>
             </div>
             <div class="info-item">
               <span class="info-label">注册商</span>
@@ -136,32 +156,50 @@
           <h3>搜索引擎权重</h3>
           <div class="weight-grid">
             <div class="weight-item">
-              <img src="https://api.mir6.com/data/quanzhong_img/baidupc/4.png" alt="百度PC">
+              <img class="weight-img" 
+                   data-engine="baidupc" 
+                   data-value="4"
+                   alt="百度PC">
               <span class="weight-label">百度PC</span>
               <span class="weight-value">4</span>
             </div>
             <div class="weight-item">
-              <img src="https://api.mir6.com/data/quanzhong_img/google/8.png" alt="Google">
+              <img class="weight-img" 
+                   data-engine="google" 
+                   data-value="8"
+                   alt="Google">
               <span class="weight-label">Google</span>
               <span class="weight-value">8</span>
             </div>
             <div class="weight-item">
-              <img src="https://api.mir6.com/data/quanzhong_img/360/6.png" alt="360">
+              <img class="weight-img" 
+                   data-engine="360" 
+                   data-value="6"
+                   alt="360">
               <span class="weight-label">360</span>
               <span class="weight-value">6</span>
             </div>
             <div class="weight-item">
-              <img src="https://api.mir6.com/data/quanzhong_img/baidum/4.png" alt="百度移动">
+              <img class="weight-img" 
+                   data-engine="baidum" 
+                   data-value="4"
+                   alt="百度移动">
               <span class="weight-label">百度移动</span>
               <span class="weight-value">4</span>
             </div>
             <div class="weight-item">
-              <img src="https://api.mir6.com/data/quanzhong_img/sougou/2.png" alt="搜狗">
+              <img class="weight-img" 
+                   data-engine="sougou" 
+                   data-value="2"
+                   alt="搜狗">
               <span class="weight-label">搜狗</span>
               <span class="weight-value">2</span>
             </div>
             <div class="weight-item">
-              <img src="https://api.mir6.com/data/quanzhong_img/shenma/0.png" alt="神马">
+              <img class="weight-img" 
+                   data-engine="shenma" 
+                   data-value="0"
+                   alt="神马">
               <span class="weight-label">神马</span>
               <span class="weight-value">0</span>
             </div>
