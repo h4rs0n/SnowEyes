@@ -451,7 +451,7 @@ async function collectAndScanResources(depth = 0, maxDepth = 3, tabId) {
       }
 
       // 从内容中匹配JS URL
-      const jsPattern = /['"](?:[^'"]+\.(?:js)(?:\?[^\s'"]*)?)['"]/g;
+      const jsPattern = /['"](?:https?:\/\/[^\s'"]+\.js(?:\?[^\s'"]*)?|[^:'"]+\.js(?:\?[^\s'"]*)?)['"]/g;
       const matches = Array.from(content.matchAll(jsPattern))
         .map(match => {
           const path = match[0].slice(1, -1);
