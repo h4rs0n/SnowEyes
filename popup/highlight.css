@@ -263,6 +263,38 @@ body {
   margin-right: 4px;
 }
 
+/* 按钮组样式 */
+.button-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+/* 复制URL按钮样式 */
+.copy-url-btn {
+  padding: 4px 8px;
+  color: #868e96;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.copy-url-btn:hover {
+  color: #51cf66;
+  background: #e6fcf5;
+}
+
+.copy-url-btn svg {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+}
+
 /* 复制提示样式 */
 .copy-tooltip {
   position: fixed;

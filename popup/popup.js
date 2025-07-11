@@ -69,8 +69,8 @@ function displayResults(results) {
   // 定义要显示的数据部分
   const sections = [
     { id: 'domain-list', data: results.domains, title: '域名' },
-    { id: 'absolute-api-list', data: results.absoluteApis, title: 'API接口(绝对路径)' },
-    { id: 'api-list', data: results.apis, title: 'API接口(相对路径)' },
+    { id: 'absolute-api-list', data: results.absoluteApis, title: 'API接口(绝对路径)', hasUrlCopy: true },
+    { id: 'api-list', data: results.apis, title: 'API接口(相对路径)', hasUrlCopy: true },
     { id: 'module-list', data: results.moduleFiles, title: '模块路径' },
     { id: 'doc-list', data: results.docFiles, title: '文档文件' },
     { id: 'credentials-list', data: results.credentials, title: '用户名密码' },
@@ -94,7 +94,7 @@ function displayResults(results) {
   let html = '';
 
   // 遍历所有部分
-  sections.forEach(({ id, data, title }) => {
+  sections.forEach(({ id, data, title, hasUrlCopy }) => {
     // 如果数据存在且不为空
     if (data && data.length > 0) {
       html += `
@@ -104,10 +104,18 @@ function displayResults(results) {
               <span class="title">${title}</span>
               <span class="count">(${data.length})</span>
             </div>
-            <button class="copy-btn" title="复制全部">
-              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-              复制全部
-            </button>
+            <div class="button-group">
+              <button class="copy-btn" title="复制全部">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                复制全部
+              </button>
+              ${hasUrlCopy ? `
+                <button class="copy-url-btn" title="复制URL">
+                  <svg viewBox="0 0 24 24"><path fill="currentColor" d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                  复制URL
+                </button>
+              ` : ''}
+            </div>
           </div>
           <div class="section-content">
             <div class="content-wrapper ${id}">
@@ -138,6 +146,43 @@ function displayResults(results) {
       const items = Array.from(section.querySelectorAll('.item'));
       const text = items.map(item => item.textContent.trim()).filter(Boolean).join('\n');
       copyToClipboard(text, e.clientX, e.clientY);
+    });
+  });
+
+  // 添加复制URL事件监听
+  container.querySelectorAll('.copy-url-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const section = btn.closest('.section');
+      const items = Array.from(section.querySelectorAll('.item'));
+      const sectionId = section.querySelector('.content-wrapper').className.split(' ')[1];
+      
+      getCurrentTab().then(tab => {
+        if (tab) {
+          const baseUrl = new URL(tab.url).origin;
+          const currentUrl = new URL(tab.url);
+          
+          const urls = items.map(item => {
+            const path = item.textContent.trim();
+            if (sectionId === 'absolute-api-list') {
+              // 绝对路径：直接拼接域名
+              return baseUrl + path;
+            } else if (sectionId === 'api-list') {
+              // 相对路径：基于当前页面URL进行解析
+              try {
+                const fullUrl = new URL(path, currentUrl.href);
+                return fullUrl.href;
+              } catch (e) {
+                // 如果解析失败，使用简单拼接
+                const currentDir = currentUrl.pathname.substring(0, currentUrl.pathname.lastIndexOf('/'));
+                return baseUrl + currentDir + '/' + path;
+              }
+            }
+            return path;
+          }).filter(Boolean).join('\n');
+          
+          copyToClipboard(urls, e.clientX, e.clientY);
+        }
+      });
     });
   });
 

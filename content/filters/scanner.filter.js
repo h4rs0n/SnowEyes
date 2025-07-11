@@ -1,7 +1,7 @@
 // 正则表达式缓存
 const regexCache = {
   coordPattern: /^coord/,
-  valuePattern: /^\/|true|false|register|signUp|name|basic|http/i,
+  valuePattern: /^\/|true|false|register|signUp|basic|http/i,
   chinesePattern: /^[\u4e00-\u9fa5]+$/,
   camelCasePattern: /\b[_a-z]+(?:[A-Z][a-z]+)+\b/,
 };
@@ -272,11 +272,14 @@ const SCANNER_FILTER = {
     if (!value.length||key==value) {
       return false; 
     }
-    if(Array.from(SCANNER_CONFIG.BLACKLIST.SHORT_VALUES).some(blackWord=>value.includes(blackWord))){
-      return false;
-    }
-    if(Array.from(SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES).some(blackWord=>value.includes(blackWord))){
-      return false;
+    if (value.length<12){
+      if(Array.from(SCANNER_CONFIG.BLACKLIST.SHORT_VALUES).some(blackWord=>value.includes(blackWord))){
+        return false;
+      }
+    }else{
+      if(Array.from(SCANNER_CONFIG.BLACKLIST.MEDIUM_VALUES).some(blackWord=>value.includes(blackWord))){
+        return false;
+      }
     }
     resultsSet?.cookies?.add(match);
     return true;
