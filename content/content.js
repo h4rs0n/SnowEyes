@@ -23,7 +23,7 @@ async function initSettings() {
       hostname = window.location.hostname.toLowerCase();
       dynamicScanEnabled = result.dynamicScan === true;
       deepScanEnabled = result.deepScan === true;
-      isWhitelisted = result.customWhitelist.some(domain => hostname === domain || hostname.endsWith(`.${domain}`));
+      isWhitelisted = result.customWhitelist?.some(domain => hostname === domain || hostname.endsWith(`.${domain}`));
       chrome.runtime.sendMessage({ type: 'REGISTER_CONTENT', from: 'content', to: 'background' }, (response) => {
         if(isWhitelisted) return;
         tabJs = response.tabJs;
