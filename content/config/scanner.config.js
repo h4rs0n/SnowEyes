@@ -25,7 +25,7 @@ const SCANNER_CONFIG = {
       // 图表相关
       /^(echarts|chart|highcharts)[.-]?\d*\.?\d*\.?\d*(?:\.min)?\.js$/i,     
       // 工具库相关
-      /^(lodash|moment|tableexport|axios|plupload|pqgrid|md5)[.-]?\d*\.?\d*\.?\d*(?:\.full)?(?:\.min)?\.js$/i,     
+      /^(lodash|moment|katex|tableexport|axios|plupload|pqgrid|md5)[.-]?\d*\.?\d*\.?\d*(?:\.full)?(?:\.min)?\.js$/i,     
       // 其他常用库
       /^(polyfill|modernizr|device|less|isotope.pkgd|lhgdialog|kendo.web|dataTables|editor|seajs-style|seajs-text|tinymce|jsencrypt|backbone|select2|underscore|ext-all|ext-unigui-min|exporter|buttons|v5_float_4)[.-]?\d*\.?\d*\.?\d*(?:[\.-]dev)?(?:[\.-]html5|bootstrap|print|full)?(?:[\.-]min)?\.js$/i,      
       // 日期选择器
@@ -58,28 +58,7 @@ const SCANNER_CONFIG = {
       'zrender/vml/vml'
     ]
   },
-
-  // 域名相关配置
   DOMAIN: {
-    // 域名白名单: 不会扫描以下域名
-    WHITELIST: [
-      'github.com',
-      '360.net',
-      'bing.com',
-      'csdn.net',
-      'bilibili.com',
-      'google.com',
-      'youtube.com',
-      'microsoft.com',
-      'apple.com',
-      'mozilla.org',
-      'aliyun.com',
-      'feishu.cn',
-      'mklab.cn',
-      'cnnvd.org.cn',
-      'qq.com',
-      // 'baidu.com'
-    ],
     // 域名黑名单：不会展示以下域名
     BLACKLIST: [
       'el.datepicker.today',
@@ -94,7 +73,7 @@ const SCANNER_CONFIG = {
     ]
   },
 
-  // IP 相关配置
+    // IP 相关配置
   IP: {
     // 特殊 IP 范围（保留地址和特殊用途地址）
     SPECIAL_RANGES: [
@@ -102,10 +81,8 @@ const SCANNER_CONFIG = {
       /^255\.255\.255\.255$/   // 广播地址
     ]
   },
-
-  // 正则表达式模式
   PATTERNS: {
-    // 域名匹配 - HTML页面
+// 域名匹配 - HTML页面
     DOMAIN: /\b(?:(?!this)[a-z0-9%-]+\.)*?(?:(?!this)[a-z0-9%-]{2,}\.)(?:wang|club|xyz|vip|top|beer|work|ren|technology|fashion|luxe|yoga|red|love|online|ltd|chat|group|pub|run|city|live|kim|pet|space|site|tech|host|fun|store|pink|ski|design|ink|wiki|video|email|company|plus|center|cool|fund|gold|guru|life|team|today|world|zone|social|bio|black|blue|green|lotto|organic|poker|promo|vote|archi|voto|fit|cn|website|press|icu|art|law|shop|band|media|cab|cash|cafe|games|link|fan|net|cc|com|fans|cloud|info|pro|mobi|asia|studio|biz|vin|news|fyi|tax|tv|market|shopping|mba|sale|co|org)(?:\:\d{1,5})?(?![a-zA-Z0-9._=>\(\);!}-])\b/g,
     // 域名匹配 - 资源文件
     DOMAIN_RESOURCE: /["'](?:(?:[a-z0-9]+:)?\/\/)?(?:(?!this)[a-z0-9%-]+\.)*?(?:[a-z0-9%-]{2,}\.)(?:wang|club|xyz|vip|top|beer|work|ren|technology|fashion|luxe|yoga|red|love|online|ltd|chat|group|pub|run|city|live|kim|pet|space|site|tech|host|fun|store|pink|ski|design|ink|wiki|video|email|company|plus|center|cool|fund|gold|guru|life|team|today|world|zone|social|bio|black|blue|green|lotto|organic|poker|promo|vote|archi|voto|fit|cn|website|press|icu|art|law|shop|band|media|cab|cash|cafe|games|link|fan|net|cc|com|fans|cloud|info|pro|mobi|asia|studio|biz|vin|news|fyi|tax|tv|market|shopping|mba|sale|co|org)(?![a-zA-Z0-9.])(?:\:\d{1,5})?\S*?["']/g,
@@ -200,9 +177,9 @@ const SCANNER_CONFIG = {
       '作弊',' '
     ])
   },
+  
 
-
-  // ID密钥相关配置
+    // ID密钥相关配置
   ID_KEY: {
     PATTERNS: [
       {name: '微信开放平台密钥', pattern: /wx[a-z0-9]{15,18}/g},

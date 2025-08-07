@@ -1,75 +1,123 @@
 import { FINGERPRINT_CONFIG } from './config/fingerprint.config.js';
-// 在文件开头添加一个Map来存储每个标签页的结果计数
-const tabCounts = new Map();
+const tabCountsCache = new Map();
+const tabJsMap = {}
 
-// 修改updateBadge函数
+chrome.webNavigation.onCommitted.addListener(details => {
+  const { tabId, frameId } = details;
+  if (frameId === 0 && tabJsMap[tabId]) {
+    tabJsMap[tabId].clear();
+  }
+});
+
+function setTabCount(tabId, count) {
+  tabCountsCache.set(tabId, count);
+  chrome.storage.session.set({ [`tab_${tabId}`]: count });
+}
+function getTabCount(tabId, callback) {
+  if (tabCountsCache.has(tabId)) {
+    callback(tabCountsCache.get(tabId));
+    return;
+  }
+  chrome.storage.session.get(`tab_${tabId}`, (data) => {
+    const count = data[`tab_${tabId}`] || 0;
+    tabCountsCache.set(tabId, count);
+    callback(count);
+  });
+}
+function setBadgeUI(tabId, count) {
+  const hasCount = count > 0;
+  chrome.action.setBadgeText({
+    text: hasCount ? String(count) : '',
+    tabId
+  });
+  chrome.action.setBadgeBackgroundColor({
+    color: hasCount ? '#4dabf7' : '#666666',
+    tabId
+  });
+}
 function updateBadge(results, tabId) {
-  const categories = [
-    results.domains,
-    results.absoluteApis,
-    results.apis,
-    results.moduleFiles,
-    results.docFiles,
-    results.ips,
-    results.phones,
-    results.emails,
-    results.idcards,
-    results.jwts,
-    results.imageFiles,
-    results.jsFiles,
-    results.vueFiles,
-    results.urls,
-    results.githubUrls,
-    results.companies,
-    results.credentials,
-    results.cookies,
-    results.idKeys,
+  const fields = [
+    'domains', 'absoluteApis', 'apis', 'moduleFiles', 'docFiles', 'ips', 'phones',
+    'emails', 'idcards', 'jwts', 'imageFiles', 'jsFiles', 'vueFiles', 'urls',
+    'githubUrls', 'companies', 'credentials', 'cookies', 'idKeys'
   ];
 
-  const nonEmptyCategories = categories.filter(category => 
-    Array.isArray(category) && category.length > 0
-  ).length;
+  const count = fields.reduce((acc, field) => {
+    const arr = results[field];
+    return acc + (Array.isArray(arr) && arr.length > 0 ? 1 : 0);
+  }, 0);
 
-  // 存储该标签页的计数
-  tabCounts.set(tabId, nonEmptyCategories);
+  setTabCount(tabId, count);
 
-  // 更新当前活动标签页的badge
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    if (tabs[0]?.id === tabId) {
-      chrome.action.setBadgeText({ 
-        text: nonEmptyCategories > 0 ? nonEmptyCategories.toString() : '',
-        tabId: tabId
-      });
-      
-      chrome.action.setBadgeBackgroundColor({ 
-        color: nonEmptyCategories > 0 ? '#4dabf7' : '#666666',
-        tabId: tabId
-      });
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const activeTab = tabs?.[0];
+    if (activeTab?.id === tabId) {
+      setBadgeUI(tabId, count);
     }
   });
 }
-
-// 添加标签页切换事件监听器
-chrome.tabs.onActivated.addListener((activeInfo) => {
-  const count = tabCounts.get(activeInfo.tabId);
-  chrome.action.setBadgeText({ 
-    text: count > 0 ? count.toString() : '',
-    tabId: activeInfo.tabId
-  });
-  
-  chrome.action.setBadgeBackgroundColor({ 
-    color: count > 0 ? '#4dabf7' : '#666666',
-    tabId: activeInfo.tabId
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  getTabCount(tabId, (count) => {
+    setBadgeUI(tabId, count);
   });
 });
-
-// 添加标签页移除事件监听器
 chrome.tabs.onRemoved.addListener((tabId) => {
-  // 清除该标签页的数据
-  tabCounts.delete(tabId);
+  tabCountsCache.delete(tabId);
+  chrome.storage.session.remove(`tab_${tabId}`);
+  chrome.storage.session.remove(`analysis_${tabId}`)
+  if(tabJsMap[tabId]){
+    tabJsMap[tabId].clear();
+  }
   Object.values(analyticsDetected).forEach(map => map.delete(tabId));
   serverFingerprints.delete(tabId);
 });
+
+async function tryFetchContent(url) {
+  const response = await fetch(url, {
+    headers: {
+      'Accept': '*/*',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    },
+    credentials: 'omit'
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return await response.text();
+}
+async function fallbackFetchContentViaTab(tabId, url) {
+  const [result] = await chrome.scripting.executeScript({
+    target: { tabId },
+    func: (url) => {
+      return fetch(url, { credentials: 'omit' }).then(res => res.text());
+    },
+    args: [url]
+  });
+
+  return result?.result ?? null;
+}
+async function handleFetchRequest(request, sender, sendResponse) {
+  try {
+    const content = await tryFetchContent(request.url);
+    sendResponse({ content });
+  } catch (error) {
+    console.warn('Primary fetch failed:', error.message);
+
+    if (sender.tab?.id) {
+      try {
+        const fallbackContent = await fallbackFetchContentViaTab(sender.tab.id, request.url);
+        sendResponse({ content: fallbackContent });
+      } catch (e2) {
+        console.warn('Fallback fetch via tab failed:', e2.message);
+        sendResponse({ content: null });
+      }
+    } else {
+      sendResponse({ content: null });
+    }
+  }
+}
 
 // 存储服务器指纹信息
 let serverFingerprints = new Map();
@@ -81,28 +129,11 @@ const analyticsDetected = {
 };
 // 统计服务检测处理函数
 function handleAnalyticsDetection(details, type) {
-  // 检查是否已经检测到
   if (analyticsDetected[type].get(details.tabId)) {
     return;
   }
 
-  let fingerprints = serverFingerprints.get(details.tabId);
-  if (!fingerprints) {
-    fingerprints = {
-      server: [],
-      component: [],
-      technology: [],
-      security: [],
-      analytics: [],
-      builder: [],
-      framework: [],
-      os: [],
-      panel: [],
-      cdn: [],
-      nameMap: new Map()
-    };
-    serverFingerprints.set(details.tabId, fingerprints);
-  }
+  let fingerprints = getFingerprints(details.tabId);
 
   analyticsDetected[type].set(details.tabId, true);
   fingerprints.analytics.push({
@@ -115,7 +146,7 @@ function handleAnalyticsDetection(details, type) {
   serverFingerprints.set(details.tabId, fingerprints);
 }
 
-// 使用单个监听器处理所有统计服务
+
 const analyticsPatterns = Object.entries(FINGERPRINT_CONFIG.ANALYTICS).map(([type, config]) => ({
   pattern: config.pattern,
   type: type
@@ -129,11 +160,22 @@ chrome.webRequest.onBeforeRequest.addListener(
     if (matchedAnalytics) {
       handleAnalyticsDetection(details, matchedAnalytics.type);
     }
+    const { tabId, url, type } = details;
+    if (type !== 'script' || tabId < 0) return;
+    const initiator_url = new URL(details.initiator);
+    const current_url = new URL(url);
+    if (initiator_url.hostname != current_url.hostname) {
+      return;
+    }
+    if(!tabJsMap[tabId]){
+      tabJsMap[tabId] = new Set();
+    }
+    tabJsMap[tabId].add(url);
+    return;
   },
   { urls: ['<all_urls>'] },
   []
 );
-
 // 识别Cookie
 function identifyTechnologyFromCookie(cookieHeader) {
   for (const cookie of FINGERPRINT_CONFIG.COOKIES) {
@@ -149,26 +191,10 @@ function identifyTechnologyFromCookie(cookieHeader) {
 }
 // 识别Header
 function processHeaders(headers, tabId) {
-  let fingerprints = serverFingerprints.get(tabId);
-  if (!fingerprints) {
-    fingerprints = {
-      server: [],
-      component: [],
-      technology: [],
-      security: [],
-      analytics: [],
-      builder: [],
-      framework: [],
-      os: [],
-      panel: [],
-      cdn: [],
-      nameMap: new Map()
-    };
-  }
+  let fingerprints = getFingerprints(tabId);
   const headerMap = new Map(
     headers.map(h => [h.name.toLowerCase(), h.value])
   );
-
   // 遍历所有指纹配置进行匹配
   for (const config of FINGERPRINT_CONFIG.HEADERS) {
     const headerValue = headerMap.get(config.header);
@@ -207,6 +233,26 @@ function processHeaders(headers, tabId) {
   return fingerprints;
 }
 
+function getFingerprints(tabId){
+  if(serverFingerprints.has(tabId)){
+    return serverFingerprints.get(tabId);
+  }
+  let fingerprints = {
+    server: [],
+    component: [],
+    technology: [],
+    security: [],
+    analytics: [],
+    builder: [],
+    framework: [],
+    os: [],
+    panel: [],
+    cdn: [],
+    nameMap: new Map()
+  };
+  serverFingerprints.set(tabId, fingerprints);
+  return fingerprints;
+}
 // 修改监听器的处理方式
 chrome.webRequest.onHeadersReceived.addListener(
   async (details) => {
@@ -238,158 +284,99 @@ chrome.webRequest.onHeadersReceived.addListener(
   ['responseHeaders']
 );
 
-// 监听器更新指纹
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.to !== 'background') return false;
   try {
-    if (request.type === 'UPDATE_BUILDER') {
-      let fingerprints = serverFingerprints.get(sender.tab.id);
-      if (!fingerprints) {
-        fingerprints = {
-          server: [],
-          serverComponents: [],
-          technology: [],
-          security: [],
-          analytics: [],
-          builder: [],
-          framework: [],
-          os: [],
-          panel: [],
-          cdn: [],
-          nameMap: new Map()
-        };
-        serverFingerprints.set(sender.tab.id, fingerprints);
-      }
-      if(!fingerprints.nameMap.has(request.finger.name)) {
-        if(request.finger.extType && !fingerprints.nameMap.has(request.finger.extName)){
-          var extfingerprint = {};
-          extfingerprint['type'] = request.finger.extType;
-          extfingerprint['name'] = request.finger.extName;
-          extfingerprint['header'] = request.finger.name;
-          extfingerprint['description'] = `通过${extfingerprint.header}识别到网站使用${extfingerprint.name}${FINGERPRINT_CONFIG.DESCRIPTIONS.find(item=>item.name===request.finger.extType)?.description}`;
-          fingerprints[extfingerprint.type].push(extfingerprint);
-          fingerprints.nameMap.set(request.finger.extName, true);
+    switch (request.type) {
+      case 'UPDATE_BUILDER': {
+        let fingerprints = getFingerprints(sender.tab.id);
+        if (!fingerprints.nameMap.has(request.finger.name)) {
+          if (request.finger.extType && !fingerprints.nameMap.has(request.finger.extName)) {
+            var extfingerprint = {};
+            extfingerprint['type'] = request.finger.extType;
+            extfingerprint['name'] = request.finger.extName;
+            extfingerprint['header'] = request.finger.name;
+            extfingerprint['description'] = `通过${extfingerprint.header}识别到网站使用${extfingerprint.name}${FINGERPRINT_CONFIG.DESCRIPTIONS.find(item => item.name === request.finger.extType)?.description}`;
+            fingerprints[extfingerprint.type].push(extfingerprint);
+            fingerprints.nameMap.set(request.finger.extName, true);
+          }
+          fingerprints.nameMap.set(request.finger.name, true);
+          fingerprints[request.finger.type].push(request.finger);
+          serverFingerprints.set(sender.tab.id, fingerprints);
         }
-        fingerprints.nameMap.set(request.finger.name, true);  // 记录指纹名称
-        fingerprints[request.finger.type].push(request.finger);
-        serverFingerprints.set(sender.tab.id, fingerprints);
-      }
-      return true;
-    }
-    if (request.type === 'GET_FINGERPRINTS') {
-      const fingerprints = serverFingerprints.get(request.tabId);
-      if (fingerprints) {
-        sendResponse({
-          server: fingerprints.server,
-          component: fingerprints.component,
-          technology: fingerprints.technology,
-          security: fingerprints.security,
-          analytics: fingerprints.analytics,
-          builder: fingerprints.builder,
-          framework: fingerprints.framework,
-          os: fingerprints.os,
-          panel: fingerprints.panel,
-          cdn: fingerprints.cdn
-        });
-      } else {
-        sendResponse(null);
-      }
-      return true;
-    }
-    if (request.type === 'FETCH_JS') {
-      fetch(request.url, {
-        headers: {
-          'Accept': '*/*',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        },
-        credentials: 'omit'  // 不发送 cookies
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.text();
-      })
-      .then(content => {
-        sendResponse({ content });
-      })
-      .catch(error => {
-        // 如果 fetch 失败，尝试使用 chrome.scripting.executeScript
-        if (sender.tab) {
-          chrome.scripting.executeScript({
-            target: { tabId: sender.tab.id },
-            function: (url) => {
-              return fetch(url, {
-                credentials: 'omit'
-              }).then(r => r.text());
-            },
-            args: [request.url]
-          })
-          .then(results => {
-            if (results[0]?.result) {
-              sendResponse({ content: results[0].result });
-            } else {
-              sendResponse({ content: null });
-            }
-          })
-          .catch(() => {
-            sendResponse({ content: null });
-          });
-        } else {
-          sendResponse({ content: null });
-        }
-      });
-      return true; 
-    } else if (request.type === 'UPDATE_BADGE') {
-      updateBadge(request.results, request.tabId);
-    } else if (request.type === 'GET_TAB_ID') {
-      sendResponse({ tabId: sender.tab?.id });
-      return true;
-    } else if (request.type === 'GET_SITE_ANALYSIS') {
-      const domain = request.domain;
-      
-      if (analysisPending) {
         return true;
       }
-      analysisPending = true;
+      case 'GET_FINGERPRINTS': {
+        const fingerprints = getFingerprints(request.tabId);
+        sendResponse(fingerprints);
+        return true;
+      }
+      case 'FETCH_JS': {
+        handleFetchRequest(request, sender, sendResponse);
+        return true; 
+      }
+      case 'REGISTER_CONTENT': {
+        const tabJs = Array.from(tabJsMap[sender.tab.id] || []);
+        sendResponse({ tabJs: tabJs });
+        return true;
+      }
+      case 'UPDATE_BADGE': {
+        updateBadge(request.results, request.tabId);
+        return true;
+      }
+      case 'GET_TAB_ID': {
+        sendResponse({ tabId: sender.tab?.id });
+        return true;
+      }
+      case 'GET_SITE_ANALYSIS': {
+        const domain = getRootDomain(request.domain);
+        const tabId = request.tabId;
 
-      // 检查是否是内网IP
-      if (isPrivateIP(domain)) {
-        analysisPending = false;
-        sendResponse({
-          weight: null,
-          ip: null,
-          icp: null,
-          isComplete: true,
-          isPrivateIP: true
+        if (analysisPending) return true;
+        analysisPending = true;
+  
+        if (isPrivateIP(domain)) {
+          analysisPending = false;
+          sendResponse({
+            weight: null,
+            ip: null,
+            icp: null,
+            isComplete: true,
+            isPrivateIP: true
+          });
+          return true;
+        }
+        
+        getAnalysisFromStorage(tabId).then(cachedData => {
+          if (cachedData.isComplete) {
+            analysisPending = false;
+            sendResponse(cachedData);
+            return;
+          }
+
+          Promise.all([
+            cachedData.weight || fetchDomainWeight(domain, tabId),
+            cachedData.ip || fetchIpInfo(domain, tabId),
+            cachedData.icp || fetchIcpInfo(domain, tabId)
+          ]).then(([weightData, ipData, icpData]) => {
+            analysisPending = false;
+            saveAnalysisToStorage(tabId, weightData, ipData, icpData);
+            sendResponse({
+              weight: weightData?.data || null,
+              ip: ipData?.data || null,
+              icp: icpData?.data || null,
+              isComplete: true,
+              isPrivateIP: false
+            });
+          }).catch(error => {
+            analysisPending = false;
+            console.error('分析请求失败:', error);
+            sendResponse(null);
+          });
         });
+
         return true;
       }
-      
-      // 首先检查缓存
-      const cachedData = getAnalysisFromCache(domain);
-      if (cachedData.isComplete) {
-        analysisPending = false;
-        sendResponse(cachedData);
-        return true;
-      }
-      
-      Promise.all([
-        cachedData.weight || fetchDomainWeight(domain, sender.tab?.id),
-        cachedData.ip || fetchIpInfo(domain, sender.tab?.id),
-        cachedData.icp || fetchIcpInfo(domain, sender.tab?.id)
-      ]).then(([weightData, ipData, icpData]) => {
-        analysisPending = false;
-        sendResponse({
-          weight: weightData,
-          ip: ipData,
-          icp: icpData
-        });
-      }).catch(error => {
-        analysisPending = false;
-        sendResponse(null);
-      });
-      
-      return true;
     }
   } catch (error) {
     console.error('消息处理出错:', error);
@@ -398,198 +385,117 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// 创建通用缓存实例
-const createCache = (expireTime = 30 * 60 * 1000) => ({
-  cache: new Map(),
-  get(key) {
-    const entry = this.cache.get(key);
-    return entry && Date.now() - entry.timestamp < expireTime ? entry.data : null;
-  },
-  set(key, data) {
-    this.cache.set(key, { data, timestamp: Date.now() });
-  }
-});
+function getAnalysisFromStorage(tabId) {
+  return new Promise(resolve => {
+    const key = `analysis_${tabId}`;
+    chrome.storage.session.get(key, res => {
+      const cache = res[key];
+      if (!cache) return resolve(emptyCache());
 
-// 初始化各模块缓存
-const caches = {
-  weight: createCache(),
-  ip: createCache(),
-  icp: createCache()
-};
-
-async function fetchWithCache(url, cacheInstance, tabId) {
-  try {
-    const cached = cacheInstance.get(url);
-    if (cached) {
-      return cached;
-    }
-
-    console.log('发起新请求:', url);
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP错误! 状态码: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.code == 200 || data.code == 404) {
-      // 统一缓存数据结构
-      const cacheData = {
-        data: data,
-        timestamp: Date.now()
-      };
-      cacheInstance.set(url, cacheData);
-      return cacheData;
-    }
-    console.error('API返回异常:', data);
-    return null;
-  } catch (error) {
-    console.error(`请求失败: ${url}`, error);
-    return null;
-  }
+      resolve({
+        weight: cache.weight?.data || null,
+        ip: cache.ip?.data || null,
+        icp: cache.icp?.data || null,
+        isComplete: !!(cache.weight && cache.ip && cache.icp)
+      });
+    });
+  });
 }
 
-// 获取根域名的函数
-function getRootDomain(domain) {
-
-  const commonTlds = [
-    'com.cn', 'org.cn', 'net.cn', 'gov.cn', 
-    'co.jp', 'co.uk', 'co.kr', 'com.hk'
-  ];
-
-  // 分割域名
-  const parts = domain.split('.');
-  if (parts.length <= 2) {
-    return domain; // 已经是根域名
-  }
-
-  // 检查是否包含特殊的顶级域名后缀
-  for (const tld of commonTlds) {
-    const tldParts = tld.split('.');
-    if (domain.endsWith('.' + tld)) {
-      return parts.slice(-(tldParts.length + 1)).join('.');
+function saveAnalysisToStorage(tabId, weight, ip, icp) {
+  const key = `analysis_${tabId}`;
+  chrome.storage.session.set({
+    [key]: {
+      weight: weight ? { data: weight.data } : null,
+      ip: ip ? { data: ip.data } : null,
+      icp: icp ? { data: icp.data } : null
     }
-  }
-
-  // 默认返回最后两部分
-  return parts.slice(-2).join('.');
+  });
 }
 
-// 修改网站解析相关函数中的域名处理
-async function fetchDomainWeight(domain, tabId) {
-  try {
-    const apiUrl = `https://api.mir6.com/api/bdqz?domain=${encodeURIComponent(domain)}&type=json`;
-    const weightData = await fetchWithCache(
-      apiUrl,
-      caches.weight,  
-      tabId
-    );
-    
-    if (weightData) {
-      return weightData;
-    }
-    return null;
-  } catch (error) {
-    console.error('获取域名权重失败:', error);
-    return null;
-  }
-}
-
-async function fetchIpInfo(domain, tabId) {
-  try {
-    const ipData = await fetchWithCache(
-      `https://api.mir6.com/api/ip_json?ip=${domain}`,
-      caches.ip,
-      tabId
-    );
-    if (ipData) {
-      return ipData;
-    }
-    return null;
-  } catch (error) {
-    console.error('获取IP信息失败:', error);
-    return null;
-  }
-}
-
-// 添加检查缓存的函数
-function getAnalysisFromCache(domain) {
-  const weightData = caches.weight.get(domain);
-  const ipData = caches.ip.get(domain);
-  const icpData = caches.icp.get(domain);
-  
-  const now = Date.now();
-  // 检查数据是否存在且有效
-  const weightValid = weightData?.data && weightData.timestamp && (now - weightData.timestamp < caches.weight.expireTime);
-  const ipValid = ipData?.data && ipData.timestamp && (now - ipData.timestamp < caches.ip.expireTime);
-  const icpValid = icpData?.data && icpData.timestamp && (now - icpData.timestamp < caches.icp.expireTime);
-
+function emptyCache() {
   return {
-    weight: weightValid ? weightData.data.data : null,
-    ip: ipValid ? ipData.data.data : null,
-    icp: icpValid ? icpData.data.data : null,
-    isComplete: weightValid && ipValid && icpValid
+    weight: null,
+    ip: null,
+    icp: null,
+    isComplete: false
   };
 }
 
-// 添加IP地址检查函数
 function isPrivateIP(domain) {
-  // 检查是否是IP地址
-  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
-  // 检查是否是内网IP
+  const ipv4Pattern = /^\d{1,3}(\.\d{1,3}){3}$/;
   if (ipv4Pattern.test(domain)) {
     const parts = domain.split('.');
-    const firstOctet = parseInt(parts[0]);
+    const first = parseInt(parts[0]), second = parseInt(parts[1]);
     return (
-      firstOctet === 10 || // 10.0.0.0 - 10.255.255.255
-      (firstOctet === 172 && parseInt(parts[1]) >= 16 && parseInt(parts[1]) <= 31) || // 172.16.0.0 - 172.31.255.255
-      (firstOctet === 192 && parseInt(parts[1]) === 168) || // 192.168.0.0 - 192.168.255.255
-      domain === '127.0.0.1' // localhost
+      first === 10 ||
+      (first === 172 && second >= 16 && second <= 31) ||
+      (first === 192 && second === 168) ||
+      domain === '127.0.0.1'
     );
   }
   return false;
 }
 
-// 添加备案信息查询函数
-async function fetchIcpInfo(domain, tabId) {
-  // 如果是IP地址，直接返回不适用
-  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
-  
-  if (ipv4Pattern.test(domain)) {
-    return {
-      data: {
-        icp: 'IP地址不适用',
-        unit: 'IP地址不适用',
-        time: 'IP地址不适用'
-      }
-    };
+function getRootDomain(domain) {
+  const specialTlds = ['com.cn', 'edu.cn', 'gov.cn', 'org.cn', 'net.cn', 'co.jp', 'co.uk', 'co.kr', 'com.hk'];
+  const parts = domain.split('.');
+  if (parts.length <= 2) return domain;
+  for (const tld of specialTlds) {
+    if (domain.endsWith(`.${tld}`)) {
+      return parts.slice(-(tld.split('.').length + 1)).join('.');
+    }
   }
-  const rootDomain = getRootDomain(domain);
+  return parts.slice(-2).join('.');
+}
+
+async function fetchWithCache(url, tabId) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const data = await response.json();
+  return { data };
+}
+
+async function fetchDomainWeight(domain, tabId) {
+  const apiUrl = `https://api.mir6.com/api/bdqz?myKey=84fbd322b048f19626e861932ec7d572&domain=${domain}&type=json`;
   try {
-    const icpData = await fetchWithCache(
-      `https://cn.apihz.cn/api/wangzhan/icp.php?id=88888888&key=88888888&domain=${rootDomain}`,
-      caches.icp,
-      tabId
-    );
-    // 如果返回404，说明没有查询到备案信息
-    if (icpData && icpData.code === 404) {
-      return {
-        data: {
-          icp: '未查询到备案信息',
-          unit: '未知',
-          time: '未知'
-        }
-      };
-    }
-    if (icpData) {
-      return icpData;
-    }
-    return null;
-  } catch (error) {
-    console.error('获取备案信息失败:', error);
+    return await fetchWithCache(apiUrl, tabId);
+  } catch (e) {
+    console.error('域名权重查询失败:', e);
     return null;
   }
 }
 
-let analysisPending = false; // 在文件顶部添加模块级变量
+async function fetchIpInfo(domain, tabId) {
+  const apiUrl = `https://api.mir6.com/api/ip_json?myKey=7f5860bc55587662c37cf678a7871ad0&ip=${domain}`;
+  try {
+    return await fetchWithCache(apiUrl, tabId);
+  } catch (e) {
+    console.error('IP 查询失败:', e);
+    return null;
+  }
+}
+
+async function fetchIcpInfo(domain, tabId) {
+  const ipv4Pattern = /^\d{1,3}(\.\d{1,3}){3}$/;
+  if (ipv4Pattern.test(domain)) {
+    return {
+      data: { icp: 'IP地址不适用', unit: 'IP地址不适用', time: 'IP地址不适用' }
+    };
+  }
+  const apiUrl = `https://cn.apihz.cn/api/wangzhan/icp.php?id=88888888&key=88888888&domain=${domain}`;
+  try {
+    const icp = await fetchWithCache(apiUrl, tabId);
+    if (icp?.data?.code === 404) {
+      return {
+        data: { icp: '未查询到备案信息', unit: '未知', time: '未知' }
+      };
+    }
+    return icp;
+  } catch (e) {
+    console.error('备案查询失败:', e);
+    return null;
+  }
+}
+
+let analysisPending = false;

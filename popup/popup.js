@@ -6,8 +6,6 @@ const searchEngines = [
   { id: 'sougou', name: '搜狗' },
   { id: 'shenma', name: '神马' }
 ];
-
-let currentActiveTabId = null;
 const imageCache = new WeakMap();
 
 // 页面切换功能
@@ -43,25 +41,59 @@ function initializePage(pageName) {
       initFingerprintPage();
       break;
     case 'analysis':
-      currentPageCleanup = initAnalysisPage();
+      initAnalysisPage();
       break;
   }
 }
 
-// 显示配置信息
-function displayConfig(config) {
-  const whitelistDomains = document.querySelector('.whitelist-domains');
-  if (!config) {
-    whitelistDomains.innerHTML = '<div class="error">无法获取配置信息</div>';
-    return;
-  }
+// 保存白名单
+function saveWhitelist() {
+  const whitelistInput = document.getElementById('whitelistInput');
+  if (!whitelistInput) return;
+  
+  // 获取输入的域名，过滤空行
+  const domains = whitelistInput.value
+    .split('\n')
+    .map(domain => domain.trim())
+    .filter(domain => domain && domain.length > 0);
+  
+  // 保存到存储
+  chrome.storage.local.set({ customWhitelist: domains }, () => {
+    showSaveTooltip('保存成功');
+  });
+}
 
-  // 显示白名单域名
-  whitelistDomains.innerHTML = config.WHITELIST ? config.WHITELIST.map(domain => `
-    <div class="domain-item">
-      <span class="domain-text">${domain}</span>
-    </div>
-  `).join('') : '';
+// 显示保存提示
+function showSaveTooltip(text) {
+  const saveBtn = document.getElementById('saveWhitelist');
+  if (!saveBtn) return;
+  
+  const rect = saveBtn.getBoundingClientRect();
+  const tooltip = document.createElement('div');
+  tooltip.className = 'copy-tooltip';
+  tooltip.textContent = text;
+  tooltip.style.left = `${rect.left + rect.width / 2}px`;
+  tooltip.style.top = `${rect.top - 30}px`;
+  document.body.appendChild(tooltip);
+  
+  setTimeout(() => tooltip.remove(), 1500);
+}
+
+// 检查当前域名是否在白名单中
+function checkIfWhitelisted(hostname, callback) {
+  chrome.storage.local.get(['customWhitelist'], (result) => {
+    if (!result.customWhitelist || result.customWhitelist.length === 0) {
+      callback(false);
+      return;
+    }
+    
+    const customWhitelist = result.customWhitelist.map(domain => domain.toLowerCase());
+    const isWhitelisted = customWhitelist.some(domain => 
+      hostname === domain || hostname.endsWith(`.${domain}`)
+    );
+    
+    callback(isWhitelisted);
+  });
 }
 
 // 显示扫描结果的函数
@@ -86,7 +118,7 @@ function displayResults(results) {
     { id: 'github-list', data: results.githubUrls, title: 'GitHub链接' },
     { id: 'vue-list', data: results.vueFiles, title: 'Vue文件' },
     { id: 'js-list', data: results.jsFiles, title: 'JS文件' },
-    { id: 'url-list', data: results.urls, title: 'URL' },
+    { id: 'url-list', data: results.urls, title: 'URL' }
   ];
 
   // 获取容器
@@ -120,8 +152,8 @@ function displayResults(results) {
           <div class="section-content">
             <div class="content-wrapper ${id}">
               ${Array.from(data).map(item => `
-                <div class="item">
-                  ${item}
+                <div class="item" title="来源: ${item[1]}" data-source="${item[1]}">
+                  ${item[0]}
                 </div>
               `).join('')}
             </div>
@@ -148,8 +180,8 @@ function displayResults(results) {
       copyToClipboard(text, e.clientX, e.clientY);
     });
   });
-
-  // 添加复制URL事件监听
+  
+    // 添加复制URL事件监听
   container.querySelectorAll('.copy-url-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const section = btn.closest('.section');
@@ -186,16 +218,31 @@ function displayResults(results) {
     });
   });
 
-  // 添加右键复制事件监听
+  // 添加悬浮提示和点击复制来源事件监听
   container.querySelectorAll('.item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      const source = item.dataset.source;
+      if (source) {
+        copyToClipboard(source, e.clientX, e.clientY);
+      }
+    });
+  
     item.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       copyToClipboard(item.textContent.trim(), e.clientX, e.clientY);
     });
   });
+  
+}
 
-  // 处理长文本
-  handleLongText();
+// 复制文本到剪贴板
+async function copyToClipboard(text, x, y) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showCopyTooltip('复制成功', x, y);
+  } catch (err) {
+    showCopyTooltip('复制失败', x, y);
+  }
 }
 
 // 显示复制成功提示
@@ -210,16 +257,6 @@ function showCopyTooltip(text, x, y) {
   setTimeout(() => tooltip.remove(), 1500);
 }
 
-// 复制文本到剪贴板
-async function copyToClipboard(text, x, y) {
-  try {
-    await navigator.clipboard.writeText(text);
-    showCopyTooltip('复制成功', x, y);
-  } catch (err) {
-    showCopyTooltip('复制失败', x, y);
-  }
-}
-
 // 页面加载完成时的初始化
 document.addEventListener('DOMContentLoaded', () => {
   const activePage = document.querySelector('.nav-tab.active').dataset.page;
@@ -231,14 +268,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   getCurrentTab().then(tab => {
     if (tab) {
-      chrome.tabs.sendMessage(tab.id, {type: 'GET_RESULTS', tabId: tab.id}, response => {
-        if (chrome.runtime.lastError) {
-          container.innerHTML = '<div class="error">无法连接到页面，尝试刷新页面后再试吧</div>';
-        } else if (response === 'WHITELISTED') {
+      const hostname = new URL(tab.url).hostname.toLowerCase();
+      // 先检查自定义白名单
+      checkIfWhitelisted(hostname, (isWhitelisted) => {
+        if (isWhitelisted) {
           container.innerHTML = '<div class="whitelisted">当前域名在白名单中，已跳过扫描</div>';
-        } else if (response) {
-          displayResults(response);
+          updateProgress(100);
+          return;
         }
+        
+        // 如果不在自定义白名单中，再发送消息获取结果
+        chrome.tabs.sendMessage(tab.id, {type: 'GET_RESULTS', tabId: tab.id, from: 'popup'}, response => {
+          if (chrome.runtime.lastError) {
+            container.innerHTML = '<div class="error">无法连接到页面，尝试刷新页面后再试吧</div>';
+          }else{
+            displayResults(response);
+            updateProgress(response.progress[0][1]);
+          }
+        });
       });
     }
   });
@@ -247,53 +294,42 @@ document.addEventListener('DOMContentLoaded', () => {
   initEventListeners();
 });
 
+// 更新进度显示
+function updateProgress(percent) {
+  const progressTab = document.querySelector('.progress-tab');
+  if (progressTab) {
+    progressTab.textContent = `${percent}%`;
+  }
+}
+
 // 监听来自 content script 的消息
 chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === 'SCAN_UPDATE' && message.results && message.tabId===currentActiveTabId) {
-    displayResults(message.results);
+  if (message.type === 'SCAN_UPDATE') {
+    if (message.results) {
+      displayResults(message.results);
+    }
+    updateProgress(message.results.progress[0][1]);
   }
 });
-// 监听标签页切换事件
-chrome.tabs.onActivated.addListener((activeInfo) => {
-  // 更新当前活动标签页ID
-   currentActiveTabId = activeInfo.tabId;
-});
-// 处理长文本的显示
-function handleLongText() {
-  const items = document.querySelectorAll('.item');
-  items.forEach(item => {
-    // 检查内容是否被截断
-    if (item.offsetWidth < item.scrollWidth) {
-      item.classList.add('truncated');
-    }
-  });
-}
 
 // 初始化配置页面
 function initConfigPage() {
-  getCurrentTab().then(tab => {
-    if (tab) {
-      // 获取配置信息
-      chrome.tabs.sendMessage(tab.id, {type: 'GET_CONFIG'}, response => {
-        if (chrome.runtime.lastError || !response || !response.config) {
-          const container = document.querySelector('.config-page .container');
-          container.innerHTML = '<div class="error">请刷新页面后重试</div>';
-          return;
-        }
-        displayConfig(response.config);
-        
-        // 获取动态扫描设置
-        chrome.storage.local.get(['dynamicScan', 'deepScan'], (result) => {
-          const dynamicScanCheckbox = document.getElementById('dynamicScan');
-          const deepScanCheckbox = document.getElementById('deepScan');
-          if (dynamicScanCheckbox) {
-            dynamicScanCheckbox.checked = result.dynamicScan === true;
-          }
-          if (deepScanCheckbox) {
-            deepScanCheckbox.checked = result.deepScan === true;
-          }
-        });
-      });
+  // 获取扫描设置和自定义白名单
+  chrome.storage.local.get(['dynamicScan', 'deepScan', 'customWhitelist'], (result) => {
+    const dynamicScanCheckbox = document.getElementById('dynamicScan');
+    const deepScanCheckbox = document.getElementById('deepScan');
+    const whitelistInput = document.getElementById('whitelistInput');
+    
+    if (dynamicScanCheckbox) {
+      dynamicScanCheckbox.checked = result.dynamicScan === true;
+    }
+    if (deepScanCheckbox) {
+      deepScanCheckbox.checked = result.deepScan === true;
+    }
+    
+    // 显示自定义白名单
+    if (whitelistInput && result.customWhitelist) {
+      whitelistInput.value = result.customWhitelist.join('\n');
     }
   });
 }
@@ -324,17 +360,15 @@ function updateServerFingerprints(fingerprints) {
   
   // 遍历所有指纹类型
   for (const [type, fingerprintData] of Object.entries(fingerprints)) {
-    // 如果是数组，遍历数组中的每个指纹
-    if (fingerprintData.length > 0) {
-      for (const fingerprint of fingerprintData) {
-        addFingerprint(fingerprintSection, {
-          type: type,
-          name: fingerprint.name,
-          description: fingerprint.description,
-          value: fingerprint.version || fingerprint.name
-        });
-      }
-    } 
+    if(fingerprintData.length === 0 || type === 'nameMap') continue;
+    for (const fingerprint of fingerprintData) {
+      addFingerprint(fingerprintSection, {
+        type: type,
+        name: fingerprint.name,
+        description: fingerprint.description,
+        value: fingerprint.version || fingerprint.name
+      });
+    }
   }
 }
 
@@ -362,7 +396,9 @@ function initFingerprintPage() {
       console.log('Requesting fingerprints for tab:', tab.id);
       chrome.runtime.sendMessage({
         type: 'GET_FINGERPRINTS',
-        tabId: tab.id
+        tabId: tab.id,
+        from: 'popup',
+        to: 'background'
       }, response => {
         console.log('Received response:', response);
         if (response) {
@@ -372,25 +408,7 @@ function initFingerprintPage() {
     }
   });
 }
-// 添加消息监听器处理 popup 的请求
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'GET_FINGERPRINTS') {
-    const fingerprints = serverFingerprints.get(request.tabId);
-    if (fingerprints) {
-      sendResponse({
-        server: fingerprints.server,
-        headers: Object.fromEntries(fingerprints.headers),
-        technology: fingerprints.technology
-      });
-    } else {
-      sendResponse(null);
-    }
-    return true;
-  }
-  // ... 其他代码
-});
-
-// 修改初始化分析页面的逻辑
+// 初始化网站解析页面
 function initAnalysisPage() {
   const container = document.querySelector('.analysis-section');
   container.innerHTML = '<div class="loading">正在获取网站信息...</div>';
@@ -400,38 +418,30 @@ function initAnalysisPage() {
   getCurrentTab().then(tab => {
     if (tab) {
       const domain = new URL(tab.url).hostname;
-      
-      let isFetching = false;
-      if (isFetching) return;
-      isFetching = true;
-
       timeoutId = setTimeout(() => {
-        isFetching = false;
         container.innerHTML = '<div class="error">请求超时，请重试</div>';
       }, 10000);
 
       chrome.runtime.sendMessage({
         type: 'GET_SITE_ANALYSIS',
-        domain: domain
+        domain: domain,
+        tabId: tab.id,
+        from: 'popup',
+        to: 'background'
       }, (response) => {
         clearTimeout(timeoutId);
-        isFetching = false;
         if (!response) {
           container.innerHTML = '<div class="error">获取网站信息失败</div>';
           return;
         }
-        
         if (response.isPrivateIP) {
           container.innerHTML = '<div class="notice">内网地址无需解析</div>';
           return;
         }
-        
         updateAnalysisPage(response, domain);
       });
     }
   });
-  
-  // 添加页面切换时的清理逻辑
   return () => {
     if (timeoutId) clearTimeout(timeoutId);
   };
@@ -440,7 +450,6 @@ function initAnalysisPage() {
 // 更新网站解析页面内容
 function updateAnalysisPage(data, domain) {
   const container = document.querySelector('.analysis-section');
-  // 解构数据，确保正确访问
   const icpData = data.icp?.data;
   container.innerHTML = `
     <!-- 基本信息 -->
@@ -514,7 +523,7 @@ function updateWeightInfo(weightData) {
     element.className = 'weight-item';
     
     // 直接使用原始值
-    const rawValue = weightData.data?.[engine.id] || 'n';
+    const rawValue = weightData[engine.id] || 'n';
     
     const displayValue = rawValue;
     const imgValue = rawValue;
@@ -558,7 +567,7 @@ function updateWeightInfo(weightData) {
 // 更新IP信息
 function updateIpInfo(ipData) {
   const ipInfo = document.querySelector('.ip-info');
-  const data = ipData.data;
+  const data = ipData;
   ipInfo.innerHTML = `
     <div class="info-item">
       <span class="info-label">IPv4/6</span>
@@ -592,7 +601,8 @@ const eventListeners = {
   'click .nav-tab': handleNavClick,
   'change #dynamicScan': handleDynamicScan,
   'change #deepScan': handleDeepScan,
-  'error .weight-img': handleImageError
+  'error .weight-img': handleImageError,
+  'click #saveWhitelist': saveWhitelist
 };
 
 function initEventListeners() {
@@ -607,20 +617,6 @@ function initEventListeners() {
       if (!selector || e.target.matches(selector)) handler(e);
     });
   });
-}
-
-// 在图片卸载时自动清理
-function trackImageElement(img) {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        // 触发图片加载
-        img.src = img.dataset.src; 
-        observer.unobserve(img);
-      }
-    });
-  });
-  observer.observe(img);
 }
 
 // 统一使用handleNavClick处理页面切换

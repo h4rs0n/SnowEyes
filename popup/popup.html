@@ -3,61 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="highlight.css">
-  <style>
-    body {
-      width: 400px;
-      height: 600px;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: #fff;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* 页面容器样式 */
-    .page {
-      display: none;
-      flex: 1;
-      overflow-y: auto;
-    }
-
-    .page.active {
-      display: block;
-    }
-
-    /* 内容容器样式 */
-    .container {
-      height: 100%;
-      overflow-y: auto;
-    }
-
-    /* 用户名密码结果的颜色标识 */
-    .credentials-list .item::before {
-      background: #e64980;  /* 粉红色 - 用户名密码 */
-    }
-
-    /* 统一信息项样式 */
-    .info-item {
-      display: flex;
-      justify-content: space-between;
-      margin: 8px 0;
-      padding: 8px;
-      background: #f8f9fa;
-      border-radius: 4px;
-    }
-
-    /* 添加图片加载过渡效果 */
-    .weight-img {
-      opacity: 0;
-      transition: opacity 0.3s ease-in-out;
-    }
-    
-    .weight-img.loaded {
-      opacity: 1;
-    }
-  </style>
 </head>
 <body>
   <!-- 导航栏 -->
@@ -67,6 +12,7 @@
       <button class="nav-tab" data-page="fingerprint">指纹嗅探</button>
       <button class="nav-tab" data-page="analysis">网站解析</button>
       <button class="nav-tab" data-page="config">配置</button>
+      <button class="progress-tab">0%</button>
     </div>
   </div>
 
@@ -84,6 +30,41 @@
     </div>
   </div>
 
+  <!-- 添加网站解析页面 -->
+  <div class="page analysis-page">
+    <div class="container">
+      <div class="analysis-section">
+        <!-- 基本信息 -->
+        <div class="analysis-group basic-group">
+          <h3>基本信息</h3>
+          <div class="basic-info">
+          </div>
+        </div>
+
+        <!-- 域名权重信息 -->
+        <div class="analysis-group weight-group">
+          <h3>搜索引擎权重</h3>
+          <div class="weight-grid">
+          </div>
+        </div>
+
+        <!-- IP地址信息 -->
+        <div class="analysis-group ip-group">
+          <h3>IP信息</h3>
+          <div class="ip-info">
+          </div>
+        </div>
+
+        <!-- Whois信息 -->
+        <div class="analysis-group whois-group">
+          <h3>Whois信息</h3>
+          <div class="whois-info">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <!-- 配置页面 -->
   <div class="page config-page">
     <div class="container">
@@ -91,10 +72,11 @@
         <div class="config-group">
           <h3>扫描白名单</h3>
           <div class="config-content">
-            以下域名将不会被扫描：
+            以下域名网站（包括子域名）不会被扫描：
           </div>
-          <div class="whitelist-domains">
-            <!-- 白名单域名将在这里动态显示 -->
+          <textarea id="whitelistInput" placeholder="输入域名，每行一个，如：&#10;example.com&#10;test.org&#10;localhost" rows="6"></textarea>
+          <div class="config-buttons">
+            <button id="saveWhitelist" class="save-btn">保存白名单</button>
           </div>
         </div>
 
@@ -123,146 +105,6 @@
       </div>
     </div>
   </div>
-
-  <!-- 添加网站解析页面 -->
-  <div class="page analysis-page">
-    <div class="container">
-      <div class="analysis-section">
-        <!-- 基本信息 -->
-        <div class="analysis-group basic-group">
-          <h3>基本信息</h3>
-          <div class="basic-info">
-            <div class="info-item">
-              <span class="info-label">域名</span>
-              <span class="info-value domain-value"></span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">备案号</span>
-              <span class="info-value icp-value"></span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">注册商</span>
-              <span class="info-value">腾讯云</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">到期时间</span>
-              <span class="info-value">2024-03-17</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 域名权重信息 -->
-        <div class="analysis-group weight-group">
-          <h3>搜索引擎权重</h3>
-          <div class="weight-grid">
-            <div class="weight-item">
-              <img class="weight-img" 
-                   data-engine="baidupc" 
-                   data-value="4"
-                   alt="百度PC">
-              <span class="weight-label">百度PC</span>
-              <span class="weight-value">4</span>
-            </div>
-            <div class="weight-item">
-              <img class="weight-img" 
-                   data-engine="google" 
-                   data-value="8"
-                   alt="Google">
-              <span class="weight-label">Google</span>
-              <span class="weight-value">8</span>
-            </div>
-            <div class="weight-item">
-              <img class="weight-img" 
-                   data-engine="360" 
-                   data-value="6"
-                   alt="360">
-              <span class="weight-label">360</span>
-              <span class="weight-value">6</span>
-            </div>
-            <div class="weight-item">
-              <img class="weight-img" 
-                   data-engine="baidum" 
-                   data-value="4"
-                   alt="百度移动">
-              <span class="weight-label">百度移动</span>
-              <span class="weight-value">4</span>
-            </div>
-            <div class="weight-item">
-              <img class="weight-img" 
-                   data-engine="sougou" 
-                   data-value="2"
-                   alt="搜狗">
-              <span class="weight-label">搜狗</span>
-              <span class="weight-value">2</span>
-            </div>
-            <div class="weight-item">
-              <img class="weight-img" 
-                   data-engine="shenma" 
-                   data-value="0"
-                   alt="神马">
-              <span class="weight-label">神马</span>
-              <span class="weight-value">0</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- IP地址信息 -->
-        <div class="analysis-group ip-group">
-          <h3>IP信息</h3>
-          <div class="ip-info">
-            <div class="info-item">
-              <span class="info-label">IPv6</span>
-              <span class="info-value">240e:97c:2f:2::4c</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">IPv4</span>
-              <span class="info-value">39.155.167.178</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">地理位置</span>
-              <span class="info-value">中国 广东省 广州市</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">运营商</span>
-              <span class="info-value">中国电信</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">协议</span>
-              <span class="info-value">IPv6</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">网络类型</span>
-              <span class="info-value">数据中心</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Whois信息 -->
-        <div class="analysis-group whois-group">
-          <h3>Whois信息</h3>
-          <div class="whois-info">
-            <div class="info-item">
-              <span class="info-label">注册时间</span>
-              <span class="info-value">1995-05-04</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">更新时间</span>
-              <span class="info-value">2023-03-17</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">DNS服务器</span>
-              <span class="info-value">ns1.qq.com</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">状态</span>
-              <span class="info-value">clientDeleteProhibited</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script src="popup.js"></script>
 </body>
 </html> 

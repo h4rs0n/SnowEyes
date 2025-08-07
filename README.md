@@ -7,20 +7,38 @@
 **雪瞳** 是一款用于检测和提取网页中敏感信息的 Chrome 浏览器扩展。帮助用户快速获取网页中的敏感信息，并进行分析和处理。
 
 ---
+## v0.2.7.2更新
+
+1. 添加来源显示（鼠标悬停对应结果显示数据来源，左键点击即可复制）
+2. 新增自定义白名单
+3. 新增进度条，实时查看扫描进度
+4. 优化访问部分网页会卡顿的情况，体验更丝滑
+5. 优化扫描处理逻辑，更快的处理，更全面的js搜集
+6. 深度扫描新增js文件路径猜解拼接，提高访问命中率
+7. 其他细节优化......
+
+下个版本预计更新内容：当前版本问题优化，指纹添加，路径拼接优化，特殊网页处理，AI?，Maybe
+
+注意: 
+1. 深度扫描在一些情况下会出现很多js误匹配，此功能后续还需要多完善，正常情况下为了维持良好体验不建议使用
+2. 关于备案信息的查询建议注册登录接口盒子使用自己的Id和key，因为公开的接口查询有限制
+
+如果您有更好的第三方接口欢迎提issue，当然您愿意分享的话。
+
+firfox版本后续更新，可能延迟一周左右。欢迎提issue，感谢支持！
+
+---
 ## 功能特点
 
 1. 实现多种敏感信息，指纹等检测分类
 2. 支持动态扫描，针对动态渲染的网页信息实时捕获
 3. 支持深度扫描，针对某些js文件中嵌套js的网站进行深度扫描
-4. 插件运行在浏览器环境中，天然环境优势，请求和用户正常浏览相似，可绕过部分爬虫识别以及部分waf拦截
 
 ## 使用详情
 
 1. 将源码下载为压缩包文件后解压或直接clone
 2. 在浏览器扩展中打开开发者工具
 3. 点击加载解压的扩展，选中解压的文件夹，即可在插件列表中使用插件
-
-**firefox搜索插件"snoweyes"添加即用**
 
 ---
 
@@ -32,26 +50,30 @@
 
 ### 信息收集页面
 <div style="text-align:center">
-    <img src="icons/souji1.png" alt="信息收集界面" width="80%">
-    <img src="icons/souji2.png" alt="信息收集界面" width="80%">
-    <img src="icons/souji3.png" alt="信息收集界面" width="80%">
+    <img src="icons/souji1.png" alt="信息收集界面" width="40%">
+    <img src="icons/souji2.png" alt="信息收集界面" width="40%">
+</div>
+
+### 指纹嗅探页面
+<div style="text-align:center">
+    <img src="icons/xiutan1.png" alt="指纹嗅探" width="40%">
+    <img src="icons/xiutan2.png" alt="指纹嗅探" width="40%">
+</div>
+
+### 网站解析页面
+<div style="text-align:center">
+    <img src="icons/jiexi1.png" alt="网站解析" width="40%">
+    <img src="icons/jiexi2.png" alt="网站解析" width="40%">
+</div>
+
+### 配置页面
+<div style="text-align:center">
+    <img src="icons/config.png" alt="白名单" width="40%">
 </div>
 
 ### 白名单页面
 <div style="text-align:center">
     <img src="icons/white.png" alt="白名单" width="80%">
-</div>
-
-### 指纹嗅探页面
-<div style="text-align:center">
-    <img src="icons/xiutan1.png" alt="指纹嗅探" width="80%">
-    <img src="icons/xiutan2.png" alt="指纹嗅探" width="80%">
-</div>
-
-### 网站解析页面
-<div style="text-align:center">
-    <img src="icons/jiexi1.png" alt="网站解析" width="80%">
-    <img src="icons/jiexi2.png" alt="网站解析" width="80%">
 </div>
 ---
 
@@ -66,11 +88,11 @@
 
 程序仍在开发中，一些功能没有完善还请见谅（不定时更新，如果有时间的话）。
 
-1. 大型网页的完整扫描可能需要点时间（极端情况比如一个网站加载上千个js文件，还可能会出现卡顿的情况，不过请耐心等待）。
-2. 可能会出现未知bug。(毕竟这事情，谁也说不准，万一呢)
-3. 如需修改黑白名单，可前往 `content/config/scanner.config.js` 文件中根据注释找到域名相关配置进行修改。
+1. 如遇js文件过多扫描需要时间，会出现卡顿情况。
+2. 可能会出现未知bug。(毕竟这事情，谁也说不准，万一呢)。
+3. 如遇问题或有新的设计想法，欢迎提issue，看到了就会回复
 
-tips: 扫描出的单个结果右键点击即可复制。
+tips: 左键复制来源，右键复制结果
 
 ---
 

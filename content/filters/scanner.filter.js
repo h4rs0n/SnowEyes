@@ -5,68 +5,51 @@ const regexCache = {
   chinesePattern: /^[\u4e00-\u9fa5]+$/,
   camelCasePattern: /\b[_a-z]+(?:[A-Z][a-z]+)+\b/,
 };
-
 // 统一的扫描过滤器
 const SCANNER_FILTER = {
   // API 过滤器
   api: (function() {
-    return function(match, resultsSet) {
+    return function(match, url, resultsSet) {
       match = match.slice(1, -1);
-
-      //如果是css字体文件则丢弃
       if (SCANNER_CONFIG.API.FONT_PATTERN.test(match)) {
         return false;
       }
-      
-      // 检查是否是Vue文件
       if (match.endsWith('.vue')) {
-        resultsSet?.vueFiles?.add(match);
+        resultsSet?.vueFiles?.set(match, url);
         return true;
       }
-      
       if (SCANNER_CONFIG.API.IMAGE_PATTERN.test(match)) {
-        resultsSet?.imageFiles?.add(match);
+        resultsSet?.imageFiles?.set(match, url);
         return true;
       }
-
-      // 检查是否是JS文件
       if (SCANNER_CONFIG.API.JS_PATTERN.test(match)) {
-        resultsSet?.jsFiles?.add(match);
+        resultsSet?.jsFiles?.set(match, url);
         return true;
       }
-
-      // 检查是否是文档文件
       if (SCANNER_CONFIG.API.DOC_PATTERN.test(match)) {
-        resultsSet?.docFiles?.add(match);
+        resultsSet?.docFiles?.set(match, url);
         return true;
       }
-
-      // 检查是否包含被过滤的内容类型
       const lcMatch = match.toLowerCase();
       const shouldFilter = SCANNER_CONFIG.API.FILTERED_CONTENT_TYPES.some(type => 
         lcMatch==type.toLowerCase()
       );
-
-      // 如果是被过滤的内容类型，直接跳过
       if (shouldFilter) {
         return false;
       }
-      // 检查是否是模块路径（以./开头）
       if (match.startsWith('./')) {
-        resultsSet?.moduleFiles?.add(match);
+        resultsSet?.moduleFiles?.set(match, url);
         return true;
       }
-
-      // 区分绝对路径和相对路径
       if (match.startsWith('/')) {
         // 绝对路径
         if(match.length<=4&&/[A-Z\.\/\#\+\?23]/.test(match.slice(1))) return false;
-        resultsSet?.absoluteApis?.add(match);
+        resultsSet?.absoluteApis?.set(match, url);
       } else {
         // 相对路径
         if (/^(audio|blots|core|ace|icon|css|formats|image|js|modules|text|themes|ui|video|static|attributors|application)/.test(match)) return false;
         if(match.length<=4) return false;
-        resultsSet?.apis?.add(match);
+        resultsSet?.apis?.set(match, url);
       }
       return true;
     };
@@ -76,7 +59,6 @@ const SCANNER_FILTER = {
   domain: (function() {
     // URL解码缓存
     const decodeCache = new Map();
-    
     const validate = {
       // 清理和标准化域名
       clean(domain) {
@@ -120,7 +102,7 @@ const SCANNER_FILTER = {
       }
     };
 
-    return function(match, resultsSet) {
+    return function(match, url, resultsSet) {
       // 清理和标准化域名
       match = validate.clean(match);
       if (!match) return false;
@@ -131,7 +113,7 @@ const SCANNER_FILTER = {
       }
 
       // 添加到结果集
-      resultsSet?.domains?.add(match);
+      resultsSet?.domains?.set(match, url);
       return true;
     };
   })(),
@@ -144,70 +126,63 @@ const SCANNER_FILTER = {
       }
     };
 
-    return function(match, resultsSet) {
+    return function(match, url, resultsSet) {
       // 提取纯IP地址（带端口）
       match = match.replace(/^[`'"]|[`'"]$/g, '');
       const ipMatch = match.match(SCANNER_CONFIG.PATTERNS.IP);
       if (ipMatch) {
         const extractedIp = ipMatch[0];
         if (!validate.notSpecial(extractedIp)) return false;
-        resultsSet?.ips?.add(extractedIp);
+        resultsSet?.ips?.set(extractedIp, url);
       }
       return true;
     };
   })(),
 
   // 其他敏感信息过滤器
-  phone: (match, resultsSet) => {
-    resultsSet?.phones?.add(match);
+  phone: (match, url, resultsSet) => {
+    resultsSet?.phones?.set(match, url);
     return true;
   },
 
-  email: (match, resultsSet) => {
-    resultsSet?.emails?.add(match);
+  email: (match, url, resultsSet) => {
+    resultsSet?.emails?.set(match, url);
     return true;
   },
 
-  idcard: (match, resultsSet) => {
-    resultsSet?.idcards?.add(match);
+  idcard: (match, url, resultsSet) => {
+    resultsSet?.idcards?.set(match, url);
     return true;
   },
 
-  url: (match, resultsSet) => {
+  url: (match, url, resultsSet) => {
     try {
       // 检查是否是GitHub URL
-      if (match.toLowerCase().includes('github.com/')) {
-        resultsSet?.githubUrls?.add(match);
+      if (match.toLowerCase().includes('github.com/')) {  
+        resultsSet?.githubUrls?.set(match, url);
         return true;
       }
-      resultsSet?.urls?.add(match);
+      resultsSet?.urls?.set(match, url);
       // 解析URL
-      const url = new URL(match);
+      const matchUrl = new URL(match);
       const currentHost = window.location.host;
       // 检查是否是当前域名或IP
-      if (url.host === currentHost) {
+      if (matchUrl.host === currentHost) {
         // 获取路径部分
-        const path = url.pathname;
-      
-        //如果是css字体文件则丢弃
+        const path = matchUrl.pathname;
         if (SCANNER_CONFIG.API.FONT_PATTERN.test(path)) {
           return false;
         }
-        // 检查是否是图片文件
         if (SCANNER_CONFIG.API.IMAGE_PATTERN.test(path)) {
-          resultsSet?.imageFiles?.add(path);
+          resultsSet?.imageFiles?.set(path, url);
           return true;
         }
-        
-        // 检查是否是JS文件
         if (SCANNER_CONFIG.API.JS_PATTERN.test(path)) {
-          resultsSet?.jsFiles?.add(path);
+          resultsSet?.jsFiles?.set(path, url);
           return true;
         }
-        
-        // 检查是否是文档文件
         if (SCANNER_CONFIG.API.DOC_PATTERN.test(path)) {
-          resultsSet?.docFiles?.add(path);
+          resultsSet?.docFiles?.set(path, url);
           return true;
         }
         
@@ -215,9 +190,9 @@ const SCANNER_FILTER = {
         if (!path.match(/\.[a-zA-Z0-9]+$/)) {
           // 区分绝对路径和相对路径
           if (path.startsWith('/')) {
-            resultsSet?.absoluteApis?.add(path);
+            resultsSet?.absoluteApis?.set(path, url);
           } else {
-            resultsSet?.apis?.add(path);
+            resultsSet?.apis?.set(path, url);
           }
           return true;
         }
@@ -229,24 +204,24 @@ const SCANNER_FILTER = {
     return true;
   },
 
-  jwt: (match, resultsSet) => {
-    resultsSet?.jwts?.add(match);
+  jwt: (match, url, resultsSet) => {
+    resultsSet?.jwts?.set(match, url);
     return true;
   },
 
-  aws_key: (match, resultsSet) => {
-    resultsSet?.awsKeys?.add(match);
+  aws_key: (match, url, resultsSet) => {
+    resultsSet?.awsKeys?.set(match, url);
     return true;
   },
 
-  company: (match, resultsSet) => {
+  company: (match, url, resultsSet) => {
     if(/[（）]/.test(match)&&!match.match(/（\S*）/)) return false;
     if (Array.from(SCANNER_CONFIG.BLACKLIST.CHINESE_BLACKLIST).some(blackWord=>match.includes(blackWord))) return false;
-    resultsSet?.companies?.add(match);
+    resultsSet?.companies?.set(match, url);
     return true;
   },
 
-  credentials: (match, resultsSet) => {
+  credentials: (match, url, resultsSet) => {
     // 检查是否是空值
     const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
     var key = valueMatch[0].replace(/['"]/g,'').toLowerCase();
@@ -257,11 +232,11 @@ const SCANNER_FILTER = {
     if (regexCache.coordPattern.test(key) || regexCache.valuePattern.test(value) || value.length<=1) return false;
     if (regexCache.chinesePattern.test(value)) return false;
     
-    resultsSet?.credentials?.add(match);
+    resultsSet?.credentials?.set(match, url);
     return true;
   },
 
-  cookie: (match, resultsSet) => {
+  cookie: (match, url, resultsSet) => {
     // 检查是否是空值
     const valueMatch = match.replace(/\s+/g,'').split(/[:=]/);
     if (valueMatch[1].replace(/['"]/g,'').length<4) {
@@ -281,11 +256,11 @@ const SCANNER_FILTER = {
         return false;
       }
     }
-    resultsSet?.cookies?.add(match);
+    resultsSet?.cookies?.set(match, url);
     return true;
   },
 
-  id_key: (match, resultsSet) => {
+  id_key: (match, url, resultsSet) => {
     // 先检查是否包含分隔符
     const hasDelimiter = match.match(/[:=]/);
     
@@ -341,14 +316,14 @@ const SCANNER_FILTER = {
           return false;
         }
       }
-      resultsSet?.idKeys?.add(match);
+      resultsSet?.idKeys?.set(match, url);
       return true;
     }
     return false;
   },
 
   // 构建工具检测过滤器
-  finger: (fingerName, fingerClass, fingerType, fingerDescription, resultsSet, fingerExtType, fingerExtName) => {
+  finger: (fingerName, fingerClass, fingerType, fingerDescription, url, resultsSet, fingerExtType, fingerExtName) => {
     var fingerprint = {};
     fingerprint.type = fingerType;
     fingerprint.name = fingerClass;
@@ -362,7 +337,7 @@ const SCANNER_FILTER = {
       type: 'UPDATE_BUILDER',
       finger: fingerprint
     });
-    resultsSet?.fingers?.add(fingerClass);
+    resultsSet?.fingers?.set(fingerClass, url);
     return true;
   }
 };

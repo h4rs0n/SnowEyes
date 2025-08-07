@@ -2,7 +2,7 @@
   "manifest_version": 3,
 
   "name": "雪瞳",
-  "version": "0.2.6.0",
+  "version": "0.2.7.2",
   "description": "洞悉无形，守护无界",
 
   "icons": {
@@ -16,7 +16,9 @@
     "scripting",    
     "storage",
     "webRequest",
-    "cookies"
+    "cookies",
+    "tabs",
+    "webNavigation"
   ],
 
   "host_permissions": [
