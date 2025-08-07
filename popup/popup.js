@@ -450,7 +450,7 @@ function initAnalysisPage() {
 // 更新网站解析页面内容
 function updateAnalysisPage(data, domain) {
   const container = document.querySelector('.analysis-section');
-  const icpData = data.icp?.data;
+  const icpData = data.icp;
   container.innerHTML = `
     <!-- 基本信息 -->
     <div class="analysis-group basic-group">
