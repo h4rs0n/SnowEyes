@@ -223,7 +223,13 @@ function displayResults(results) {
     item.addEventListener('click', (e) => {
       const source = item.dataset.source;
       if (source) {
-        copyToClipboard(source, e.clientX, e.clientY);
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          chrome.tabs.create({ url: source });
+          showCopyTooltip('已在新标签页打开', e.clientX, e.clientY);
+        } else {
+          copyToClipboard(source, e.clientX, e.clientY);
+        }
       }
     });
   
