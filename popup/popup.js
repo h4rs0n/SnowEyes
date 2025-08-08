@@ -7,7 +7,7 @@ const searchEngines = [
   { id: 'shenma', name: '神马' }
 ];
 const imageCache = new WeakMap();
-
+let tabId = null;
 // 页面切换功能
 function switchPage(pageName) {
   // 清理旧页面的资源
@@ -304,7 +304,7 @@ function updateProgress(percent) {
 
 // 监听来自 content script 的消息
 chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === 'SCAN_UPDATE') {
+  if (message.type === 'SCAN_UPDATE' && message.tabId === tabId) {
     if (message.results) {
       displayResults(message.results);
     }
@@ -631,6 +631,7 @@ function handleNavClick(e) {
 // 添加通用的标签页查询函数
 async function getCurrentTab() {
   const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+  tabId = tabs[0].id;
   return tabs[0] || null;
 }
 
