@@ -282,7 +282,7 @@ const matchPatterns = async (chunk, isHtmlContent = false, url) => {
   }
   return update;
 };
-const collectJsUrls = (content) => {
+const collectJsUrls = (content, isHtmlContent = false) => {
   const jsUrls = new Set();
   const baseUrl = window.location.origin;
   const jsPattern = /['"](?:[^'"]+\.(?:js)(?:\?[^\s'"]*)?)['"]/g;
@@ -308,7 +308,7 @@ const collectJsUrls = (content) => {
       jsUrls.add(chunkUrl);
     });
   }
-  if (!isUseWebpack && deepScanEnabled) {
+  if ((!isUseWebpack && deepScanEnabled) || !isHtmlContent) {
     const matches = Array.from(content.matchAll(jsPattern))
     .map(match => {
       const path = match[0].slice(1, -1);
@@ -423,7 +423,7 @@ async function initScan() {
       await scanSources([htmlContent], true, document.location.href);
     }
 
-    const initialJs = collectJsUrls(htmlContent);
+    const initialJs = collectJsUrls(htmlContent, true);
     initialJs.forEach(url => enqueueJsUrl(url, 'page'));
     if (!observerInitialized) {
       observer.observe(document.body, {
@@ -502,7 +502,7 @@ async function handleJsTask(url) {
     });
     if (response?.content) {
       await scanSources([response.content], false, url);
-      const newJsUrls = collectJsUrls(response.content);
+      const newJsUrls = collectJsUrls(response.content, false);
       if(newJsUrls){
         newJsUrls.forEach(jsUrl => enqueueJsUrl(jsUrl, 'page', getBasePath(url)));
       }
