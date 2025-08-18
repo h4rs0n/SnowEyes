@@ -7,7 +7,7 @@ let maxDepth = 3;
 let tabJs = new Set();
 let isWhitelisted = false;
 let hostname = null;
-
+let isUseWebpack = false;
 const tree = {};
 const jsQueue = [];
 const queueSet = new Set();
@@ -27,6 +27,8 @@ async function initSettings() {
       chrome.runtime.sendMessage({ type: 'REGISTER_CONTENT', from: 'content', to: 'background' }, (response) => {
         if(isWhitelisted) return;
         tabJs = response.tabJs;
+        currentTabId = response.tabId;
+        getTabResults(currentTabId);
         tabJs.forEach(url => {
           enqueueJsUrl(url, 'background');
         });
@@ -47,7 +49,6 @@ const waitForDependencies = () => {
     })();
   });
 };
-// 获取tabId
 const getTabId = () => {
   return new Promise(resolve => {
     chrome.runtime.sendMessage({ type: 'GET_TAB_ID', from: 'content', to: 'background'}, response => {
@@ -109,10 +110,10 @@ function enqueueJsUrl(url, source='page', basePath = '') {
     jsFileMap.set(fileName, filePath);
     queueSet.add(url);
     jsQueue.push(url);
+    tabResults.get(currentTabId).jsFiles.set(url, "暂无法展示来源");
     processJsQueue();
   }
 }
-//分块处理
 function* splitIntoChunks(text) {
   if (text.length <= MAX_CHUNK_SIZE) {
     yield text;
@@ -131,8 +132,6 @@ function* splitIntoChunks(text) {
         currentLines = [];
         currentSize = 0;
       }
-
-      // 对超长单行进行切割
       if (line.length > MAX_CHUNK_SIZE) {
         for (let i = 0; i < line.length; i += MAX_CHUNK_SIZE) {
           yield line.slice(i, i + MAX_CHUNK_SIZE);
@@ -152,7 +151,7 @@ function* splitIntoChunks(text) {
   }
 }
 //匹配函数
-const matchPatterns = (chunk, isHtmlContent = false, url) => {
+const matchPatterns = async (chunk, isHtmlContent = false, url) => {
   const patterns = Object.entries(SCANNER_CONFIG.PATTERNS);
   const resultsSet = tabResults.get(currentTabId);
   let update = false;
@@ -166,7 +165,6 @@ const matchPatterns = (chunk, isHtmlContent = false, url) => {
     
     try {
       if (key === 'FINGER') {
-        // 对每个模式进行匹配
         for (const {pattern: fingerPattern, name: fingerName, class: fingerClass, type: fingerType, description: fingerDescription, extType: fingerExtType, extName: fingerExtName} of pattern.patterns) {
           if (resultsSet.fingers.has(fingerClass)) continue;
           const matches = chunk.match(fingerPattern);
@@ -188,7 +186,6 @@ const matchPatterns = (chunk, isHtmlContent = false, url) => {
         }
         continue;
       }
-      // 域名使用不同的匹配模式
       if (key === 'DOMAIN') {
         const domainPattern = isHtmlContent ? pattern : SCANNER_CONFIG.PATTERNS.DOMAIN_RESOURCE;
         while ((match = domainPattern.exec(chunk)) !== null) {
@@ -209,7 +206,6 @@ const matchPatterns = (chunk, isHtmlContent = false, url) => {
         }
         continue;
       }
-      // API模式特殊处理
       if (key === 'API') {
         const apiPattern = SCANNER_CONFIG.API.PATTERN;
         apiPattern.lastIndex = 0;
@@ -230,58 +226,39 @@ const matchPatterns = (chunk, isHtmlContent = false, url) => {
         }
         continue;
       }
-      if (key === 'CREDENTIALS') {
-        // 对每个模式进行匹配
-        for (const {pattern: credentialsPattern} of pattern.patterns) {
-          let patternLastIndex = 0;  // 每个模式独立的 lastIndex
-          while ((match = credentialsPattern.exec(chunk)) !== null) {
-            if (credentialsPattern.lastIndex <= patternLastIndex) {
-              window.logger.warn(`检测到可能的无限循环: CREDENTIALS Pattern`);
-              break;
-            }
-            patternLastIndex = credentialsPattern.lastIndex;
-            
-            if (--maxIterations <= 0) {
-              window.logger.warn(`达到最大迭代次数: CREDENTIALS`);
-              break;
-            }
-            
-            if (filter(match[0], url, resultsSet)) {
-              update = true;
-            }
+      if (key === 'CREDENTIALS' || key === 'ID_KEY' || key === 'EMAIL') {
+        let patterns = [];
+        if (key === 'EMAIL') {
+          patterns = [{"pattern": SCANNER_CONFIG.PATTERNS.EMAIL.toString()}];
+        }else{
+          patterns = pattern.patterns.map(p => ({
+            pattern: p.pattern.toString(),
+          }));
+        }
+        try {
+          const response = await new Promise((resolve) => {
+            chrome.runtime.sendMessage({
+              type: 'REGEX_MATCH',
+              from: 'content',
+              to: 'background',
+              chunk: chunk,
+              patterns: patterns,
+              patternType: key
+            }, resolve);
+          });
+          
+          if (response && response.matches) {
+            response.matches.forEach(({match}) => {
+              if (filter(match, url, resultsSet)) {
+                update = true;
+              }
+            });
           }
-          // 重置正则表达式的 lastIndex
-          credentialsPattern.lastIndex = 0;
+        } catch (e) {
+          window.logger.error('CREDENTIALS匹配出错:', e);
         }
         continue;
       }
-      // ID_KEY模式特殊处理
-      if (key === 'ID_KEY') {
-        // 对每个模式进行匹配
-        for (const {pattern: idKeyPattern} of pattern.patterns) {
-          let patternLastIndex = 0;  // 每个模式独立的 lastIndex
-          while ((match = idKeyPattern.exec(chunk)) !== null) {
-            if (idKeyPattern.lastIndex <= patternLastIndex) {
-              window.logger.warn(`检测到可能的无限循环: ID_KEY Pattern`);
-              break;
-            }
-            patternLastIndex = idKeyPattern.lastIndex;
-            
-            if (--maxIterations <= 0) {
-              window.logger.warn(`达到最大迭代次数: ID_KEY`);
-              break;
-            }
-            
-            if (filter(match[0], url, resultsSet)) {
-              update = true;
-            }
-          }
-          // 重置正则表达式的 lastIndex
-          idKeyPattern.lastIndex = 0;
-        }
-        continue;
-      }
-      // 其他模式使用exec
       while ((match = pattern.exec(chunk)) !== null) {
         if (pattern.lastIndex <= lastIndex) {
           window.logger.warn(`检测到可能的无限循环: ${pattern}`);
@@ -305,12 +282,34 @@ const matchPatterns = (chunk, isHtmlContent = false, url) => {
   }
   return update;
 };
-// 收集页面的js
 const collectJsUrls = (content) => {
   const jsUrls = new Set();
   const baseUrl = window.location.origin;
   const jsPattern = /['"](?:[^'"]+\.(?:js)(?:\?[^\s'"]*)?)['"]/g;
-  const matches = Array.from(content.matchAll(jsPattern))
+  const chunkCodePattern = /("[a-z/]*")[+|()\[\]\{\}a-z]*\+"."\+{(?:"?[0-9a-z-]*"?:"?[0-9a-z-]{1,}"?,?){1,}}\[[a-z]\]\+".js"/i;
+  const chunkJsPattern = /"?[0-9a-z-]*"?\s*:\s*"?[0-9a-z-]*"?/g;
+  const chunkMatch = content.match(chunkCodePattern);
+  if (chunkMatch) {
+    isUseWebpack = true;
+    let chunkBasePath = chunkMatch[1].slice(1, -1);
+    if (!chunkBasePath.startsWith('/')) {
+      chunkBasePath = '/' + chunkBasePath;
+    }
+    Array.from(chunkMatch[0].matchAll(chunkJsPattern)).forEach(chunkJsMatch => {
+      let chunkId = chunkJsMatch[0].split(":")[0];
+      if(chunkId.includes("\"")||chunkId.includes("\'")){
+        chunkId = chunkId.slice(1, -1);
+      }
+      let chunkHash = chunkJsMatch[0].split(":")[1];
+      if(chunkHash.includes("\"")||chunkHash.includes("\'")){
+        chunkHash = chunkHash.slice(1, -1);
+      }
+      const chunkUrl = baseUrl + chunkBasePath + chunkId + '.' + chunkHash + '.js';
+      jsUrls.add(chunkUrl);
+    });
+  }
+  if (!isUseWebpack && deepScanEnabled) {
+    const matches = Array.from(content.matchAll(jsPattern))
     .map(match => {
       const path = match[0].slice(1, -1);
       let url = null
@@ -334,8 +333,8 @@ const collectJsUrls = (content) => {
       }
     })
     .filter(url => url !== null);
-
-  matches.forEach(url => jsUrls.add(url));
+    matches.forEach(url => jsUrls.add(url));
+  }
   return jsUrls;
 };
 //扫描函数
@@ -344,7 +343,7 @@ async function scanSources(sources, isHtmlContent = false, url) {
     for (const source of sources) {
       if (!source) continue;
       for (const chunk of splitIntoChunks(source)) {
-        let update = matchPatterns(chunk, isHtmlContent, url);
+        let update = await matchPatterns(chunk, isHtmlContent, url);
         if (update) sendUpdate();
         await new Promise(r => setTimeout(r, 0));
       }
@@ -365,9 +364,8 @@ const debounceScan = () => {
     if (htmlContent) {
       scanSources([htmlContent], true, document.location.href);
     }
-  }, 1000); // 2秒内的变化会被合并为一次扫描
+  }, 1000); 
 };
-//监听 DOM 变化
 const observer = new MutationObserver((mutations) => {
   if (!dynamicScanEnabled) return;
 
@@ -383,38 +381,38 @@ const observer = new MutationObserver((mutations) => {
     debounceScan();
   }
 });
-// 初始化扫描
+function getTabResults(currentTabId){
+  if (!tabResults.has(currentTabId)) {
+    tabResults.set(currentTabId, {
+      domains: new Map(),
+      absoluteApis: new Map(),
+      apis: new Map(),
+      moduleFiles: new Map(),
+      docFiles: new Map(),
+      ips: new Map(),
+      phones: new Map(),
+      emails: new Map(),
+      idcards: new Map(),
+      jwts: new Map(),
+      imageFiles: new Map(),
+      jsFiles: new Map(),
+      vueFiles: new Map(),
+      urls: new Map(),
+      githubUrls: new Map(),
+      companies: new Map(),
+      credentials: new Map(),
+      cookies: new Map(),
+      idKeys: new Map(),
+      fingers: new Map(),
+      progress: new Map()
+    });
+  }
+}
 async function initScan() {
   try {
     await waitForDependencies();
     if (!currentTabId) await getTabId();
-
-    if (!tabResults.has(currentTabId)) {
-      tabResults.set(currentTabId, {
-        domains: new Map(),     
-        absoluteApis: new Map(),
-        apis: new Map(),        
-        moduleFiles: new Map(), 
-        docFiles: new Map(),    
-        ips: new Map(),         
-        phones: new Map(),      
-        emails: new Map(),      
-        idcards: new Map(),     
-        jwts: new Map(),        
-        imageFiles: new Map(),  
-        jsFiles: new Map(),     
-        vueFiles: new Map(),    
-        urls: new Map(),        
-        githubUrls: new Map(),  
-        companies: new Map(),   
-        credentials: new Map(),  
-        cookies: new Map(),      
-        idKeys: new Map(),       
-        fingers: new Map(), 
-        progress: new Map()
-      });
-    }
-
+    getTabResults(currentTabId);
     window.logger.info('开始扫描...');
     Object.keys(tabResults.get(currentTabId)).forEach(key => {
       tabResults.get(currentTabId)[key].clear();
@@ -463,7 +461,6 @@ const sendUpdate = () => {
       results: results,
       tabId: currentTabId,
     }).catch(() => {
-      // 忽略消息发送失败的错误
     });
     
     chrome.runtime.sendMessage({
@@ -473,7 +470,6 @@ const sendUpdate = () => {
       results: results,
       tabId: currentTabId,
     }).catch(() => {
-      // 忽略消息发送失败的错误
     });
   } catch (e) {
     if (e.message !== 'Extension context invalidated.') {
@@ -504,17 +500,11 @@ async function handleJsTask(url) {
     const response = await new Promise(resolve => {
       chrome.runtime.sendMessage({ type: 'FETCH_JS', url: url, from: 'content', to: 'background'}, resolve);
     });
-
     if (response?.content) {
-      //扫描js
       await scanSources([response.content], false, url);
-      if(deepScanEnabled){
-        // 收集新的js
-        const newJsUrls = collectJsUrls(response.content);
-        const basePath = getBasePath(url);
-        if(newJsUrls){
-          newJsUrls.forEach(jsUrl => enqueueJsUrl(jsUrl, 'page', basePath));
-        }
+      const newJsUrls = collectJsUrls(response.content);
+      if(newJsUrls){
+        newJsUrls.forEach(jsUrl => enqueueJsUrl(jsUrl, 'page', getBasePath(url)));
       }
     }
   } catch (e) {

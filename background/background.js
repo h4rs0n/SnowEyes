@@ -118,16 +118,12 @@ async function handleFetchRequest(request, sender, sendResponse) {
     }
   }
 }
-
-// 存储服务器指纹信息
 let serverFingerprints = new Map();
-
 const analyticsDetected = {
-  baidu: new Map(),    
-  yahoo: new Map(),    
-  google: new Map(),   
+  baidu: new Map(),
+  yahoo: new Map(),
+  google: new Map(),
 };
-// 统计服务检测处理函数
 function handleAnalyticsDetection(details, type) {
   if (analyticsDetected[type].get(details.tabId)) {
     return;
@@ -141,8 +137,6 @@ function handleAnalyticsDetection(details, type) {
     description: FINGERPRINT_CONFIG.ANALYTICS[type].description,
     version: FINGERPRINT_CONFIG.ANALYTICS[type].version
   });
-
-  // 更新存储
   serverFingerprints.set(details.tabId, fingerprints);
 }
 
@@ -195,7 +189,6 @@ function processHeaders(headers, tabId) {
   const headerMap = new Map(
     headers.map(h => [h.name.toLowerCase(), h.value])
   );
-  // 遍历所有指纹配置进行匹配
   for (const config of FINGERPRINT_CONFIG.HEADERS) {
     const headerValue = headerMap.get(config.header);
     if (headerValue) {
@@ -253,19 +246,14 @@ function getFingerprints(tabId){
   serverFingerprints.set(tabId, fingerprints);
   return fingerprints;
 }
-// 修改监听器的处理方式
 chrome.webRequest.onHeadersReceived.addListener(
   async (details) => {
-    // 只处理主文档请求，并且立即返回响应头
     if (details.type !== 'main_frame') return { responseHeaders: details.responseHeaders };
     if (!details.responseHeaders) return { responseHeaders: details.responseHeaders };
     
-    // 使用setTimeout将指纹处理放到下一个事件循环
     setTimeout(() => {
       const fingerprints = processHeaders(details.responseHeaders, details.tabId);
       serverFingerprints.set(details.tabId, fingerprints);
-    
-      // 延迟处理cookies
       chrome.cookies.getAll({ url: details.url }, (cookies) => {
         if (cookies.length > 0) {
           const cookieNames = cookies.map(cookie => cookie.name).join(';');
@@ -283,6 +271,47 @@ chrome.webRequest.onHeadersReceived.addListener(
   { urls: ['<all_urls>'] },
   ['responseHeaders']
 );
+function performRegexMatching(chunk, patterns, patternType) {
+  const matches = [];
+  let maxIterations = 10000;
+  
+  try {
+    for (const patternInfo of patterns) {
+      const { pattern: patternString} = patternInfo;
+      let regex;
+      try {
+        const match = patternString.match(/^\/(.+)\/([gimuy]*)$/);
+        if (match) {
+          regex = new RegExp(match[1], match[2]);
+        }
+      } catch (e) {
+        console.error(`无效的正则表达式: ${patternString}`, e);
+        continue;
+      }
+      let patternLastIndex = 0;
+      let match;
+      while ((match = regex.exec(chunk)) !== null) {
+        if (regex.lastIndex <= patternLastIndex) {
+          console.warn(`检测到可能的无限循环: ${patternType} Pattern - ${patternName}`);
+          break;
+        }
+        patternLastIndex = regex.lastIndex;
+        if (--maxIterations <= 0) {
+          console.warn(`达到最大迭代次数: ${patternType}`);
+          break;
+        }
+        matches.push({
+          match: match[0],
+        });
+      }
+      regex.lastIndex = 0;
+    }
+  } catch (e) {
+    console.error(`${patternType} 匹配出错:`, e);
+  }
+  
+  return matches;
+}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.to !== 'background') return false;
@@ -317,7 +346,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
       case 'REGISTER_CONTENT': {
         const tabJs = Array.from(tabJsMap[sender.tab.id] || []);
-        sendResponse({ tabJs: tabJs });
+        sendResponse({ tabJs: tabJs, tabId: sender.tab.id });
         return true;
       }
       case 'UPDATE_BADGE': {
@@ -326,6 +355,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
       case 'GET_TAB_ID': {
         sendResponse({ tabId: sender.tab?.id });
+        return true;
+      }
+      case 'REGEX_MATCH': {
+        const { chunk, patterns, patternType } = request;
+        const matches = performRegexMatching(chunk, patterns, patternType);
+        sendResponse({ matches });
         return true;
       }
       case 'GET_SITE_ANALYSIS': {
