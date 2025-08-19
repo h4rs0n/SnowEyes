@@ -308,7 +308,7 @@ const collectJsUrls = (content, isHtmlContent = false) => {
       jsUrls.add(chunkUrl);
     });
   }
-  if ((!isUseWebpack && deepScanEnabled) || !isHtmlContent) {
+  if ((!isUseWebpack && deepScanEnabled) || isHtmlContent) {
     const matches = Array.from(content.matchAll(jsPattern))
     .map(match => {
       const path = match[0].slice(1, -1);
