@@ -54,23 +54,23 @@
 
 | 插件主界面 |
 | :---: |
-| <img src="icons/plugin.png" alt="插件" width="400"> <img src="icons/plugin.png" alt="插件" width="400"> |
+| <img src="icons/plugin.png" alt="插件" width="100%"> |
 
 | 信息收集页面 |
 | :---: |
-| <img src="icons/souji1.png" alt="信息收集界面" width="400"> <img src="icons/souji2.png" alt="信息收集界面" width="400"> |
+| <img src="icons/souji1.png" alt="信息收集界面" width="45%"> <img src="icons/souji2.png" alt="信息收集界面" width="45%"> |
 
 | 指纹嗅探页面 |
 | :---: |
-| <img src="icons/xiutan1.png" alt="指纹嗅探" width="400"> <img src="icons/xiutan2.png" alt="指纹嗅探" width="400"> |
+| <img src="icons/xiutan1.png" alt="指纹嗅探" width="45%"> <img src="icons/xiutan2.png" alt="指纹嗅探" width="45%"> |
 
 | 网站解析页面 |
 | :---: |
-| <img src="icons/jiexi1.png" alt="网站解析" width="400"> <img src="icons/jiexi2.png" alt="网站解析" width="400"> |
+| <img src="icons/jiexi1.png" alt="网站解析" width="45%"> <img src="icons/jiexi2.png" alt="网站解析" width="45%"> |
 
 | 配置与白名单 |
 | :---: |
-| <img src="icons/config.png" alt="配置页面" width="400"> <img src="icons/white.png" alt="白名单" width="400"> |
+| <img src="icons/config.png" alt="配置页面" width="45%"> <img src="icons/white.png" alt="白名单" width="45%"> |
 
 </details>
 
