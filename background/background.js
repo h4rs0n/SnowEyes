@@ -365,6 +365,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
       case 'GET_SITE_ANALYSIS': {
         const domain = getRootDomain(request.domain);
+        // 查询IP需要完整域名
+        const fullDomain = request.domain
         const tabId = request.tabId;
 
         if (analysisPending) return true;
@@ -391,7 +393,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
           Promise.all([
             cachedData.weight || fetchDomainWeight(domain, tabId),
-            cachedData.ip || fetchIpInfo(domain, tabId),
+            cachedData.ip || fetchIpInfo(fullDomain, tabId),
             cachedData.icp || fetchIcpInfo(domain, tabId)
           ]).then(([weightData, ipData, icpData]) => {
             analysisPending = false;
