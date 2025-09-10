@@ -54,7 +54,7 @@
 
 | 插件主界面 |
 | :---: |
-| <img src="icons/plugin.png" alt="插件" width="800"> |
+| <img src="icons/plugin.png" alt="插件" width="400"> <img src="icons/plugin.png" alt="插件" width="400"> |
 
 | 信息收集页面 |
 | :---: |
@@ -70,7 +70,7 @@
 
 | 配置与白名单 |
 | :---: |
-| <img src="icons/config.png" alt="配置页面" width="400"> <img src="icons/white.png" alt="白名单" width="800"> |
+| <img src="icons/config.png" alt="配置页面" width="400"> <img src="icons/white.png" alt="白名单" width="400"> |
 
 </details>
 
